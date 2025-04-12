@@ -1,12 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart'; // Import for date formatting
 
 // Import PDF and Printing packages
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
-// No longer need path_provider here unless saving locally first
 
 class PlayerDetailsScreen extends StatefulWidget {
   final DocumentSnapshot playerDoc; // Receive the player document
@@ -18,30 +18,61 @@ class PlayerDetailsScreen extends StatefulWidget {
 }
 
 class _PlayerDetailsScreenState extends State<PlayerDetailsScreen> {
-  late Map<String, dynamic> playerData; // To store player data
+  late Map<String, dynamic> playerData;
 
   @override
   void initState() {
     super.initState();
-    // Extract data when the widget is initialized
-    playerData = widget.playerDoc.data() as Map<String, dynamic>;
+    // Extract data, handle potential errors
+    if (widget.playerDoc.exists && widget.playerDoc.data() != null) {
+      playerData = widget.playerDoc.data() as Map<String, dynamic>;
+    } else {
+      playerData = { 'name': 'Error: Data Missing', /* provide defaults */ };
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar( const SnackBar(content: Text('Error loading player details.'), backgroundColor: Colors.red));
+          Navigator.of(context).pop();
+        }
+      });
+    }
   }
 
-  // --- PDF Report Generation (Moved from AdminScreen) ---
+  // Helper function to format Timestamps safely
+  String _formatTimestamp(Timestamp? timestamp, {String format = 'dd MMMM yyyy HH:mm'}) {
+    if (timestamp == null) return 'N/A';
+    try {
+      return DateFormat(format).format(timestamp.toDate());
+    } catch (e) {
+      print("Error formatting timestamp: $e");
+      return 'Invalid Date';
+    }
+  }
+  String _formatDateOnly(Timestamp? timestamp) {
+    return _formatTimestamp(timestamp, format: 'dd MMMM yyyy');
+  }
+
+  // --- PDF Report Generation (Now includes confirmed fields) ---
   Future<void> _generatePlayerReport() async {
     final pdf = pw.Document();
 
-    // Use the locally stored playerData
+    // Extract data safely
     final String name = playerData['name'] ?? 'N/A';
     final String position = playerData['position'] ?? 'N/A';
     final String teamName = playerData['team'] ?? 'No Team Assigned';
     final String? pictureUrl = playerData['picture'] as String?;
+    final Timestamp? birthDate = playerData['birth_date'] as Timestamp?;
+
+    // Extract Attendance Map data safely
+    final Map<String, dynamic>? attendanceData = playerData['Attendance'] as Map<String, dynamic>?;
+    final bool? presence = attendanceData?['Presence'] as bool?;
+    final Timestamp? startTraining = attendanceData?['Start_training'] as Timestamp?;
+    final Timestamp? finishTraining = attendanceData?['Finish_training'] as Timestamp?;
+    final String? trainingType = attendanceData?['Training_type'] as String?;
+
 
     // Fetch Network Image for PDF
-    pw.Widget playerImageWidget = pw.Container(
-        width: 80, height: 80, color: PdfColors.grey200, child: pw.Center(child: pw.Text('No Image'))
-    );
-    if (pictureUrl != null && pictureUrl.isNotEmpty) {
+    pw.Widget playerImageWidget = pw.Container( width: 80, height: 80, color: PdfColors.grey200, child: pw.Center(child: pw.Text('No Image')));
+    if (pictureUrl != null && pictureUrl.isNotEmpty) { /* ... image fetching logic ... */
       try {
         final netImage = await networkImage(pictureUrl);
         playerImageWidget = pw.ClipOval(child: pw.Image(netImage, width: 80, height: 80, fit: pw.BoxFit.cover));
@@ -61,31 +92,39 @@ class _PlayerDetailsScreenState extends State<PlayerDetailsScreen> {
               pw.Header(level: 0, text: 'Player Report', textStyle: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
               pw.Divider(thickness: 2),
               pw.SizedBox(height: 20),
+              // --- Basic Info Section ---
               pw.Row(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
                     playerImageWidget,
                     pw.SizedBox(width: 30),
-                    pw.Expanded( // Allow text to wrap if needed
-                      child: pw.Column(
-                          crossAxisAlignment: pw.CrossAxisAlignment.start,
-                          mainAxisAlignment: pw.MainAxisAlignment.center,
-                          children: [
-                            pw.Text('Name: $name', style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
-                            pw.SizedBox(height: 12),
-                            pw.Text('Position: $position', style: const pw.TextStyle(fontSize: 16)),
-                            pw.SizedBox(height: 8),
-                            pw.Text('Assigned Team: $teamName', style: const pw.TextStyle(fontSize: 16)),
-                          ]
-                      ),
-                    )
-                  ]
-              ),
-              pw.SizedBox(height: 40),
-              pw.Header(level: 1, text: 'Additional Information (Placeholder)'),
-              pw.Paragraph(text: 'Contact: [Fetch if available]'),
-              pw.Paragraph(text: 'Emergency Contact: [Fetch if available]'),
-              // Add more sections (e.g., fetch attendance records for this player)
+                    pw.Expanded( child: pw.Column( crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
+                      pw.Text('Name: $name', style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
+                      pw.SizedBox(height: 8),
+                      pw.Text('Position: $position', style: const pw.TextStyle(fontSize: 16)),
+                      pw.SizedBox(height: 8),
+                      pw.Text('Team: $teamName', style: const pw.TextStyle(fontSize: 16)),
+                      pw.SizedBox(height: 8),
+                      // Add Birth Date
+                      pw.Text('Birth Date: ${_formatDateOnly(birthDate)}', style: const pw.TextStyle(fontSize: 16)),
+                    ]))]),
+              pw.SizedBox(height: 30),
+
+              // --- Last Recorded Attendance Section (If Available) ---
+              if (attendanceData != null) ...[
+                pw.Header(level: 1, text: 'Last Recorded Session Status'),
+                pw.Bullet(text: 'Status: ${presence == true ? "Present" : "Absent"}'),
+                pw.Bullet(text: 'Training Type: ${trainingType ?? 'N/A'}'),
+                pw.Bullet(text: 'Session Start: ${_formatTimestamp(startTraining)}'),
+                pw.Bullet(text: 'Session Finish: ${_formatTimestamp(finishTraining)}'),
+                // Add notes if available in this map - currently not in screenshot
+                // pw.Bullet(text: 'Notes: ${attendanceData['Notes'] ?? ''}'),
+                pw.SizedBox(height: 20),
+              ],
+
+              // --- Other Sections ---
+              pw.Paragraph(text: 'Document ID: ${widget.playerDoc.id}'),
+
             ],
           );
         },
@@ -93,125 +132,133 @@ class _PlayerDetailsScreenState extends State<PlayerDetailsScreen> {
     );
 
     // Use Printing package
-    try {
+    try { /* ... Printing.layoutPdf logic ... */
       await Printing.layoutPdf(
           onLayout: (PdfPageFormat format) async => pdf.save(),
           name: 'Player_Report_${name.replaceAll(' ', '_')}.pdf'
       );
-    } catch (e) {
+    } catch (e) { /* ... Error Handling ... */
       print("Error generating/sharing player PDF: $e");
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error generating PDF report.'), backgroundColor: Colors.red),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error generating PDF report.'), backgroundColor: Colors.red),);
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Extract data safely within the build method too, in case initState didn't run yet (though unlikely)
+    // Extract data safely using the state variable
     final name = playerData['name'] ?? 'Player Details';
     final position = playerData['position'] ?? 'N/A';
     final teamName = playerData['team'] ?? 'No Team Assigned';
     final pictureUrl = playerData['picture'] as String?;
+    final Timestamp? birthDate = playerData['birth_date'] as Timestamp?; // Get birth date
+
+    // Extract Attendance Map safely
+    final Map<String, dynamic>? attendanceData = playerData['Attendance'] as Map<String, dynamic>?;
+
 
     return Scaffold(
       appBar: AppBar(
         title: Text(name),
-        flexibleSpace: Container( // Optional Gradient
-          decoration: const BoxDecoration(
-            gradient: LinearGradient( colors: [Color(0xFFF27121), Colors.white], begin: Alignment.topCenter, end: Alignment.bottomCenter),
-          ),
-        ),
-        actions: [
-          // Add PDF generation button to AppBar
-          IconButton(
-            icon: const Icon(Icons.picture_as_pdf),
-            tooltip: 'Generate PDF Report',
-            onPressed: _generatePlayerReport,
-          ),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration( gradient: LinearGradient( colors: [Color(0xFFF27121), Colors.white], begin: Alignment.topCenter, end: Alignment.bottomCenter),),),
+        actions: [ /* ... PDF Button ... */
+          IconButton( icon: const Icon(Icons.picture_as_pdf), tooltip: 'Generate PDF Report', onPressed: _generatePlayerReport,),
         ],
       ),
-      body: SingleChildScrollView( // Allow scrolling if content overflows
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Center(
-              child: CircleAvatar(
-                radius: 60,
-                backgroundColor: Colors.grey.shade300,
-                backgroundImage: (pictureUrl != null && pictureUrl.isNotEmpty)
-                    ? NetworkImage(pictureUrl)
-                    : const AssetImage("assets/images/default_profile.jpeg") as ImageProvider,
-                onBackgroundImageError: (exception, stackTrace) {
-                  print("Error loading image on details screen: $exception");
-                  // Optionally show an error icon or placeholder in the CircleAvatar itself
-                },
-              ),
-            ),
-            const SizedBox(height: 20),
-            Center(
-              child: Text(
-                name,
-                style: GoogleFonts.ubuntu(fontSize: 24, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Divider(),
-            const SizedBox(height: 10),
+            // --- Player Avatar & Name (Same as before) ---
+            Center( child: CircleAvatar( radius: 60, /* ... Avatar properties ... */
+              backgroundColor: Colors.grey.shade300,
+              backgroundImage: (pictureUrl != null && pictureUrl.isNotEmpty) ? NetworkImage(pictureUrl) : const AssetImage("assets/images/default_profile.jpeg") as ImageProvider,
+              onBackgroundImageError: (e, s) { print("Error loading image: $e"); },
+            ),),
+            const SizedBox(height: 16),
+            Text( name, style: GoogleFonts.ubuntu(fontSize: 24, fontWeight: FontWeight.bold), textAlign: TextAlign.center,),
+            const SizedBox(height: 24),
 
-            // Use ListTile for consistent styling of details
-            _buildDetailItem(Icons.sports_soccer, "Position", position),
-            _buildDetailItem(Icons.group_work, "Team", teamName),
+            // --- Details Card ---
+            Card(
+              elevation: 2, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              child: Padding( padding: const EdgeInsets.all(16.0), child: Column( children: [
+                _buildDetailRow(Icons.sports_soccer, "Position:", position),
+                const Divider(height: 20),
+                _buildDetailRow(Icons.group_work, "Team:", teamName),
+                const Divider(height: 20),
+                // Display Birth Date
+                _buildDetailRow(Icons.cake_outlined, "Birth Date:", _formatDateOnly(birthDate)),
+              ],),),),
+            const SizedBox(height: 24),
 
-            // Add more details if available in your 'players' collection
-            // _buildDetailItem(Icons.calendar_today, "Joined Date", playerData['joinDate'] ?? 'N/A'),
-            //_buildDetailItem(Icons.phone, "Contact", playerData['phone'] ?? 'N/A'),
+            // --- Last Recorded Attendance Card (Conditionally displayed) ---
+            if (attendanceData != null) _buildAttendanceCard(attendanceData),
 
             const SizedBox(height: 30),
-            Center(
-              child: ElevatedButton.icon(
-                icon: const Icon(Icons.picture_as_pdf_outlined),
-                label: const Text('Generate Player Report'),
-                style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFF27121), // Theme color
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))
-                ),
-                onPressed: _generatePlayerReport,
-              ),
-            )
+
+            // --- Report Button (Same as before) ---
+            Center( child: ElevatedButton.icon( /* ... Button properties ... */
+              icon: const Icon(Icons.picture_as_pdf_outlined), label: const Text('Generate Player Report'),
+              style: ElevatedButton.styleFrom( backgroundColor: const Color(0xFFF27121), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))),
+              onPressed: _generatePlayerReport,),),
+            const SizedBox(height: 20),
           ],
         ),
       ),
     );
   }
 
-  // Helper widget to build detail list items
-  Widget _buildDetailItem(IconData icon, String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        children: [
-          Icon(icon, color: Colors.grey.shade600, size: 20),
-          const SizedBox(width: 16),
-          Text(
-            "$label:",
-            style: GoogleFonts.ubuntu(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.black87),
-          ),
-          const SizedBox(width: 8),
-          Expanded( // Allow value text to wrap
-            child: Text(
-              value,
-              style: GoogleFonts.ubuntu(fontSize: 16, color: Colors.black54),
-              textAlign: TextAlign.end,
+  // --- Helper Widgets ---
+
+  // Build detail row (same as before)
+  Widget _buildDetailRow(IconData icon, String label, String value) {
+    // ... same implementation as before ...
+    return Padding( padding: const EdgeInsets.symmetric(vertical: 6.0), child: Row( mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+      Row( children: [ Icon(icon, color: const Color(0xFFF27121), size: 20), const SizedBox(width: 12), Text( label, style: GoogleFonts.ubuntu(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black87),),]),
+      Flexible( child: Text( value, style: GoogleFonts.ubuntu(fontSize: 16, color: Colors.black54), textAlign: TextAlign.right, overflow: TextOverflow.ellipsis,)),],),);
+  }
+
+  // Build Attendance Card
+  Widget _buildAttendanceCard(Map<String, dynamic> attendanceData) {
+    final bool? presence = attendanceData['Presence'] as bool?;
+    final Timestamp? startTraining = attendanceData['Start_training'] as Timestamp?;
+    final Timestamp? finishTraining = attendanceData['Finish_training'] as Timestamp?;
+    final String? trainingType = attendanceData['Training_type'] as String?;
+    // final String? notes = attendanceData['Notes'] as String?; // Add if Notes field exists
+
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Last Recorded Session Status",
+              style: GoogleFonts.ubuntu(fontSize: 18, fontWeight: FontWeight.w600),
             ),
-          ),
-        ],
+            const SizedBox(height: 10),
+            _buildDetailRow(
+                presence == true ? Icons.check_circle : Icons.cancel_outlined,
+                "Status:",
+                presence == true ? "Present" : "Absent"
+            ),
+            const Divider(height: 20),
+            _buildDetailRow(Icons.fitness_center, "Training Type:", trainingType ?? 'N/A'),
+            const Divider(height: 20),
+            _buildDetailRow(Icons.timer_outlined, "Session Start:", _formatTimestamp(startTraining)),
+            const Divider(height: 20),
+            _buildDetailRow(Icons.timer_off_outlined, "Session Finish:", _formatTimestamp(finishTraining)),
+            // Add notes if available:
+            // const Divider(height: 20),
+            // _buildDetailRow(Icons.notes, "Coach Notes:", notes ?? ''),
+          ],
+        ),
       ),
     );
   }
