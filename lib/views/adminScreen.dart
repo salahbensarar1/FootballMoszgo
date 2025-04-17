@@ -1,20 +1,14 @@
-// import 'package:firebase_auth/firebase_auth.dart'; // Already imported below
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-// import 'package:firebase_core/firebase_core.dart'; // Usually initialized in main.dart
 import 'package:flutter/material.dart';
 import 'package:footballtraining/loginPage.dart'; // Your login page import
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart'; // Needed for date formatting
 
-// Import the new Detail Screen files (Create these files next)
+// Import the Detail Screen files
 import 'player_details_screen.dart';
 import 'team_details_screen.dart';
-// import 'attendance_details_screen.dart'; // Import if you create this
-
-// PDF/Printing imports are no longer needed in AdminScreen
-// import 'package:pdf/pdf.dart';
-// import 'package:pdf/widgets.dart' as pw;
-// import 'package:printing/printing.dart';
+import 'session_details_screen.dart'; // Import the session detail screen
 
 class AdminScreen extends StatefulWidget {
   const AdminScreen({super.key});
@@ -54,7 +48,6 @@ class _AdminScreenState extends State<AdminScreen> {
   }
 
   // --- Data Fetching ---
-  // _getUserDetails remains the same as before...
   Future<void> _getUserDetails() async {
     final user = _auth.currentUser;
     if (user?.uid != null) {
@@ -69,8 +62,8 @@ class _AdminScreenState extends State<AdminScreen> {
           });
         } else if (mounted) {
           setState(() {
-            userName = "Admin";
-            email = user.email;
+            userName = "Admin"; // Default if admin user not found in 'users'
+            email = user.email; // Fallback to auth email
           });
         }
       } catch (e) {
@@ -80,51 +73,57 @@ class _AdminScreenState extends State<AdminScreen> {
         }
       }
     } else {
+      // Should not happen if screen is protected, but good practice
       if (mounted) { setState(() { userName = "Admin"; email = "Not logged in"; });}
     }
   }
 
-  // getStreamForCurrentTab remains the same as before...
+  // Get stream based on tab and search query
   Stream<QuerySnapshot> getStreamForCurrentTab() {
     Query query;
     String searchField;
 
     switch (currentTab) {
-      case 0: // Attendances
-        query = _firestore.collection('attendances').orderBy('date', descending: true);
-        searchField = 'playerName'; // *** Verify this field name ***
+      case 0: // Attendances - Uses training_sessions
+        query = _firestore.collection('training_sessions')
+            .orderBy('start_time', descending: true); // Order by session start time
+        searchField = 'team'; // Search sessions by team name
         if (searchQuery.isNotEmpty) {
+          // Apply search filter on the 'team' field
           query = query
               .where(searchField, isGreaterThanOrEqualTo: searchQuery)
               .where(searchField, isLessThanOrEqualTo: '$searchQuery\uf8ff');
+          // Requires Firestore Index: training_sessions -> team ASC, start_time DESC
         }
         break;
+
       case 1: // Players
         query = _firestore.collection('players');
-        searchField = 'name';
+        searchField = 'name'; // Search players by name
         if (searchQuery.isNotEmpty) {
           query = query
               .where(searchField, isGreaterThanOrEqualTo: searchQuery)
               .where(searchField, isLessThanOrEqualTo: '$searchQuery\uf8ff')
               .orderBy(searchField);
         } else {
-          query = query.orderBy(searchField);
+          query = query.orderBy(searchField); // Default sort by name
         }
         break;
+
       case 2: // Teams
         query = _firestore.collection('teams');
-        searchField = 'team_name';
+        searchField = 'team_name'; // Search teams by team_name
         if (searchQuery.isNotEmpty) {
           query = query
               .where(searchField, isGreaterThanOrEqualTo: searchQuery)
               .where(searchField, isLessThanOrEqualTo: '$searchQuery\uf8ff')
               .orderBy(searchField);
         } else {
-          query = query.orderBy(searchField);
+          query = query.orderBy(searchField); // Default sort by team_name
         }
         break;
       default:
-        return const Stream.empty();
+        return const Stream.empty(); // Fallback
     }
     return query.snapshots();
   }
@@ -132,127 +131,204 @@ class _AdminScreenState extends State<AdminScreen> {
   // --- Widget Build ---
   @override
   Widget build(BuildContext context) {
-    // Build method structure (AppBar, Drawer, Tabs, Search, Body) remains the same...
     var size = MediaQuery.of(context).size;
     return Scaffold(
         appBar: AppBar(
           title: Text(userName != null ? "Hi, $userName" : "Admin Dashboard"),
-          flexibleSpace: Container(
+          flexibleSpace: Container( // Applying gradient
             decoration: const BoxDecoration(
               gradient: LinearGradient( colors: [Color(0xFFF27121), Colors.white], begin: Alignment.topCenter, end: Alignment.bottomCenter),
             ),
           ),
         ),
-        drawer: Drawer(
-          // Drawer implementation remains the same...
+        drawer: Drawer( // Drawer implementation
           child: Container(
-            decoration: const BoxDecoration(
+            decoration: const BoxDecoration( // Matching gradient
               gradient: LinearGradient(colors: [Color(0xFFF27121), Colors.white], begin: Alignment.topCenter, end: Alignment.bottomCenter),
             ),
-            child: ListView( /* ... Drawer items ... */
+            child: ListView(
               padding: EdgeInsets.zero,
               children: [
                 DrawerHeader(
                   decoration: const BoxDecoration(color: Colors.transparent),
                   child: Column( crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    const CircleAvatar(backgroundImage: AssetImage('assets/images/admin.jpeg'), radius: 40, backgroundColor: Colors.white),
+                    const CircleAvatar(backgroundImage: AssetImage('assets/images/admin.jpeg'), radius: 40, backgroundColor: Colors.white), // Placeholder image
                     const SizedBox(height: 15),
                     Text(email ?? "Loading email...", style: const TextStyle(color: Colors.white, fontSize: 16)),
                     Text(userName ?? "Admin", style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
                   ],),
                 ),
-                ListTile( leading: const Icon(Icons.dashboard_customize, color: Colors.black87), title: const Text('Dashboard Overview'), onTap: () { Navigator.pop(context); /* Navigate or show message */ },),
-                ListTile( leading: const Icon(Icons.person_add_alt_1, color: Colors.black87), title: const Text('Manage Users'), onTap: () { Navigator.pop(context); /* Navigate or show message */ },),
+                // Example Drawer Items (Add your actual items here)
+                ListTile( leading: const Icon(Icons.dashboard_customize, color: Colors.black87), title: const Text('Dashboard Overview'), onTap: () { Navigator.pop(context); /* TODO: Navigate or show message */ },),
+                ListTile( leading: const Icon(Icons.person_add_alt_1, color: Colors.black87), title: const Text('Manage Users'), onTap: () { Navigator.pop(context); /* TODO: Navigate or show message */ },),
                 const Divider(indent: 16, endIndent: 16),
-                ListTile( leading: const Icon(Icons.settings, color: Colors.black87), title: const Text('Settings'), onTap: () { Navigator.pop(context); /* Navigate or show message */ },),
-                ListTile( leading: const Icon(Icons.logout, color: Colors.black87), title: const Text('Logout'), onTap: () => _logout(context),),
+                ListTile( leading: const Icon(Icons.settings, color: Colors.black87), title: const Text('Settings'), onTap: () { Navigator.pop(context); /* TODO: Navigate or show message */ },),
+                ListTile( leading: const Icon(Icons.logout, color: Colors.black87), title: const Text('Logout'), onTap: () => _logout(context),), // Logout action
               ],
             ),
           ),
         ),
         body: Column(
           children: <Widget>[
-            // Tab Bar remains the same...
-            SizedBox( width: size.width, height: size.height * 0.05, child: ListView.builder( scrollDirection: Axis.horizontal, itemCount: tabs.length, itemBuilder: (context, index) {
-              return GestureDetector( onTap: () { setState(() { currentTab = index; searchQuery = ""; _searchController.clear(); }); },
-                child: Padding( padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                  child: Text( tabs[index], style: GoogleFonts.ubuntu( fontSize: currentTab == index ? 17 : 15, fontWeight: currentTab == index ? FontWeight.w600 : FontWeight.w400, color: currentTab == index ? const Color(0xFFF27121) : Colors.grey.shade600,),),
-                ),);},),),
-            const Divider(height: 1, thickness: 1),
+            // --- Tab Bar ---
+            SizedBox(
+              width: size.width, height: size.height * 0.05,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal, itemCount: tabs.length,
+                itemBuilder: (context, index) {
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        currentTab = index;
+                        searchQuery = ""; // Reset search on tab change
+                        _searchController.clear(); // Clear text field
+                      });
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                      child: Text( tabs[index], style: GoogleFonts.ubuntu( // Tab text styling
+                        fontSize: currentTab == index ? 17 : 15,
+                        fontWeight: currentTab == index ? FontWeight.w600 : FontWeight.w400,
+                        color: currentTab == index ? const Color(0xFFF27121) : Colors.grey.shade600,),),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const Divider(height: 1, thickness: 1), // Separator
 
-            // Search Bar remains the same...
-            Padding( padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0), child: TextField( controller: _searchController, onChanged: (value) { setState(() { searchQuery = value; }); },
-              decoration: InputDecoration( hintText: 'Search ${tabs[currentTab]}...', prefixIcon: const Icon(Icons.search, size: 20), border: OutlineInputBorder( borderRadius: BorderRadius.circular(30.0), borderSide: BorderSide.none,), filled: true, fillColor: Colors.grey[200], contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 20),
-                suffixIcon: searchQuery.isNotEmpty ? IconButton( icon: const Icon(Icons.clear, size: 20), tooltip: 'Clear Search', onPressed: () { _searchController.clear(); setState(() { searchQuery = ""; }); },) : null,),),),
+            // --- Search Bar ---
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+              child: TextField(
+                controller: _searchController,
+                onChanged: (value) { setState(() { searchQuery = value; }); }, // Update search query on change
+                decoration: InputDecoration( // Search bar styling
+                  hintText: 'Search ${tabs[currentTab]}...', // Dynamic hint text
+                  prefixIcon: const Icon(Icons.search, size: 20, color: Colors.grey),
+                  border: OutlineInputBorder( borderRadius: BorderRadius.circular(30.0), borderSide: BorderSide.none,),
+                  filled: true, fillColor: Colors.grey[200],
+                  contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 20),
+                  suffixIcon: searchQuery.isNotEmpty ? IconButton( // Clear button
+                    icon: const Icon(Icons.clear, size: 20, color: Colors.grey),
+                    tooltip: 'Clear Search',
+                    onPressed: () { _searchController.clear(); setState(() { searchQuery = ""; }); },
+                  ) : null, // Show only if search query is not empty
+                ),
+              ),
+            ),
 
-            // Content Area (StreamBuilder) remains the same structure...
+            // --- Content Area ---
             Expanded(
-              child: _buildContentBody(),
+              child: _buildContentBody(), // Builds the list based on the current tab
             ),
           ],
         ));
   }
 
-  // --- Build Content Based on Tab ---
+  // Builds the body content (the list) based on the selected tab
   Widget _buildContentBody() {
-    // StreamBuilder structure remains the same...
     return StreamBuilder<QuerySnapshot>(
-      stream: getStreamForCurrentTab(),
+      stream: getStreamForCurrentTab(), // Gets the stream based on tab and search
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) { return const Center(child: CircularProgressIndicator(color: Color(0xFFF27121))); }
-        if (snapshot.hasError) { return Center(child: Text("Error loading ${tabs[currentTab]}. Check console & indexes.")); }
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) { return Center(child: Text(searchQuery.isEmpty ? "No ${tabs[currentTab]} found." : "No ${tabs[currentTab]} match your search.")); }
+        // Handle loading state
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator(color: Color(0xFFF27121)));
+        }
+        // Handle errors
+        if (snapshot.hasError) {
+          print("Firestore Error (${tabs[currentTab]}): ${snapshot.error}"); // Log error
+          return Center(child: Text("Error loading ${tabs[currentTab]}. Check console & indexes."));
+        }
+        // Handle no data
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return Center(child: Text(searchQuery.isEmpty ? "No ${tabs[currentTab]} found." : "No ${tabs[currentTab]} match your search."));
+        }
+
+        // Data is available, build the list
         var items = snapshot.data!.docs;
-        return ListView.builder( itemCount: items.length, itemBuilder: (context, index) {
-          var item = items[index];
-          switch (currentTab) {
-            case 0: return _buildAttendanceTile(item);
-            case 1: return _buildPlayerTile(item);
-            case 2: return _buildTeamTile(item);
-            default: return const SizedBox.shrink();
-          }
-        },);
-      },);
+        return ListView.builder(
+          itemCount: items.length,
+          itemBuilder: (context, index) {
+            var item = items[index];
+            // Delegate building the list tile to specific functions
+            switch (currentTab) {
+              case 0: return _buildAttendanceTile(item); // Use updated attendance tile
+              case 1: return _buildPlayerTile(item); // Use player tile
+              case 2: return _buildTeamTile(item);   // Use team tile
+              default: return const SizedBox.shrink(); // Empty for invalid tab index
+            }
+          },
+        );
+      },
+    );
   }
 
-  // --- List Tile Builders (MODIFIED) ---
+  // --- List Tile Builders ---
 
-  // Attendance Tile
-  Widget _buildAttendanceTile(DocumentSnapshot attendanceDoc) {
-    final data = attendanceDoc.data() as Map<String, dynamic>;
-    String playerName = data['playerName'] ?? 'Unknown Player'; // Verify field
-    Timestamp? timestamp = data['date'] as Timestamp?; // Verify field
-    String dateStr = timestamp != null ? MaterialLocalizations.of(context).formatShortDate(timestamp.toDate()) : 'No Date';
-    String status = data['status'] ?? 'N/A'; // Verify field
-    Color statusColor = status.toLowerCase() == 'present' ? Colors.green.shade700 : (status.toLowerCase() == 'absent' ? Colors.red.shade700 : Colors.grey);
+  // Builds a list tile for an Attendance (Training Session) item
+  Widget _buildAttendanceTile(DocumentSnapshot sessionDoc) {
+    final data = sessionDoc.data() as Map<String, dynamic>? ?? {};
+
+    // Extract data from the session document
+    String teamName = data['team'] ?? 'N/A';
+    String trainingType = data['training_type'] ?? 'N/A';
+    Timestamp? startTime = data['start_time'] as Timestamp?;
+    String dateStr = 'No Date';
+    String timeStr = '';
+    if (startTime != null) {
+      try {
+        // Format date and time using intl package
+        dateStr = DateFormat('EEE, dd MMM yyyy').format(startTime.toDate());
+        timeStr = DateFormat('HH:mm').format(startTime.toDate());
+      } catch (e) { dateStr = 'Invalid Date'; print("Error formatting date: $e"); }
+    }
+
+    // Calculate attendance count from the nested 'players' array
+    int attendeeCount = 0;
+    int totalPlayersInSession = 0;
+    final List<dynamic>? playersList = data['players'] as List<dynamic>?;
+    if (playersList != null) {
+      totalPlayersInSession = playersList.length;
+      try {
+        attendeeCount = playersList.where((p) => (p as Map<String, dynamic>?)?['present'] == true).length;
+      } catch (e) { print("Error reading session players array (${sessionDoc.id}): $e"); }
+    }
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-      elevation: 1.5,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      elevation: 1.5, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       child: ListTile(
-        leading: Icon(Icons.check_circle_outline, color: statusColor),
-        title: Text(playerName, style: const TextStyle(fontWeight: FontWeight.w500)),
-        subtitle: Text('Date: $dateStr'),
-        trailing: Text( status.toUpperCase(), style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 12),),
-        // *** MODIFIED: Implement onTap for Navigation ***
+        leading: CircleAvatar( // Icon representing a session
+          backgroundColor: Colors.indigo.shade100,
+          child: const Icon(Icons.event_available, color: Colors.indigo, size: 22), // Changed icon
+        ),
+        title: Text(
+          "$teamName - $trainingType", // Display team and type
+          style: const TextStyle(fontWeight: FontWeight.w500),
+          overflow: TextOverflow.ellipsis,
+        ),
+        subtitle: Text("$dateStr at $timeStr"), // Display formatted date and time
+        trailing: Column( // Show attendance count
+          mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text("$attendeeCount / $totalPlayersInSession", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.grey.shade800)),
+            Text("Present", style: TextStyle(fontSize: 10, color: Colors.grey.shade600))
+          ],
+        ),
         onTap: () {
-          // Decide if you want a details screen for attendance
-          // If yes:
-          // Navigator.push(context, MaterialPageRoute(builder: (context) => AttendanceDetailsScreen(attendanceDoc: attendanceDoc)));
-          // If no (like now):
-          ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Tapped on attendance for: $playerName on $dateStr'))
-          );
-          print("Attendance Doc ID: ${attendanceDoc.id}"); // Log ID for potential future use
+          // Navigate to the SessionDetailsScreen when tapped
+          Navigator.push( context, MaterialPageRoute(
+            builder: (context) => SessionDetailsScreen(sessionDoc: sessionDoc), // Pass the session document
+          ),);
         },
       ),
     );
   }
 
-  // Player Tile
+  // Builds a list tile for a Player item
   Widget _buildPlayerTile(DocumentSnapshot playerDoc) {
-    final data = playerDoc.data() as Map<String, dynamic>;
+    final data = playerDoc.data() as Map<String, dynamic>? ?? {}; // Safe access
     String name = data['name'] ?? 'No Name';
     String position = data['position'] ?? 'N/A';
     String teamName = data['team'] ?? 'No Team';
@@ -260,73 +336,63 @@ class _AdminScreenState extends State<AdminScreen> {
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-      elevation: 1.5,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      elevation: 1.5, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       child: ListTile(
-        leading: CircleAvatar( radius: 25, backgroundColor: Colors.grey[300], backgroundImage: (pictureUrl != null && pictureUrl.isNotEmpty) ? NetworkImage(pictureUrl) : const AssetImage("assets/images/default_profile.jpeg") as ImageProvider, onBackgroundImageError: (_, __) {},),
+        leading: CircleAvatar( // Player picture or default
+          radius: 25, backgroundColor: Colors.grey[300],
+          backgroundImage: (pictureUrl != null && pictureUrl.isNotEmpty) ? NetworkImage(pictureUrl) : const AssetImage("assets/images/default_profile.jpeg") as ImageProvider,
+          onBackgroundImageError: (_, __) { /* Optional: log error */ },
+        ),
         title: Text(name, style: const TextStyle(fontWeight: FontWeight.w500)),
         subtitle: Text('Pos: $position | Team: $teamName'),
-        // *** MODIFIED: Implement onTap for Navigation ***
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              // Navigate to the PlayerDetailsScreen, passing the document
-              builder: (context) => PlayerDetailsScreen(playerDoc: playerDoc),
-            ),
-          );
-        },
-        // *** REMOVED: Report IconButton from trailing ***
         trailing: const Icon(Icons.chevron_right, color: Colors.grey), // Indicate tappable
+        onTap: () {
+          // Navigate to PlayerDetailsScreen
+          Navigator.push( context, MaterialPageRoute(
+            builder: (context) => PlayerDetailsScreen(playerDoc: playerDoc), // Pass player document
+          ),);
+        },
       ),
     );
   }
 
-  // Team Tile
+  // Builds a list tile for a Team item
   Widget _buildTeamTile(DocumentSnapshot teamDoc) {
-    final data = teamDoc.data() as Map<String, dynamic>;
+    final data = teamDoc.data() as Map<String, dynamic>? ?? {}; // Safe access
     String teamName = data['team_name'] ?? 'No Team Name';
     int playerCount = data['number_of_players'] ?? 0;
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-      elevation: 1.5,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      elevation: 1.5, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       child: ListTile(
-        leading: const CircleAvatar( radius: 25, backgroundColor: Colors.blueGrey, child: Icon(Icons.group, color: Colors.white),),
+        leading: const CircleAvatar( // Team icon
+          radius: 25, backgroundColor: Colors.blueGrey, child: Icon(Icons.group, color: Colors.white),
+        ),
         title: Text(teamName, style: const TextStyle(fontWeight: FontWeight.w500)),
         subtitle: Text('Players: $playerCount'),
-        // *** MODIFIED: Implement onTap for Navigation ***
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              // Navigate to the TeamDetailsScreen, passing the document
-              builder: (context) => TeamDetailsScreen(teamDoc: teamDoc),
-            ),
-          );
-        },
-        // *** REMOVED: Report IconButton from trailing ***
         trailing: const Icon(Icons.chevron_right, color: Colors.grey), // Indicate tappable
+        onTap: () {
+          // Navigate to TeamDetailsScreen
+          Navigator.push( context, MaterialPageRoute(
+            builder: (context) => TeamDetailsScreen(teamDoc: teamDoc), // Pass team document
+          ),);
+        },
       ),
     );
   }
 
-  // --- PDF Report Generation Functions (REMOVED) ---
-  // _generatePlayerReport() function is removed from here
-  // _generateTeamReport() function is removed from here
-
-
-  // --- Logout Function (Remains the same) ---
+  // --- Logout Function ---
   void _logout(BuildContext context) async {
-    // Logout logic remains the same...
     try {
       await _auth.signOut();
-      if (!mounted) return;
-      Navigator.pushAndRemoveUntil( context, MaterialPageRoute(builder: (context) => const Loginpage()), (Route<dynamic> route) => false,);
+      if (!mounted) return; // Check if widget is still mounted before navigating
+      Navigator.pushAndRemoveUntil(
+        context, MaterialPageRoute(builder: (context) => const Loginpage()),
+            (Route<dynamic> route) => false, );
     } catch (e) {
       print("Logout failed: $e");
-      if (!mounted) return;
+      if (!mounted) return; // Check before showing snackbar
       ScaffoldMessenger.of(context).showSnackBar( SnackBar(content: Text("Logout failed: $e"), backgroundColor: Colors.red),);
     }
   }
