@@ -1,6 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart'; // To potentially get current user info
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart'; // Import provider
+import '../providers/theme_provider.dart'; // Import your ThemeProvider
 
 // Placeholder for profile edit screen
 // import 'edit_admin_profile_screen.dart';
@@ -26,13 +28,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     print("Current Admin UID: ${_auth.currentUser?.uid}");
   }
 
-  void _changeTheme(bool isDarkMode) {
-    // TODO: Implement theme switching logic using a theme provider
-    // (e.g., Provider, Riverpod, GetX) to update the app's theme.
-    ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Theme change to ${isDarkMode ? 'Dark' : 'Light'} not implemented yet.'))
-    );
-  }
+
 
   void _manageNotifications() {
     // TODO: Navigate to a screen to manage notification preferences
@@ -57,7 +53,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     // Get current theme brightness (example placeholder)
-    bool isCurrentlyDark = Theme.of(context).brightness == Brightness.dark;
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    // Determine switch state based on provider's state
+    bool isCurrentlyDark = themeProvider.isDarkMode; // Use provider's getter
+
 
     return Scaffold(
         appBar: AppBar(
@@ -82,14 +81,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
             // --- Appearance Section ---
             _buildSectionHeader("Appearance"),
-            SwitchListTile( // Use SwitchListTile for theme toggle
+            SwitchListTile(
               secondary: Icon(isCurrentlyDark ? Icons.dark_mode_outlined : Icons.light_mode_outlined),
               title: const Text('Dark Mode'),
-              value: isCurrentlyDark, // Reflect current theme (placeholder)
+              value: isCurrentlyDark, // Use value from provider
               onChanged: (bool value) {
-                _changeTheme(value); // Call placeholder action
+                // Call the provider's method to toggle the theme
+                themeProvider.toggleTheme(value);
               },
-              // TODO: You'll need a ThemeProvider to actually make this switch work visually
+              // Active color can be themed too
+              activeColor: Theme.of(context).colorScheme.primary,
             ),
 
             // --- Notifications Section ---
