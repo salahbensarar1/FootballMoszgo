@@ -10,6 +10,10 @@ import 'player_details_screen.dart';
 import 'team_details_screen.dart';
 import 'session_details_screen.dart'; // Import the session detail screen
 
+import 'dashboard_screen.dart';      // Create this file
+import 'user_management_screen.dart'; // Create this file
+import 'settings_screen.dart';
+
 class AdminScreen extends StatefulWidget {
   const AdminScreen({super.key});
 
@@ -134,40 +138,73 @@ class _AdminScreenState extends State<AdminScreen> {
     var size = MediaQuery.of(context).size;
     return Scaffold(
         appBar: AppBar(
-          title: Text(userName != null ? "Hi, $userName" : "Admin Dashboard"),
-          flexibleSpace: Container( // Applying gradient
-            decoration: const BoxDecoration(
-              gradient: LinearGradient( colors: [Color(0xFFF27121), Colors.white], begin: Alignment.topCenter, end: Alignment.bottomCenter),
-            ),
-          ),
+          // ... AppBar code ...
         ),
-        drawer: Drawer( // Drawer implementation
+        drawer: Drawer(
           child: Container(
-            decoration: const BoxDecoration( // Matching gradient
+            decoration: const BoxDecoration( // Keep gradient if desired
               gradient: LinearGradient(colors: [Color(0xFFF27121), Colors.white], begin: Alignment.topCenter, end: Alignment.bottomCenter),
             ),
             child: ListView(
               padding: EdgeInsets.zero,
               children: [
                 DrawerHeader(
+                  // ... DrawerHeader code ...
                   decoration: const BoxDecoration(color: Colors.transparent),
                   child: Column( crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    const CircleAvatar(backgroundImage: AssetImage('assets/images/admin.jpeg'), radius: 40, backgroundColor: Colors.white), // Placeholder image
+                    const CircleAvatar(backgroundImage: AssetImage('assets/images/admin.jpeg'), radius: 40, backgroundColor: Colors.white),
                     const SizedBox(height: 15),
                     Text(email ?? "Loading email...", style: const TextStyle(color: Colors.white, fontSize: 16)),
                     Text(userName ?? "Admin", style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
                   ],),
                 ),
-                // Example Drawer Items (Add your actual items here)
-                ListTile( leading: const Icon(Icons.dashboard_customize, color: Colors.black87), title: const Text('Dashboard Overview'), onTap: () { Navigator.pop(context); /* TODO: Navigate or show message */ },),
-                ListTile( leading: const Icon(Icons.person_add_alt_1, color: Colors.black87), title: const Text('Manage Users'), onTap: () { Navigator.pop(context); /* TODO: Navigate or show message */ },),
+                ListTile(
+                  leading: const Icon(Icons.dashboard_customize, color: Colors.black87),
+                  title: const Text('Dashboard Overview'),
+                  onTap: () {
+                    Navigator.pop(context); // Close the drawer first
+                    Navigator.push( // Navigate to DashboardScreen
+                      context,
+                      MaterialPageRoute(builder: (context) => const DashboardScreen()),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.people_alt_outlined, color: Colors.black87), // Changed Icon
+                  title: const Text('Manage Users'),
+                  onTap: () {
+                    Navigator.pop(context); // Close the drawer
+                    Navigator.push( // Navigate to UserManagementScreen
+                      context,
+                      MaterialPageRoute(builder: (context) => const UserManagementScreen()),
+                    );
+                  },
+                ),
                 const Divider(indent: 16, endIndent: 16),
-                ListTile( leading: const Icon(Icons.settings, color: Colors.black87), title: const Text('Settings'), onTap: () { Navigator.pop(context); /* TODO: Navigate or show message */ },),
-                ListTile( leading: const Icon(Icons.logout, color: Colors.black87), title: const Text('Logout'), onTap: () => _logout(context),), // Logout action
+                ListTile(
+                  leading: const Icon(Icons.settings, color: Colors.black87),
+                  title: const Text('Settings'),
+                  onTap: () {
+                    Navigator.pop(context); // Close the drawer
+                    Navigator.push( // Navigate to SettingsScreen
+                      context,
+                      MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                    );
+                  },
+                ),
+                ListTile(
+                    leading: const Icon(Icons.logout, color: Colors.black87),
+                    title: const Text('Logout'),
+                    onTap: () {
+                      // Close the drawer *before* logging out if needed, though _logout handles navigation fully
+                      // Navigator.pop(context);
+                      _logout(context); // Logout function already handles navigation
+                    }
+                ),
               ],
             ),
           ),
-        ),
+        ), // End Drawer
         body: Column(
           children: <Widget>[
             // --- Tab Bar ---
