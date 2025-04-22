@@ -44,9 +44,13 @@ dependencies:
   intl: ^0.20.2
 
 flutter_icons:
-  image_path: "icon/icon.png"
   android: true
   ios: true
+  image_path: "icon/icon.png"
+  adaptive_icon_background: "#ffffff"
+  adaptive_icon_foreground: "icon/icon1.png"
+  remove_alpha_ios: true
+  
 
 dev_dependencies:
   flutter_test:
