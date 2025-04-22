@@ -155,22 +155,23 @@ class _ReceptionistScreenState extends State<ReceptionistScreen> {
                     var item = items[index];
 
                     // ✅ Different Fields for Coaches/Players vs. Teams
-                    String title;
-                    String subtitle;
+                    final data1 = item.data() as Map<String, dynamic>;
+
+                    String title = '';
+                    String subtitle = '';
 
                     if (currentTab == 0) {
                       // Coaches
-                      title = item['name'];
-                      subtitle = item['role_description'] ?? "";
+                      title = data1['name'] ?? 'Unnamed Coach';
+                      subtitle = data1['role_description'] ?? '';
                     } else if (currentTab == 1) {
                       // Players
-                      title = item['name'];
-                      // You can display position or something else here
-                      subtitle = "Position: ${item['position'] ?? ''}";
+                      title = data1['name'] ?? 'Unnamed Player';
+                      subtitle = "Position: ${data1['position'] ?? 'Unknown'}";
                     } else {
                       // Teams
-                      title = item['team_name'];
-                      subtitle = "Players: ${item['number_of_players'] ?? 0}";
+                      title = data1['team_name'] ?? 'Unnamed Team';
+                      subtitle = "Players: ${data1['number_of_players'] ?? 0}";
                     }
 
                     // Safe retrieval for picture field

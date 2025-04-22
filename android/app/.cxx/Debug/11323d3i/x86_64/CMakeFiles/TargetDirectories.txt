@@ -1,0 +1,2 @@
+/Users/lesalonsteven/Desktop/footballTraining/android/app/.cxx/Debug/11323d3i/x86_64/CMakeFiles/edit_cache.dir
+/Users/lesalonsteven/Desktop/footballTraining/android/app/.cxx/Debug/11323d3i/x86_64/CMakeFiles/rebuild_cache.dir
