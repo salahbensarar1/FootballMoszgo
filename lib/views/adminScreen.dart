@@ -10,7 +10,7 @@ import 'player_details_screen.dart';
 import 'team_details_screen.dart';
 import 'session_details_screen.dart'; // Import the session detail screen
 
-import 'dashboard_screen.dart';      // Create this file
+import 'dashboard_screen.dart'; // Create this file
 import 'user_management_screen.dart'; // Create this file
 import 'settings_screen.dart';
 
@@ -40,7 +40,9 @@ class _AdminScreenState extends State<AdminScreen> {
     _getUserDetails();
     _searchController.addListener(() {
       if (_searchController.text.isEmpty && searchQuery.isNotEmpty) {
-        setState(() { searchQuery = ""; });
+        setState(() {
+          searchQuery = "";
+        });
       }
     });
   }
@@ -56,8 +58,7 @@ class _AdminScreenState extends State<AdminScreen> {
     final user = _auth.currentUser;
     if (user?.uid != null) {
       try {
-        final doc =
-        await _firestore.collection('users').doc(user!.uid).get();
+        final doc = await _firestore.collection('users').doc(user!.uid).get();
         if (mounted && doc.exists) {
           final data = doc.data() as Map<String, dynamic>;
           setState(() {
@@ -73,12 +74,20 @@ class _AdminScreenState extends State<AdminScreen> {
       } catch (e) {
         print("Error fetching user details: $e");
         if (mounted) {
-          setState(() { userName = "Error"; email = "Error"; });
+          setState(() {
+            userName = "Error";
+            email = "Error";
+          });
         }
       }
     } else {
       // Should not happen if screen is protected, but good practice
-      if (mounted) { setState(() { userName = "Admin"; email = "Not logged in"; });}
+      if (mounted) {
+        setState(() {
+          userName = "Admin";
+          email = "Not logged in";
+        });
+      }
     }
   }
 
@@ -89,8 +98,8 @@ class _AdminScreenState extends State<AdminScreen> {
 
     switch (currentTab) {
       case 0: // Attendances - Uses training_sessions
-        query = _firestore.collection('training_sessions')
-            .orderBy('start_time', descending: true); // Order by session start time
+        query = _firestore.collection('training_sessions').orderBy('start_time',
+            descending: true); // Order by session start time
         searchField = 'team'; // Search sessions by team name
         if (searchQuery.isNotEmpty) {
           // Apply search filter on the 'team' field
@@ -138,12 +147,16 @@ class _AdminScreenState extends State<AdminScreen> {
     var size = MediaQuery.of(context).size;
     return Scaffold(
         appBar: AppBar(
-          // ... AppBar code ...
-        ),
+            // ... AppBar code ...
+            ),
         drawer: Drawer(
           child: Container(
-            decoration: const BoxDecoration( // Keep gradient if desired
-              gradient: LinearGradient(colors: [Color(0xFFF27121), Colors.white], begin: Alignment.topCenter, end: Alignment.bottomCenter),
+            decoration: const BoxDecoration(
+              // Keep gradient if desired
+              gradient: LinearGradient(
+                  colors: [Color(0xFFF27121), Colors.white],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter),
             ),
             child: ListView(
               padding: EdgeInsets.zero,
@@ -151,32 +164,55 @@ class _AdminScreenState extends State<AdminScreen> {
                 DrawerHeader(
                   // ... DrawerHeader code ...
                   decoration: const BoxDecoration(color: Colors.transparent),
-                  child: Column( crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    const CircleAvatar(backgroundImage: AssetImage('assets/images/admin.jpeg'), radius: 40, backgroundColor: Colors.white),
-                    const SizedBox(height: 15),
-                    Text(email ?? "Loading email...", style: const TextStyle(color: Colors.white, fontSize: 16)),
-                    Text(userName ?? "Admin", style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                  ],),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const CircleAvatar(
+                            backgroundImage:
+                                AssetImage('assets/images/admin.jpeg'),
+                            radius: 33,
+                            backgroundColor: Colors.white),
+                        const SizedBox(height: 15),
+                        Text(email ?? "Loading email...",
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold)),
+                        Text(userName ?? "Admin",
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w300)),
+                      ],
+                    ),
+                  ),
                 ),
                 ListTile(
-                  leading: const Icon(Icons.dashboard_customize, color: Colors.black87),
+                  leading: const Icon(Icons.dashboard_customize,
+                      color: Colors.black87),
                   title: const Text('Dashboard Overview'),
                   onTap: () {
                     Navigator.pop(context); // Close the drawer first
-                    Navigator.push( // Navigate to DashboardScreen
+                    Navigator.push(
+                      // Navigate to DashboardScreen
                       context,
-                      MaterialPageRoute(builder: (context) => const DashboardScreen()),
+                      MaterialPageRoute(
+                          builder: (context) => const DashboardScreen()),
                     );
                   },
                 ),
                 ListTile(
-                  leading: const Icon(Icons.people_alt_outlined, color: Colors.black87), // Changed Icon
+                  leading: const Icon(Icons.people_alt_outlined,
+                      color: Colors.black87), // Changed Icon
                   title: const Text('Manage Users'),
                   onTap: () {
                     Navigator.pop(context); // Close the drawer
-                    Navigator.push( // Navigate to UserManagementScreen
+                    Navigator.push(
+                      // Navigate to UserManagementScreen
                       context,
-                      MaterialPageRoute(builder: (context) => const UserManagementScreen()),
+                      MaterialPageRoute(
+                          builder: (context) => const UserManagementScreen()),
                     );
                   },
                 ),
@@ -186,9 +222,11 @@ class _AdminScreenState extends State<AdminScreen> {
                   title: const Text('Settings'),
                   onTap: () {
                     Navigator.pop(context); // Close the drawer
-                    Navigator.push( // Navigate to SettingsScreen
+                    Navigator.push(
+                      // Navigate to SettingsScreen
                       context,
-                      MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                      MaterialPageRoute(
+                          builder: (context) => const SettingsScreen()),
                     );
                   },
                 ),
@@ -198,9 +236,9 @@ class _AdminScreenState extends State<AdminScreen> {
                     onTap: () {
                       // Close the drawer *before* logging out if needed, though _logout handles navigation fully
                       // Navigator.pop(context);
-                      _logout(context); // Logout function already handles navigation
-                    }
-                ),
+                      _logout(
+                          context); // Logout function already handles navigation
+                    }),
               ],
             ),
           ),
@@ -209,9 +247,11 @@ class _AdminScreenState extends State<AdminScreen> {
           children: <Widget>[
             // --- Tab Bar ---
             SizedBox(
-              width: size.width, height: size.height * 0.05,
+              width: size.width,
+              height: size.height * 0.05,
               child: ListView.builder(
-                scrollDirection: Axis.horizontal, itemCount: tabs.length,
+                scrollDirection: Axis.horizontal,
+                itemCount: tabs.length,
                 itemBuilder: (context, index) {
                   return GestureDetector(
                     onTap: () {
@@ -222,11 +262,21 @@ class _AdminScreenState extends State<AdminScreen> {
                       });
                     },
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                      child: Text( tabs[index], style: GoogleFonts.ubuntu( // Tab text styling
-                        fontSize: currentTab == index ? 17 : 15,
-                        fontWeight: currentTab == index ? FontWeight.w600 : FontWeight.w400,
-                        color: currentTab == index ? const Color(0xFFF27121) : Colors.grey.shade600,),),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 8),
+                      child: Text(
+                        tabs[index],
+                        style: GoogleFonts.ubuntu(
+                          // Tab text styling
+                          fontSize: currentTab == index ? 17 : 15,
+                          fontWeight: currentTab == index
+                              ? FontWeight.w600
+                              : FontWeight.w400,
+                          color: currentTab == index
+                              ? const Color(0xFFF27121)
+                              : Colors.grey.shade600,
+                        ),
+                      ),
                     ),
                   );
                 },
@@ -236,28 +286,50 @@ class _AdminScreenState extends State<AdminScreen> {
 
             // --- Search Bar ---
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
               child: TextField(
                 controller: _searchController,
-                onChanged: (value) { setState(() { searchQuery = value; }); }, // Update search query on change
-                decoration: InputDecoration( // Search bar styling
-                  hintText: 'Search ${tabs[currentTab]}...', // Dynamic hint text
-                  prefixIcon: const Icon(Icons.search, size: 20, color: Colors.grey),
-                  border: OutlineInputBorder( borderRadius: BorderRadius.circular(30.0), borderSide: BorderSide.none,),
+                onChanged: (value) {
+                  setState(() {
+                    searchQuery = value;
+                  });
+                }, // Update search query on change
+                decoration: InputDecoration(
+                  // Search bar styling
+                  hintText:
+                      'Search ${tabs[currentTab]}...', // Dynamic hint text
+                  prefixIcon:
+                      const Icon(Icons.search, size: 20, color: Colors.grey),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30.0),
+                    borderSide: BorderSide.none,
+                  ),
                   filled: true, fillColor: Colors.grey[200],
-                  contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 20),
-                  suffixIcon: searchQuery.isNotEmpty ? IconButton( // Clear button
-                    icon: const Icon(Icons.clear, size: 20, color: Colors.grey),
-                    tooltip: 'Clear Search',
-                    onPressed: () { _searchController.clear(); setState(() { searchQuery = ""; }); },
-                  ) : null, // Show only if search query is not empty
+                  contentPadding:
+                      const EdgeInsets.symmetric(vertical: 0, horizontal: 20),
+                  suffixIcon: searchQuery.isNotEmpty
+                      ? IconButton(
+                          // Clear button
+                          icon: const Icon(Icons.clear,
+                              size: 20, color: Colors.grey),
+                          tooltip: 'Clear Search',
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() {
+                              searchQuery = "";
+                            });
+                          },
+                        )
+                      : null, // Show only if search query is not empty
                 ),
               ),
             ),
 
             // --- Content Area ---
             Expanded(
-              child: _buildContentBody(), // Builds the list based on the current tab
+              child:
+                  _buildContentBody(), // Builds the list based on the current tab
             ),
           ],
         ));
@@ -266,20 +338,28 @@ class _AdminScreenState extends State<AdminScreen> {
   // Builds the body content (the list) based on the selected tab
   Widget _buildContentBody() {
     return StreamBuilder<QuerySnapshot>(
-      stream: getStreamForCurrentTab(), // Gets the stream based on tab and search
+      stream:
+          getStreamForCurrentTab(), // Gets the stream based on tab and search
       builder: (context, snapshot) {
         // Handle loading state
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator(color: Color(0xFFF27121)));
+          return const Center(
+              child: CircularProgressIndicator(color: Color(0xFFF27121)));
         }
         // Handle errors
         if (snapshot.hasError) {
-          print("Firestore Error (${tabs[currentTab]}): ${snapshot.error}"); // Log error
-          return Center(child: Text("Error loading ${tabs[currentTab]}. Check console & indexes."));
+          print(
+              "Firestore Error (${tabs[currentTab]}): ${snapshot.error}"); // Log error
+          return Center(
+              child: Text(
+                  "Error loading ${tabs[currentTab]}. Check console & indexes."));
         }
         // Handle no data
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return Center(child: Text(searchQuery.isEmpty ? "No ${tabs[currentTab]} found." : "No ${tabs[currentTab]} match your search."));
+          return Center(
+              child: Text(searchQuery.isEmpty
+                  ? "No ${tabs[currentTab]} found."
+                  : "No ${tabs[currentTab]} match your search."));
         }
 
         // Data is available, build the list
@@ -290,10 +370,15 @@ class _AdminScreenState extends State<AdminScreen> {
             var item = items[index];
             // Delegate building the list tile to specific functions
             switch (currentTab) {
-              case 0: return _buildAttendanceTile(item); // Use updated attendance tile
-              case 1: return _buildPlayerTile(item); // Use player tile
-              case 2: return _buildTeamTile(item);   // Use team tile
-              default: return const SizedBox.shrink(); // Empty for invalid tab index
+              case 0:
+                return _buildAttendanceTile(
+                    item); // Use updated attendance tile
+              case 1:
+                return _buildPlayerTile(item); // Use player tile
+              case 2:
+                return _buildTeamTile(item); // Use team tile
+              default:
+                return const SizedBox.shrink(); // Empty for invalid tab index
             }
           },
         );
@@ -318,7 +403,10 @@ class _AdminScreenState extends State<AdminScreen> {
         // Format date and time using intl package
         dateStr = DateFormat('EEE, dd MMM yyyy').format(startTime.toDate());
         timeStr = DateFormat('HH:mm').format(startTime.toDate());
-      } catch (e) { dateStr = 'Invalid Date'; print("Error formatting date: $e"); }
+      } catch (e) {
+        dateStr = 'Invalid Date';
+        print("Error formatting date: $e");
+      }
     }
 
     // Calculate attendance count from the nested 'players' array
@@ -328,36 +416,55 @@ class _AdminScreenState extends State<AdminScreen> {
     if (playersList != null) {
       totalPlayersInSession = playersList.length;
       try {
-        attendeeCount = playersList.where((p) => (p as Map<String, dynamic>?)?['present'] == true).length;
-      } catch (e) { print("Error reading session players array (${sessionDoc.id}): $e"); }
+        attendeeCount = playersList
+            .where((p) => (p as Map<String, dynamic>?)?['present'] == true)
+            .length;
+      } catch (e) {
+        print("Error reading session players array (${sessionDoc.id}): $e");
+      }
     }
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-      elevation: 1.5, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      elevation: 1.5,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       child: ListTile(
-        leading: CircleAvatar( // Icon representing a session
+        leading: CircleAvatar(
+          // Icon representing a session
           backgroundColor: Colors.indigo.shade100,
-          child: const Icon(Icons.event_available, color: Colors.indigo, size: 22), // Changed icon
+          child: const Icon(Icons.event_available,
+              color: Colors.indigo, size: 22), // Changed icon
         ),
         title: Text(
           "$teamName - $trainingType", // Display team and type
           style: const TextStyle(fontWeight: FontWeight.w500),
           overflow: TextOverflow.ellipsis,
         ),
-        subtitle: Text("$dateStr at $timeStr"), // Display formatted date and time
-        trailing: Column( // Show attendance count
-          mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.end,
+        subtitle:
+            Text("$dateStr at $timeStr"), // Display formatted date and time
+        trailing: Column(
+          // Show attendance count
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Text("$attendeeCount / $totalPlayersInSession", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.grey.shade800)),
-            Text("Present", style: TextStyle(fontSize: 10, color: Colors.grey.shade600))
+            Text("$attendeeCount / $totalPlayersInSession",
+                style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: Colors.grey.shade800)),
+            Text("Present",
+                style: TextStyle(fontSize: 10, color: Colors.grey.shade600))
           ],
         ),
         onTap: () {
           // Navigate to the SessionDetailsScreen when tapped
-          Navigator.push( context, MaterialPageRoute(
-            builder: (context) => SessionDetailsScreen(sessionDoc: sessionDoc), // Pass the session document
-          ),);
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => SessionDetailsScreen(
+                  sessionDoc: sessionDoc), // Pass the session document
+            ),
+          );
         },
       ),
     );
@@ -373,21 +480,31 @@ class _AdminScreenState extends State<AdminScreen> {
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-      elevation: 1.5, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      elevation: 1.5,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       child: ListTile(
-        leading: CircleAvatar( // Player picture or default
+        leading: CircleAvatar(
+          // Player picture or default
           radius: 25, backgroundColor: Colors.grey[300],
-          backgroundImage: (pictureUrl != null && pictureUrl.isNotEmpty) ? NetworkImage(pictureUrl) : const AssetImage("assets/images/default_profile.jpeg") as ImageProvider,
-          onBackgroundImageError: (_, __) { /* Optional: log error */ },
+          backgroundImage: (pictureUrl != null && pictureUrl.isNotEmpty)
+              ? NetworkImage(pictureUrl)
+              : const AssetImage("assets/images/default_profile.jpeg")
+                  as ImageProvider,
+          onBackgroundImageError: (_, __) {/* Optional: log error */},
         ),
         title: Text(name, style: const TextStyle(fontWeight: FontWeight.w500)),
         subtitle: Text('Pos: $position | Team: $teamName'),
-        trailing: const Icon(Icons.chevron_right, color: Colors.grey), // Indicate tappable
+        trailing: const Icon(Icons.chevron_right,
+            color: Colors.grey), // Indicate tappable
         onTap: () {
           // Navigate to PlayerDetailsScreen
-          Navigator.push( context, MaterialPageRoute(
-            builder: (context) => PlayerDetailsScreen(playerDoc: playerDoc), // Pass player document
-          ),);
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => PlayerDetailsScreen(
+                  playerDoc: playerDoc), // Pass player document
+            ),
+          );
         },
       ),
     );
@@ -401,19 +518,28 @@ class _AdminScreenState extends State<AdminScreen> {
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-      elevation: 1.5, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      elevation: 1.5,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       child: ListTile(
-        leading: const CircleAvatar( // Team icon
-          radius: 25, backgroundColor: Colors.blueGrey, child: Icon(Icons.group, color: Colors.white),
+        leading: const CircleAvatar(
+          // Team icon
+          radius: 25, backgroundColor: Colors.blueGrey,
+          child: Icon(Icons.group, color: Colors.white),
         ),
-        title: Text(teamName, style: const TextStyle(fontWeight: FontWeight.w500)),
+        title:
+            Text(teamName, style: const TextStyle(fontWeight: FontWeight.w500)),
         subtitle: Text('Players: $playerCount'),
-        trailing: const Icon(Icons.chevron_right, color: Colors.grey), // Indicate tappable
+        trailing: const Icon(Icons.chevron_right,
+            color: Colors.grey), // Indicate tappable
         onTap: () {
           // Navigate to TeamDetailsScreen
-          Navigator.push( context, MaterialPageRoute(
-            builder: (context) => TeamDetailsScreen(teamDoc: teamDoc), // Pass team document
-          ),);
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) =>
+                  TeamDetailsScreen(teamDoc: teamDoc), // Pass team document
+            ),
+          );
         },
       ),
     );
@@ -423,15 +549,20 @@ class _AdminScreenState extends State<AdminScreen> {
   void _logout(BuildContext context) async {
     try {
       await _auth.signOut();
-      if (!mounted) return; // Check if widget is still mounted before navigating
+      if (!mounted)
+        return; // Check if widget is still mounted before navigating
       Navigator.pushAndRemoveUntil(
-        context, MaterialPageRoute(builder: (context) => const Loginpage()),
-            (Route<dynamic> route) => false, );
+        context,
+        MaterialPageRoute(builder: (context) => const Loginpage()),
+        (Route<dynamic> route) => false,
+      );
     } catch (e) {
       print("Logout failed: $e");
       if (!mounted) return; // Check before showing snackbar
-      ScaffoldMessenger.of(context).showSnackBar( SnackBar(content: Text("Logout failed: $e"), backgroundColor: Colors.red),);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text("Logout failed: $e"), backgroundColor: Colors.red),
+      );
     }
   }
-
 } // End of _AdminScreenState
