@@ -1,65 +1,43 @@
-name: Build & Deploy iOS IPA
+name: Build iOS App (No Signing)
 
 on:
+  workflow_dispatch:
   push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
-  build-ios:
+  build_ios:
     runs-on: macos-latest
 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
+    - name: ⬇️ Checkout code
+      uses: actions/checkout@v3
 
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.27.1'  # Adjust if you're using a different version locally
-          channel: 'stable'
-          cache: true
+    - name: 💻 Set up Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.27.1' # or your Flutter version
 
-      - name: Install Dependencies
-        run: flutter pub get
+    - name: 📦 Install Flutter dependencies
+      run: flutter pub get
 
-      - name: Build iOS App (no codesign)
-        run: flutter build ios --release --no-codesign
+    - name: 🧪 Build iOS app (no code signing)
+      run: |
+        flutter build ios --release --no-codesign
 
-      - name: Archive with Xcode
-        run: |
-          xcodebuild -workspace ios/Runner.xcworkspace \
-                     -scheme Runner \
-                     -sdk iphoneos \
-                     -configuration Release \
-                     -archivePath build/ios/Runner.xcarchive archive
+    - name: 📁 Upload .app artifact (for manual testing or inspection)
+      uses: actions/upload-artifact@v4
+      with:
+        name: ios-app
+        path: build/ios/iphoneos/
 
-      - name: Export IPA from Archive
-        run: |
-          xcodebuild -exportArchive \
-                     -archivePath build/ios/Runner.xcarchive \
-                     -exportPath build/ios/ipa \
-                     -exportOptionsPlist ios/exportOptions.plist
+    - name: 🔒 Upload to Firebase App Distribution (DISABLED until you get Apple Developer)
+      if: false  # Skips this step for now
+      run: |
+        echo "${{ secrets.FIREBASE_CREDENTIALS }}" > "${HOME}/firebase-service-account.json"
+        firebase appdistribution:distribute \
+          build/ios/ipa/Runner.ipa \
+          --app "${{ secrets.FIREBASE_APP_ID_IOS }}" \
+          --groups "testers" \
+          --release-notes "Automated release from GitHub Actions"
 
-      - name: Install Firebase CLI
-        run: curl -sL https://firebase.tools | bash
-
-      - name: Upload IPA to Firebase App Distribution
-        run: |
-          echo "${{ secrets.FIREBASE_CREDENTIALS }}" > "${HOME}/firebase-service-account.json"
-          firebase appdistribution:distribute \
-            build/ios/ipa/Runner.ipa \
-            --app ${{ secrets.FIREBASE_APP_ID_IOS }} \
-            --groups "testers" \
-            --release-notes "Automated release from GitHub Actions"
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: "${HOME}/firebase-service-account.json"
-
-      - name: Upload IPA Artifact to GitHub Actions
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-release.ipa
-          path: build/ios/ipa/Runner.ipa
