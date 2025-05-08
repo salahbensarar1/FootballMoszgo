@@ -8,14 +8,26 @@ The Football Training App is a role-based mobile application built with Flutter 
 
 ---
 
-## 📁 App Structure
-'''
+## 📂 Project Structure
+
+```text
 lib/
-├── config/            # Firebase setup
-├── views/             # Role-based screens (admin/, coach/, receptionist/, etc.)
-├── widgets/           # Shared UI components
-├── main.dart          # App entry point
-'''
+├── config/                  # Firebase setup and configuration
+│   └── firebase_config.dart
+
+├── views/                   # Role-based screens
+│   ├── admin/               # • Admin dashboard, settings, and user management
+│   ├── coach/               # • Coach screen and session details
+│   ├── receptionist/        # • Receptionist screen and add-entry dialog
+│   ├── player/              # • Player profile and report screen
+│   ├── team/                # • Team details screen
+│   ├── dashboard/           # • Dashboard overview screen
+│   └── login/               # • Login and authentication UI
+
+├── widgets/                 # Reusable UI components (planned or future use)
+
+└── main.dart                # App entry point: initializes Firebase, theme, and routes 
+```
 ---
 
 ## 🛠 Tech Stack
