@@ -1,16 +1,15 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:footballtraining/loginPage.dart'; // Your login page import
+import 'package:footballtraining/views/coach/session_details_screen.dart';
+import 'package:footballtraining/views/dashboard/dashboard_screen.dart';
+import 'package:footballtraining/views/login/login_page.dart';
+import 'package:footballtraining/views/player/player_details_screen.dart';
+import 'package:footballtraining/views/team/team_details_screen.dart';
+
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart'; // Needed for date formatting
 
-// Import the Detail Screen files
-import 'player_details_screen.dart';
-import 'team_details_screen.dart';
-import 'session_details_screen.dart'; // Import the session detail screen
-
-import 'dashboard_screen.dart'; // Create this file
 import 'user_management_screen.dart'; // Create this file
 import 'settings_screen.dart';
 

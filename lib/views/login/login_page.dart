@@ -1,9 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:footballtraining/views/adminScreen.dart';
-import 'package:footballtraining/views/coachScreen.dart';
-import 'package:footballtraining/views/receptionistScreen.dart';
+import 'package:footballtraining/views/admin/admin_screen.dart';
+import 'package:footballtraining/views/coach/coach_screen.dart';
+import 'package:footballtraining/views/receptionist/receptionist_screen.dart';
 
 class Loginpage extends StatefulWidget {
   const Loginpage({super.key});
