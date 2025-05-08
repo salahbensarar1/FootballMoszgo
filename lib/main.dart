@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:footballtraining/firebaseConfig.dart';
-// ✅ Ensure FirebaseAuth is imported
+import 'package:footballtraining/config/firebase_config.dart';
 
-import 'loginPage.dart';
+import 'package:footballtraining/views/login/login_page.dart';
+// ✅ Ensure FirebaseAuth is imported
 
 void main() async {
   WidgetsFlutterBinding

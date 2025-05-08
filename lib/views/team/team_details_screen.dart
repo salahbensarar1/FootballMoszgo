@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:footballtraining/views/player_details_screen.dart'; // Import player details screen
+import 'package:footballtraining/views/player/player_details_screen.dart';
+
 import 'package:google_fonts/google_fonts.dart';
 
 // Import PDF and Printing packages
@@ -42,10 +43,12 @@ class _TeamDetailsScreenState extends State<TeamDetailsScreen> {
     final String? coachId = teamData['coach'] as String?; // Coach's document ID
     if (coachId != null && coachId.isNotEmpty) {
       try {
-        final coachDoc = await _firestore.collection('users').doc(coachId).get();
+        final coachDoc =
+            await _firestore.collection('users').doc(coachId).get();
         if (mounted && coachDoc.exists) {
           setState(() {
-            coachName = (coachDoc.data() as Map<String, dynamic>)['name'] ?? 'N/A';
+            coachName =
+                (coachDoc.data() as Map<String, dynamic>)['name'] ?? 'N/A';
           });
         } else if (mounted) {
           setState(() {
@@ -60,7 +63,9 @@ class _TeamDetailsScreenState extends State<TeamDetailsScreen> {
           });
         }
       } finally {
-        if (mounted) { setState(() => isLoadingCoach = false); }
+        if (mounted) {
+          setState(() => isLoadingCoach = false);
+        }
       }
     } else {
       if (mounted) {
@@ -102,14 +107,14 @@ class _TeamDetailsScreenState extends State<TeamDetailsScreen> {
     }
   }
 
-
   // --- PDF Report Generation (Moved from AdminScreen) ---
   Future<void> _generateTeamReport() async {
     final pdf = pw.Document();
 
     // Use local state variables (teamData, coachName, teamPlayers)
     final String teamName = teamData['team_name'] ?? 'N/A';
-    final String teamDescription = teamData['team_desciption'] ?? 'No Description Provided';
+    final String teamDescription =
+        teamData['team_desciption'] ?? 'No Description Provided';
     final int storedPlayerCount = teamData['number_of_players'] ?? 0;
 
     // --- Fetch Team Image for PDF (Optional) ---
@@ -117,12 +122,19 @@ class _TeamDetailsScreenState extends State<TeamDetailsScreen> {
     if (teamPictureUrl != null && teamPictureUrl!.isNotEmpty) {
       try {
         final netImage = await networkImage(teamPictureUrl!);
-        teamImageWidget = pw.ClipRRect( horizontalRadius: 8, verticalRadius: 8,
-            child: pw.Image(netImage, width: 100, height: 70, fit: pw.BoxFit.cover)
-        );
+        teamImageWidget = pw.ClipRRect(
+            horizontalRadius: 8,
+            verticalRadius: 8,
+            child: pw.Image(netImage,
+                width: 100, height: 70, fit: pw.BoxFit.cover));
       } catch (e) {
         print("Error loading team network image for PDF: $e");
-        teamImageWidget = pw.Container(width: 100, height: 70, color: PdfColors.red100, child: pw.Center(child: pw.Text('Load\nError', textAlign: pw.TextAlign.center)));
+        teamImageWidget = pw.Container(
+            width: 100,
+            height: 70,
+            color: PdfColors.red100,
+            child: pw.Center(
+                child: pw.Text('Load\nError', textAlign: pw.TextAlign.center)));
       }
     }
 
@@ -135,54 +147,89 @@ class _TeamDetailsScreenState extends State<TeamDetailsScreen> {
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: pw.CrossAxisAlignment.center,
                   children: [
-                    pw.Text('Team Report: $teamName', style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
-                    if (teamPictureUrl != null && teamPictureUrl!.isNotEmpty) teamImageWidget,
-                  ]
-              )
-          ),
+                    pw.Text('Team Report: $teamName',
+                        style: pw.TextStyle(
+                            fontSize: 20, fontWeight: pw.FontWeight.bold)),
+                    if (teamPictureUrl != null && teamPictureUrl!.isNotEmpty)
+                      teamImageWidget,
+                  ])),
           build: (pw.Context context) => [
-            pw.Paragraph(text: 'Description: $teamDescription', style: const pw.TextStyle(fontSize: 14)),
-            pw.Paragraph(text: 'Assigned Coach: $coachName', style: const pw.TextStyle(fontSize: 14)), // Use fetched coach name
-            pw.Paragraph(text: 'Registered Players: $storedPlayerCount (Found: ${teamPlayers.length})', style: const pw.TextStyle(fontSize: 12, color: PdfColors.grey600)),
-            pw.Divider(height: 20),
-            pw.Header(level: 1, text: 'Team Roster', textStyle: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
-            // Display Player List (already fetched into teamPlayers)
-            if (isLoadingPlayers) pw.Center(child: pw.Text('Loading player list...')) // Should already be loaded, but safe check
-            else if (teamPlayers.isEmpty) pw.Center(child: pw.Text('No players currently assigned to this team.'))
-            else pw.TableHelper.fromTextArray(
-                context: context, cellPadding: const pw.EdgeInsets.all(5),
-                headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11), cellStyle: const pw.TextStyle(fontSize: 10),
-                headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300), border: pw.TableBorder.all(color: PdfColors.grey500),
-                cellAlignments: { 0: pw.Alignment.centerLeft, 1: pw.Alignment.centerLeft},
-                headers: ['Player Name', 'Position'],
-                data: teamPlayers.map((player) {
-                  final pData = player.data() as Map<String, dynamic>;
-                  return [ pData['name'] ?? 'N/A', pData['position'] ?? 'N/A', ];
-                }).toList(),
-              ),
-          ],
-          footer: (pw.Context context) => pw.Container( alignment: pw.Alignment.centerRight,
-              child: pw.Text('Page ${context.pageNumber} of ${context.pagesCount}', style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.grey))
-          )
-      ),
+                pw.Paragraph(
+                    text: 'Description: $teamDescription',
+                    style: const pw.TextStyle(fontSize: 14)),
+                pw.Paragraph(
+                    text: 'Assigned Coach: $coachName',
+                    style: const pw.TextStyle(
+                        fontSize: 14)), // Use fetched coach name
+                pw.Paragraph(
+                    text:
+                        'Registered Players: $storedPlayerCount (Found: ${teamPlayers.length})',
+                    style: const pw.TextStyle(
+                        fontSize: 12, color: PdfColors.grey600)),
+                pw.Divider(height: 20),
+                pw.Header(
+                    level: 1,
+                    text: 'Team Roster',
+                    textStyle: pw.TextStyle(
+                        fontSize: 16, fontWeight: pw.FontWeight.bold)),
+                // Display Player List (already fetched into teamPlayers)
+                if (isLoadingPlayers)
+                  pw.Center(
+                      child: pw.Text(
+                          'Loading player list...')) // Should already be loaded, but safe check
+                else if (teamPlayers.isEmpty)
+                  pw.Center(
+                      child: pw.Text(
+                          'No players currently assigned to this team.'))
+                else
+                  pw.TableHelper.fromTextArray(
+                    context: context,
+                    cellPadding: const pw.EdgeInsets.all(5),
+                    headerStyle: pw.TextStyle(
+                        fontWeight: pw.FontWeight.bold, fontSize: 11),
+                    cellStyle: const pw.TextStyle(fontSize: 10),
+                    headerDecoration:
+                        const pw.BoxDecoration(color: PdfColors.grey300),
+                    border: pw.TableBorder.all(color: PdfColors.grey500),
+                    cellAlignments: {
+                      0: pw.Alignment.centerLeft,
+                      1: pw.Alignment.centerLeft
+                    },
+                    headers: ['Player Name', 'Position'],
+                    data: teamPlayers.map((player) {
+                      final pData = player.data() as Map<String, dynamic>;
+                      return [
+                        pData['name'] ?? 'N/A',
+                        pData['position'] ?? 'N/A',
+                      ];
+                    }).toList(),
+                  ),
+              ],
+          footer: (pw.Context context) => pw.Container(
+              alignment: pw.Alignment.centerRight,
+              child: pw.Text(
+                  'Page ${context.pageNumber} of ${context.pagesCount}',
+                  style: pw.Theme.of(context)
+                      .defaultTextStyle
+                      .copyWith(color: PdfColors.grey)))),
     );
 
     // Use Printing package
     try {
       await Printing.layoutPdf(
           onLayout: (PdfPageFormat format) async => pdf.save(),
-          name: 'Team_Report_${teamName.replaceAll(' ', '_')}.pdf'
-      );
+          name: 'Team_Report_${teamName.replaceAll(' ', '_')}.pdf');
     } catch (e) {
       print("Error generating/sharing team PDF: $e");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error generating PDF report.'), backgroundColor: Colors.red),
+          const SnackBar(
+              content: Text('Error generating PDF report.'),
+              backgroundColor: Colors.red),
         );
       }
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -193,9 +240,13 @@ class _TeamDetailsScreenState extends State<TeamDetailsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(teamName),
-        flexibleSpace: Container( // Optional Gradient
+        flexibleSpace: Container(
+          // Optional Gradient
           decoration: const BoxDecoration(
-            gradient: LinearGradient( colors: [Color(0xFFF27121), Colors.white], begin: Alignment.topCenter, end: Alignment.bottomCenter),
+            gradient: LinearGradient(
+                colors: [Color(0xFFF27121), Colors.white],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter),
           ),
         ),
         actions: [
@@ -207,7 +258,8 @@ class _TeamDetailsScreenState extends State<TeamDetailsScreen> {
           ),
         ],
       ),
-      body: ListView( // Use ListView to combine static details and dynamic player list
+      body: ListView(
+        // Use ListView to combine static details and dynamic player list
         padding: const EdgeInsets.all(16.0),
         children: [
           // Display Team Picture if available
@@ -220,8 +272,13 @@ class _TeamDetailsScreenState extends State<TeamDetailsScreen> {
                   height: 150, // Adjust height as needed
                   width: double.infinity,
                   fit: BoxFit.cover,
-                  loadingBuilder: (context, child, progress) => progress == null ? child : const Center(child: CircularProgressIndicator()),
-                  errorBuilder: (context, error, stack) => const Icon(Icons.broken_image, size: 100, color: Colors.grey),
+                  loadingBuilder: (context, child, progress) => progress == null
+                      ? child
+                      : const Center(child: CircularProgressIndicator()),
+                  errorBuilder: (context, error, stack) => const Icon(
+                      Icons.broken_image,
+                      size: 100,
+                      color: Colors.grey),
                 ),
               ),
             ),
@@ -231,7 +288,8 @@ class _TeamDetailsScreenState extends State<TeamDetailsScreen> {
           // Team Name (larger)
           Text(
             teamName,
-            style: GoogleFonts.ubuntu(fontSize: 24, fontWeight: FontWeight.bold),
+            style:
+                GoogleFonts.ubuntu(fontSize: 24, fontWeight: FontWeight.bold),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 10),
@@ -240,23 +298,26 @@ class _TeamDetailsScreenState extends State<TeamDetailsScreen> {
           if (teamDescription.isNotEmpty)
             Text(
               teamDescription,
-              style: GoogleFonts.ubuntu(fontSize: 15, color: Colors.grey.shade700),
+              style:
+                  GoogleFonts.ubuntu(fontSize: 15, color: Colors.grey.shade700),
               textAlign: TextAlign.center,
             ),
-          if (teamDescription.isNotEmpty)
-            const SizedBox(height: 10),
+          if (teamDescription.isNotEmpty) const SizedBox(height: 10),
 
           Divider(),
           const SizedBox(height: 10),
 
           // Coach and Player Count Info
-          _buildDetailItem(Icons.person_outline, "Coach", isLoadingCoach ? "Loading..." : coachName),
-          _buildDetailItem(Icons.groups, "Registered Players", playerCount.toString()),
+          _buildDetailItem(Icons.person_outline, "Coach",
+              isLoadingCoach ? "Loading..." : coachName),
+          _buildDetailItem(
+              Icons.groups, "Registered Players", playerCount.toString()),
 
           const SizedBox(height: 20),
           Text(
             "Player Roster",
-            style: GoogleFonts.ubuntu(fontSize: 18, fontWeight: FontWeight.w600),
+            style:
+                GoogleFonts.ubuntu(fontSize: 18, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 5),
 
@@ -271,9 +332,10 @@ class _TeamDetailsScreenState extends State<TeamDetailsScreen> {
               style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFF27121),
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))
-              ),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20))),
               onPressed: _generateTeamReport,
             ),
           )
@@ -285,15 +347,24 @@ class _TeamDetailsScreenState extends State<TeamDetailsScreen> {
   // Helper to build the player list section with loading/empty states
   Widget _buildPlayerListSection() {
     if (isLoadingPlayers) {
-      return const Center(child: Padding( padding: EdgeInsets.all(20.0), child: CircularProgressIndicator(color: Color(0xFFF27121)),));
+      return const Center(
+          child: Padding(
+        padding: EdgeInsets.all(20.0),
+        child: CircularProgressIndicator(color: Color(0xFFF27121)),
+      ));
     }
     if (teamPlayers.isEmpty) {
-      return const Center(child: Padding( padding: EdgeInsets.all(20.0), child: Text("No players assigned to this team yet."),));
+      return const Center(
+          child: Padding(
+        padding: EdgeInsets.all(20.0),
+        child: Text("No players assigned to this team yet."),
+      ));
     }
 
     return ListView.builder(
       shrinkWrap: true, // Important inside another scroll view (ListView)
-      physics: const NeverScrollableScrollPhysics(), // Disable scrolling for this inner list
+      physics:
+          const NeverScrollableScrollPhysics(), // Disable scrolling for this inner list
       itemCount: teamPlayers.length,
       itemBuilder: (context, index) {
         final playerDoc = teamPlayers[index];
@@ -310,7 +381,8 @@ class _TeamDetailsScreenState extends State<TeamDetailsScreen> {
               backgroundColor: Colors.grey.shade200,
               backgroundImage: (playerPicUrl != null && playerPicUrl.isNotEmpty)
                   ? NetworkImage(playerPicUrl)
-                  : const AssetImage("assets/images/default_profile.jpeg") as ImageProvider,
+                  : const AssetImage("assets/images/default_profile.jpeg")
+                      as ImageProvider,
               onBackgroundImageError: (_, __) {},
             ),
             title: Text(playerName),
@@ -321,7 +393,8 @@ class _TeamDetailsScreenState extends State<TeamDetailsScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => PlayerDetailsScreen(playerDoc: playerDoc),
+                  builder: (context) =>
+                      PlayerDetailsScreen(playerDoc: playerDoc),
                 ),
               );
             },
@@ -341,10 +414,14 @@ class _TeamDetailsScreenState extends State<TeamDetailsScreen> {
           const SizedBox(width: 16),
           Text(
             "$label:",
-            style: GoogleFonts.ubuntu(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.black87),
+            style: GoogleFonts.ubuntu(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: Colors.black87),
           ),
           const SizedBox(width: 8),
-          Expanded( // Allow value text to wrap
+          Expanded(
+            // Allow value text to wrap
             child: Text(
               value,
               style: GoogleFonts.ubuntu(fontSize: 16, color: Colors.black54),

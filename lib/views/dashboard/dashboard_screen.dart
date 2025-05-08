@@ -1,9 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:footballtraining/views/coach/session_details_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart'; // For formatting dates
 // Import SessionDetailsScreen if you want to navigate from recent sessions list
-import 'session_details_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -35,12 +35,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<void> _fetchCounts() async {
     try {
       // Use aggregate query for efficiency (counts documents without downloading them)
-      AggregateQuerySnapshot playerSnap = await _firestore.collection('players').count().get();
-      AggregateQuerySnapshot teamSnap = await _firestore.collection('teams').count().get();
+      AggregateQuerySnapshot playerSnap =
+          await _firestore.collection('players').count().get();
+      AggregateQuerySnapshot teamSnap =
+          await _firestore.collection('teams').count().get();
       // Count users where role is 'coach'
-      AggregateQuerySnapshot coachSnap = await _firestore.collection('users').where('role', isEqualTo: 'coach').count().get();
+      AggregateQuerySnapshot coachSnap = await _firestore
+          .collection('users')
+          .where('role', isEqualTo: 'coach')
+          .count()
+          .get();
 
-      if (mounted) { // Check if the widget is still in the tree
+      if (mounted) {
+        // Check if the widget is still in the tree
         setState(() {
           playerCount = playerSnap.count ?? 0;
           teamCount = teamSnap.count ?? 0;
@@ -53,7 +60,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
       if (mounted) {
         setState(() => isLoadingStats = false); // Stop loading even on error
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error loading statistics.'), backgroundColor: Colors.red),
+          const SnackBar(
+              content: Text('Error loading statistics.'),
+              backgroundColor: Colors.red),
         );
       }
     }
@@ -69,13 +78,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
         .snapshots(); // Get a stream of updates
   }
 
-
   // Helper function to format Timestamps safely
-  String _formatTimestamp(Timestamp? timestamp, {String format = 'dd MMM, HH:mm'}) {
+  String _formatTimestamp(Timestamp? timestamp,
+      {String format = 'dd MMM, HH:mm'}) {
     if (timestamp == null) return 'N/A';
     try {
       return DateFormat(format).format(timestamp.toDate());
-    } catch (e) { return 'Invalid Date'; }
+    } catch (e) {
+      return 'Invalid Date';
+    }
   }
 
   @override
@@ -83,46 +94,60 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Dashboard Overview'),
-        flexibleSpace: Container( // Optional Gradient
+        flexibleSpace: Container(
+          // Optional Gradient
           decoration: const BoxDecoration(
-            gradient: LinearGradient( colors: [Color(0xFFF27121), Colors.white], begin: Alignment.topCenter, end: Alignment.bottomCenter),
+            gradient: LinearGradient(
+                colors: [Color(0xFFF27121), Colors.white],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter),
           ),
         ),
       ),
-      body: RefreshIndicator( // Add pull-to-refresh
+      body: RefreshIndicator(
+        // Add pull-to-refresh
         onRefresh: _fetchCounts, // Re-fetch stats on pull
-        child: ListView( // Use ListView for scrollability
+        child: ListView(
+          // Use ListView for scrollability
           padding: const EdgeInsets.all(16.0),
           children: [
             // --- Statistics Section ---
             Text(
               "Key Statistics",
-              style: GoogleFonts.ubuntu(fontSize: 20, fontWeight: FontWeight.w600),
+              style:
+                  GoogleFonts.ubuntu(fontSize: 20, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 10),
             isLoadingStats
-                ? const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator()))
-                : Wrap( // Use Wrap for responsive layout of stat cards
-              spacing: 16.0, // Horizontal space between cards
-              runSpacing: 16.0, // Vertical space between rows of cards
-              alignment: WrapAlignment.spaceEvenly,
-              children: [
-                _buildStatCard("Total Players", playerCount.toString(), Icons.person, Colors.blue),
-                _buildStatCard("Total Teams", teamCount.toString(), Icons.group, Colors.green),
-                _buildStatCard("Active Coaches", coachCount.toString(), Icons.sports, Colors.orange),
-                // Add more stats here if needed (e.g., sessions this month)
-              ],
-            ),
+                ? const Center(
+                    child: Padding(
+                        padding: EdgeInsets.all(20),
+                        child: CircularProgressIndicator()))
+                : Wrap(
+                    // Use Wrap for responsive layout of stat cards
+                    spacing: 16.0, // Horizontal space between cards
+                    runSpacing: 16.0, // Vertical space between rows of cards
+                    alignment: WrapAlignment.spaceEvenly,
+                    children: [
+                      _buildStatCard("Total Players", playerCount.toString(),
+                          Icons.person, Colors.blue),
+                      _buildStatCard("Total Teams", teamCount.toString(),
+                          Icons.group, Colors.green),
+                      _buildStatCard("Active Coaches", coachCount.toString(),
+                          Icons.sports, Colors.orange),
+                      // Add more stats here if needed (e.g., sessions this month)
+                    ],
+                  ),
             const SizedBox(height: 30),
 
             // --- Recent Sessions Section ---
             Text(
               "Recent Training Sessions",
-              style: GoogleFonts.ubuntu(fontSize: 20, fontWeight: FontWeight.w600),
+              style:
+                  GoogleFonts.ubuntu(fontSize: 20, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 10),
             _buildRecentSessionsList(), // Build the list using the StreamBuilder
-
           ],
         ),
       ),
@@ -130,7 +155,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   // Helper Widget for Stat Cards (Corrected Color Usage)
-  Widget _buildStatCard(String title, String count, IconData icon, MaterialColor color) { // Use MaterialColor type
+  Widget _buildStatCard(
+      String title, String count, IconData icon, MaterialColor color) {
+    // Use MaterialColor type
     double screenWidth = MediaQuery.of(context).size.width;
     double cardWidth = (screenWidth - 48) / 2;
     cardWidth = cardWidth < 140 ? 140 : cardWidth;
@@ -147,12 +174,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(icon, size: 30, color: color), // Use the base MaterialColor for icon
+              Icon(icon,
+                  size: 30,
+                  color: color), // Use the base MaterialColor for icon
               const SizedBox(height: 10),
               Text(
                 count,
                 // Access a specific darker shade (e.g., 700 or 900) from the MaterialColor swatch
-                style: GoogleFonts.ubuntu(fontSize: 24, fontWeight: FontWeight.bold, color: color.shade700), // Corrected: Use shade property
+                style: GoogleFonts.ubuntu(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: color.shade700), // Corrected: Use shade property
               ),
               const SizedBox(height: 5),
               Text(
@@ -166,21 +198,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-
   // Helper Widget to build the Recent Sessions List
   Widget _buildRecentSessionsList() {
     return StreamBuilder<QuerySnapshot>(
       stream: recentSessionsStream,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator()));
+          return const Center(
+              child: Padding(
+                  padding: EdgeInsets.all(20),
+                  child: CircularProgressIndicator()));
         }
         if (snapshot.hasError) {
           print("Error loading recent sessions: ${snapshot.error}");
-          return const Center(child: Text("Error loading recent sessions.", style: TextStyle(color: Colors.red)));
+          return const Center(
+              child: Text("Error loading recent sessions.",
+                  style: TextStyle(color: Colors.red)));
         }
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return const Center(child: Padding(padding: EdgeInsets.all(20), child: Text("No recent sessions found.")));
+          return const Center(
+              child: Padding(
+                  padding: EdgeInsets.all(20),
+                  child: Text("No recent sessions found.")));
         }
 
         // Data available
@@ -188,7 +227,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
         return ListView.builder(
           shrinkWrap: true, // Important inside the parent ListView
-          physics: const NeverScrollableScrollPhysics(), // Disable inner list scroll
+          physics:
+              const NeverScrollableScrollPhysics(), // Disable inner list scroll
           itemCount: sessions.length,
           itemBuilder: (context, index) {
             final sessionDoc = sessions[index];
@@ -202,11 +242,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
             return Card(
               margin: const EdgeInsets.symmetric(vertical: 4),
               elevation: 1,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
               child: ListTile(
                 leading: CircleAvatar(
                   backgroundColor: Colors.indigo.shade100,
-                  child: const Icon(Icons.event_note, size: 20, color: Colors.indigo),
+                  child: const Icon(Icons.event_note,
+                      size: 20, color: Colors.indigo),
                 ),
                 title: Text(
                   "$teamName - $trainingType",
@@ -214,13 +256,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 subtitle: Text(_formatTimestamp(startTime)), // Format date/time
-                trailing: const Icon(Icons.chevron_right, size: 18, color: Colors.grey),
+                trailing: const Icon(Icons.chevron_right,
+                    size: 18, color: Colors.grey),
                 onTap: () {
                   // Navigate to SessionDetailsScreen when tapped
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => SessionDetailsScreen(sessionDoc: sessionDoc),
+                      builder: (context) =>
+                          SessionDetailsScreen(sessionDoc: sessionDoc),
                     ),
                   );
                 },
@@ -231,6 +275,4 @@ class _DashboardScreenState extends State<DashboardScreen> {
       },
     );
   }
-
 }
-

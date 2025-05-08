@@ -1,8 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:footballtraining/loginPage.dart';
-import 'package:footballtraining/views/addEntryDialog.dart';
+import 'package:footballtraining/views/login/login_page.dart';
+import 'package:footballtraining/views/receptionist/add_entry_dialog.dart';
+
 import 'package:google_fonts/google_fonts.dart';
 
 class ReceptionistScreen extends StatefulWidget {
