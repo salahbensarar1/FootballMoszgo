@@ -1,0 +1,118 @@
+{
+  "@@locale": "en",
+  "appTitle": "Football Training",
+  "login": "Login",
+  "welcomeBack": "Welcome back",
+  "email": "Email",
+  "password": "Password",
+  "loginButton": "Login",
+  "adminManagement": "Admin Management",
+  
+  "adminScreen": "Admin Screen",
+  "coachScreen": "Coach Screen",
+  "receptionistScreen": "Receptionist Screen",
+  
+  "dashboardOverview": "Dashboard Overview",
+  "manageUsers": "Manage Users",
+  "settings": "Settings",
+  "logout": "Logout",
+  
+  "coaches": "Coaches",
+  "players": "Players", 
+  "teams": "Teams",
+  "attendances": "Attendances",
+  
+  "searchHint": "Search {entity}...",
+  "@searchHint": {
+    "placeholders": {
+      "entity": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "addEntity": "Add {entity}",
+  "@addEntity": {
+    "placeholders": {
+      "entity": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "edit": "Edit",
+  "delete": "Delete",
+  "save": "Save",
+  "cancel": "Cancel",
+  "add": "Add",
+  
+  "playerInfo": "Player Info",
+  "payments": "Payments",
+  "paymentStatus": "Payment Status",
+  "paymentManagement": "{year} Payment Management",
+  "@paymentManagement": {
+    "placeholders": {
+      "year": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "sendReminder": "Send Reminder",
+  "paymentReminder": "Payment Reminder",
+  "paymentReminderEmail": "Payment Reminder Email",
+  "sendEmail": "Send Email",
+  "close": "Close",
+  
+  "name": "Name",
+  "position": "Position",
+  "team": "Team",
+  "teamName": "Team Name",
+  "selectTeam": "Select Team",
+  "assignCoach": "Assign Coach",
+  "roleDescription": "Role Description",
+  
+  "trainingType": "Training Type",
+  "pitchLocation": "Pitch Location",
+  "startTraining": "Start Training (2-hour window)",
+  "saveSession": "Save Session",
+  
+  "successfullyUpdated": "Successfully updated.",
+  "failedToUpdate": "Failed to update: {error}",
+  "@failedToUpdate": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "deletedSuccessfully": "Deleted successfully.",
+  "failedToDelete": "Failed to delete: {error}",
+  "@failedToDelete": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "noEmailAvailable": "No email available for this player",
+  "emailSentSuccessfully": "Email sent successfully to {email}",
+  "@emailSentSuccessfully": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "allMonthsPaid": "All months are paid!",
+  "failedToSendEmail": "Failed to send email. Please try again.",
+  
+  "totalPlayers": "Total Players",
+  "totalTeams": "Total Teams", 
+  "activeCoaches": "Active Coaches",
+  "keyStatistics": "Key Statistics",
+  "recentTrainingSessions": "Recent Training Sessions"
+}
