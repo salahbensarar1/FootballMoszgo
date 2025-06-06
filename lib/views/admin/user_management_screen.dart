@@ -1,10 +1,20 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // To get current admin UID
-import 'package:flutter/material.dart';
-//import 'package:google_fonts/google_fonts.dart';
+// File: lib/views/admin/user_management_screen.dart
 
-// Placeholder for Edit User Screen/Dialog (if needed later)
-// import 'edit_user_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:footballtraining/views/admin/components/user_card.dart';
+import 'package:footballtraining/views/admin/components/user_filters.dart';
+import 'package:footballtraining/views/shared/widgets/empty_state_widget.dart';
+import 'package:footballtraining/views/shared/widgets/error_state_widget.dart';
+import 'package:footballtraining/views/shared/widgets/loading_state_widget.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+// Import components
+import 'package:footballtraining/views/admin/dialogs/add_user_dialog.dart';
+import 'package:footballtraining/views/admin/dialogs/edit_user_dialog.dart';
+import 'package:footballtraining/views/admin/dialogs/delete_user_dialog.dart';
 
 class UserManagementScreen extends StatefulWidget {
   const UserManagementScreen({super.key});
@@ -13,251 +23,254 @@ class UserManagementScreen extends StatefulWidget {
   State<UserManagementScreen> createState() => _UserManagementScreenState();
 }
 
-class _UserManagementScreenState extends State<UserManagementScreen> {
+class _UserManagementScreenState extends State<UserManagementScreen>
+    with TickerProviderStateMixin {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth =
-      FirebaseAuth.instance; // To filter out current admin
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // State for potential search/filter later
+  // Animation controllers
+  late AnimationController _fadeController;
+  late AnimationController _slideController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  // State variables
   String searchQuery = "";
-  String? selectedRoleFilter; // e.g., 'coach', 'admin'
+  String? selectedRoleFilter;
+  final TextEditingController _searchController = TextEditingController();
 
-  // Function to build the stream based on filters
+  @override
+  void initState() {
+    super.initState();
+    _initializeAnimations();
+    _searchController.addListener(_handleSearchChange);
+  }
+
+  @override
+  void dispose() {
+    _fadeController.dispose();
+    _slideController.dispose();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _initializeAnimations() {
+    _fadeController = AnimationController(
+      duration: Duration(milliseconds: 800),
+      vsync: this,
+    );
+
+    _slideController = AnimationController(
+      duration: Duration(milliseconds: 600),
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _fadeController,
+      curve: Curves.easeInOut,
+    ));
+
+    _slideAnimation = Tween<Offset>(
+      begin: Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _slideController,
+      curve: Curves.easeOutCubic,
+    ));
+
+    _fadeController.forward();
+    _slideController.forward();
+  }
+
+  void _handleSearchChange() {
+    if (_searchController.text.isEmpty && searchQuery.isNotEmpty) {
+      setState(() {
+        searchQuery = "";
+      });
+    }
+  }
+
   Stream<QuerySnapshot> _getUsersStream() {
-    Query query =
-        _firestore.collection('users').orderBy('name'); // Default order
+    Query query = _firestore.collection('users').orderBy('name');
 
-    // --- Filtering Logic ---
-    // Filter out the currently logged-in admin to prevent self-modification here
-    final String? currentAdminUid = _auth.currentUser?.uid;
-    if (currentAdminUid != null) {
-      // Note: Firestore doesn't support direct '!=' query on document ID easily combined with others.
-      // We'll filter client-side for simplicity here, but for large user bases,
-      // a backend solution or structuring data differently might be better.
-    }
-
-    // Filter by selected role if one is chosen
-    if (selectedRoleFilter != null && selectedRoleFilter!.isNotEmpty) {
+    // Filter by role if selected
+    if (selectedRoleFilter != null &&
+        selectedRoleFilter!.isNotEmpty &&
+        selectedRoleFilter != 'All') {
       query = query.where('role', isEqualTo: selectedRoleFilter);
-      // Requires Index: users -> role ASC, name ASC
     }
 
-    // Apply search query (simple prefix search on name)
+    // Apply search query
     if (searchQuery.isNotEmpty) {
       query = query
           .where('name', isGreaterThanOrEqualTo: searchQuery)
           .where('name', isLessThanOrEqualTo: '$searchQuery\uf8ff');
-      // May require composite index depending on other filters, e.g.,
-      // users -> role ASC, name ASC
-      // users -> name ASC
     }
 
     return query.snapshots();
   }
 
-  // --- Action Placeholders ---
-  void _editUser(DocumentSnapshot userDoc) {
-    // TODO: Implement navigation to an Edit User screen or show an Edit Dialog
-    // Pass userDoc.id or userDoc itself
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content:
-            Text('Edit action for ${userDoc['name']} not implemented yet.')));
-    print("Edit user ID: ${userDoc.id}");
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    return Scaffold(
+      backgroundColor: Colors.grey.shade50,
+      appBar: _buildAppBar(l10n),
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: SlideTransition(
+          position: _slideAnimation,
+          child: Column(
+            children: [
+              UserFilters(
+                searchController: _searchController,
+                searchQuery: searchQuery,
+                selectedRoleFilter: selectedRoleFilter,
+                onSearchChanged: (value) => setState(() => searchQuery = value),
+                onRoleFilterChanged: (role) =>
+                    setState(() => selectedRoleFilter = role),
+              ),
+              Expanded(child: _buildUsersList(l10n)),
+            ],
+          ),
+        ),
+      ),
+      floatingActionButton: _buildAddUserFab(l10n),
+    );
   }
 
-  void _deleteUser(DocumentSnapshot userDoc) async {
-    final userName = userDoc['name'] ?? 'this user';
-    final userRole = userDoc['role'] ?? 'user';
+  PreferredSizeWidget _buildAppBar(AppLocalizations l10n) {
+    return AppBar(
+      elevation: 0,
+      centerTitle: true,
+      title: Text(
+        l10n.manageUsers,
+        style: GoogleFonts.poppins(
+          fontWeight: FontWeight.w600,
+          fontSize: 20,
+        ),
+      ),
+      flexibleSpace: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFF27121), Color(0xFFFF8A50)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+      ),
+      leading: IconButton(
+        icon: Icon(Icons.arrow_back_ios_rounded, color: Colors.white),
+        onPressed: () => Navigator.pop(context),
+      ),
+      actions: [
+        IconButton(
+          icon: Icon(Icons.refresh_rounded, color: Colors.white),
+          onPressed: () => setState(() {}),
+          tooltip: 'Refresh',
+        ),
+      ],
+    );
+  }
 
-    // --- Confirmation Dialog ---
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Confirm Deletion'),
-          content: Text(
-              'Are you sure you want to delete $userName ($userRole)? This action cannot be undone.'),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: Text('Cancel'),
-            ),
-            TextButton(
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
-              onPressed: () => Navigator.of(context).pop(true),
-              child: Text('Delete'),
-            ),
-          ],
+  Widget _buildUsersList(AppLocalizations l10n) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: _getUsersStream(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return LoadingStateWidget();
+        }
+
+        if (snapshot.hasError) {
+          return ErrorStateWidget(
+            error: snapshot.error.toString(),
+            onRetry: () => setState(() {}),
+          );
+        }
+
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return EmptyStateWidget(
+            searchQuery: searchQuery,
+            entityName: 'users',
+          );
+        }
+
+        // Filter out current admin
+        final currentAdminUid = _auth.currentUser?.uid;
+        final users = snapshot.data!.docs
+            .where((doc) => doc.id != currentAdminUid)
+            .toList();
+
+        if (users.isEmpty) {
+          return EmptyStateWidget(
+            searchQuery: searchQuery,
+            entityName: 'users',
+          );
+        }
+
+        return ListView.separated(
+          padding: EdgeInsets.all(16),
+          itemCount: users.length,
+          separatorBuilder: (context, index) => SizedBox(height: 12),
+          itemBuilder: (context, index) {
+            return UserCard(
+              userDoc: users[index],
+              onEdit: () => _editUser(users[index], l10n),
+              onDelete: () => _deleteUser(users[index], l10n),
+            );
+          },
         );
       },
     );
-
-    if (confirm == true) {
-      // TODO: Implement actual Firestore delete logic
-      // Consider cascading effects (e.g., unassigning coach from teams)
-      print("Attempting to delete user ID: ${userDoc.id}");
-      try {
-        // --- Example Firestore Delete (Implement with caution!) ---
-        // await _firestore.collection('users').doc(userDoc.id).delete();
-        // --- Also handle unassigning coach if applicable ---
-        // if (userRole == 'coach') {
-        //    WriteBatch batch = _firestore.batch();
-        //    final teamsManaged = await _firestore.collection('teams').where('coach', isEqualTo: userDoc.id).get();
-        //    for (var teamDoc in teamsManaged.docs) {
-        //       batch.update(teamDoc.reference, {'coach': null}); // or ''
-        //    }
-        //    await batch.commit();
-        // }
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(
-                'Deletion for $userName NOT implemented yet (check TODO).'),
-            backgroundColor: Colors.orange));
-      } catch (e) {
-        print("Error during user deletion placeholder: $e");
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Error deleting $userName: $e'),
-            backgroundColor: Colors.red));
-      }
-    }
   }
 
-  void _addUser() {
-    // TODO: Implement navigation to Add User screen or show Add User Dialog
-    // Should allow setting name, email, password (or invite), role
-    ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Add User action not implemented yet.')));
+  Widget _buildAddUserFab(AppLocalizations l10n) {
+    return FloatingActionButton.extended(
+      onPressed: () => _addUser(l10n),
+      backgroundColor: Color(0xFFF27121),
+      foregroundColor: Colors.white,
+      icon: Icon(Icons.person_add_rounded),
+      label: Text(
+        l10n.add,
+        style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+      ),
+      elevation: 8,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final String? currentAdminUid =
-        _auth.currentUser?.uid; // Get current admin UID
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Manage Users'),
-        flexibleSpace: Container(
-          // Optional Gradient
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-                colors: [Color(0xFFF27121), Colors.white],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter),
-          ),
-        ),
-        // Optional: Add Filter button here later
-        // actions: [ IconButton(icon: Icon(Icons.filter_list), onPressed: _showFilterDialog) ],
+  // Action methods
+  void _editUser(DocumentSnapshot userDoc, AppLocalizations l10n) {
+    showDialog(
+      context: context,
+      builder: (context) => EditUserDialog(
+        userDoc: userDoc,
+        l10n: l10n,
+        onUserUpdated: () => setState(() {}),
       ),
-      body: Column(
-        children: [
-          // TODO: Add Search Bar and Filter Dropdown later if needed
-          // Padding( ... TextField(onChanged: (val) => setState(() => searchQuery = val)) ... ),
-          // Padding( ... DropdownButtonFormField<String>(...) ...),
+    );
+  }
 
-          Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: _getUsersStream(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (snapshot.hasError) {
-                  print("Error loading users: ${snapshot.error}");
-                  return const Center(child: Text("Error loading users."));
-                }
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return const Center(child: Text("No users found."));
-                }
-
-                // Filter out the current admin client-side
-                final users = snapshot.data!.docs
-                    .where((doc) => doc.id != currentAdminUid)
-                    .toList();
-
-                if (users.isEmpty) {
-                  return const Center(child: Text("No other users found."));
-                }
-
-                return ListView.builder(
-                  itemCount: users.length,
-                  itemBuilder: (context, index) {
-                    final userDoc = users[index];
-                    final data = userDoc.data() as Map<String, dynamic>? ?? {};
-
-                    final name = data['name'] ?? 'N/A';
-                    final email = data['email'] ?? 'No Email';
-                    final role = data['role'] ?? 'No Role';
-                    final pictureUrl = data['picture']
-                        as String?; // Assuming picture field exists
-
-                    return Card(
-                      margin: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 5),
-                      elevation: 1.5,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8)),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          // User picture or default
-                          radius: 22, backgroundColor: Colors.grey[300],
-                          backgroundImage:
-                              (pictureUrl != null && pictureUrl.isNotEmpty)
-                                  ? NetworkImage(pictureUrl)
-                                  : const AssetImage(
-                                          "assets/images/default_profile.jpeg")
-                                      as ImageProvider, // Use default asset
-                          onBackgroundImageError: (_, __) {},
-                        ),
-                        title: Text(name,
-                            style:
-                                const TextStyle(fontWeight: FontWeight.w500)),
-                        subtitle: Text("$email\nRole: ${role.toUpperCase()}",
-                            style: TextStyle(color: Colors.grey.shade600)),
-                        isThreeLine: true, // Allow space for role line
-                        trailing: PopupMenuButton<String>(
-                          icon: const Icon(Icons.more_vert, color: Colors.grey),
-                          tooltip: 'User Actions',
-                          onSelected: (value) {
-                            if (value == 'edit') {
-                              _editUser(userDoc);
-                            } else if (value == 'delete') {
-                              _deleteUser(userDoc);
-                            }
-                          },
-                          itemBuilder: (BuildContext context) =>
-                              <PopupMenuEntry<String>>[
-                            const PopupMenuItem<String>(
-                              value: 'edit',
-                              child: ListTile(
-                                  leading: Icon(Icons.edit_outlined),
-                                  title: Text('Edit Role')),
-                            ),
-                            const PopupMenuItem<String>(
-                              value: 'delete',
-                              child: ListTile(
-                                  leading: Icon(Icons.delete_outline,
-                                      color: Colors.red),
-                                  title: Text('Delete User',
-                                      style: TextStyle(color: Colors.red))),
-                            ),
-                          ],
-                        ),
-                        onTap: () => _editUser(
-                            userDoc), // Allow tapping list tile to edit as well
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
-          ),
-        ],
+  void _deleteUser(DocumentSnapshot userDoc, AppLocalizations l10n) {
+    showDialog(
+      context: context,
+      builder: (context) => DeleteUserDialog(
+        userDoc: userDoc,
+        onUserDeleted: () => setState(() {}),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _addUser, // Call placeholder function
-        tooltip: 'Add User',
-        backgroundColor: const Color(0xFFF27121), // Theme color
-        child: const Icon(Icons.add, color: Colors.white),
+    );
+  }
+
+  void _addUser(AppLocalizations l10n) {
+    showDialog(
+      context: context,
+      builder: (context) => AddUserDialog(
+        l10n: l10n,
+        onUserAdded: () => setState(() {}),
       ),
     );
   }

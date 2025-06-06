@@ -1,0 +1,118 @@
+{
+  "@@locale": "hu",
+  "appTitle": "Futballedzés",
+  "login": "Bejelentkezés",
+  "welcomeBack": "Üdvözöljük újra",
+  "email": "E-mail",
+  "password": "Jelszó",
+  "loginButton": "Bejelentkezés",
+  "adminManagement": "Admin kezelés",
+  
+  "adminScreen": "Admin felület",
+  "coachScreen": "Edző felület", 
+  "receptionistScreen": "Recepciós felület",
+  
+  "dashboardOverview": "Irányítópult áttekintés",
+  "manageUsers": "Felhasználók kezelése",
+  "settings": "Beállítások",
+  "logout": "Kijelentkezés",
+  
+  "coaches": "Edzők",
+  "players": "Játékosok",
+  "teams": "Csapatok", 
+  "attendances": "Jelenléti ívek",
+  
+  "searchHint": "{entity} keresése...",
+  "@searchHint": {
+    "placeholders": {
+      "entity": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "addEntity": "{entity} hozzáadása",
+  "@addEntity": {
+    "placeholders": {
+      "entity": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "edit": "Szerkesztés",
+  "delete": "Törlés", 
+  "save": "Mentés",
+  "cancel": "Mégsem",
+  "add": "Hozzáadás",
+  
+  "playerInfo": "Játékos adatok",
+  "payments": "Fizetések",
+  "paymentStatus": "Fizetési állapot",
+  "paymentManagement": "{year} fizetés kezelés",
+  "@paymentManagement": {
+    "placeholders": {
+      "year": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "sendReminder": "Emlékeztető küldése",
+  "paymentReminder": "Fizetési emlékeztető",
+  "paymentReminderEmail": "Fizetési emlékeztető e-mail",
+  "sendEmail": "E-mail küldése",
+  "close": "Bezárás",
+  
+  "name": "Név",
+  "position": "Pozíció",
+  "team": "Csapat",
+  "teamName": "Csapat neve",
+  "selectTeam": "Csapat kiválasztása",
+  "assignCoach": "Edző hozzárendelése",
+  "roleDescription": "Szerepkör leírása",
+  
+  "trainingType": "Edzés típusa",
+  "pitchLocation": "Pálya helye",
+  "startTraining": "Edzés indítása (2 órás időszak)",
+  "saveSession": "Edzés mentése",
+  
+  "successfullyUpdated": "Sikeresen frissítve.",
+  "failedToUpdate": "Frissítés sikertelen: {error}",
+  "@failedToUpdate": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "deletedSuccessfully": "Sikeresen törölve.",
+  "failedToDelete": "Törlés sikertelen: {error}",
+  "@failedToDelete": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "noEmailAvailable": "Nincs elérhető e-mail cím ehhez a játékoshoz",
+  "emailSentSuccessfully": "E-mail sikeresen elküldve: {email}",
+  "@emailSentSuccessfully": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "allMonthsPaid": "Minden hónap ki van fizetve!",
+  "failedToSendEmail": "E-mail küldése sikertelen. Kérjük, próbálja újra.",
+  
+  "totalPlayers": "Összes játékos",
+  "totalTeams": "Összes csapat",
+  "activeCoaches": "Aktív edzők", 
+  "keyStatistics": "Fő statisztikák",
+  "recentTrainingSessions": "Legutóbbi edzések"
+}
