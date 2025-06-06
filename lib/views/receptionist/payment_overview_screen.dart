@@ -1631,7 +1631,6 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
       builder: (context) => PlayerDetailsDialog(
         player: player,
         selectedYear: selectedYear,
-        teamPaymentFees: teamPaymentFees,
       ),
     );
   }

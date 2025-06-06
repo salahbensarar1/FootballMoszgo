@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -16,7 +14,6 @@ class PlayerDetailsDialog extends StatefulWidget {
     super.key,
     required this.player,
     required this.selectedYear,
-    required Map<String, double> teamPaymentFees,
   });
 
   @override
@@ -44,15 +41,10 @@ class _PlayerDetailsDialogState extends State<PlayerDetailsDialog>
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Container(
-        constraints: BoxConstraints(
-          maxWidth: min(500, size.width * 0.9),
-          maxHeight: min(700, size.height * 0.9),
-        ),
+        constraints: const BoxConstraints(maxWidth: 500, maxHeight: 700),
         child: Column(
           children: [
             _buildHeader(),
@@ -160,63 +152,44 @@ class _PlayerDetailsDialogState extends State<PlayerDetailsDialog>
         labelColor: _getStatusColor(widget.player.status),
         unselectedLabelColor: Colors.grey.shade600,
         indicatorColor: _getStatusColor(widget.player.status),
-        isScrollable: false, // Ensure tabs are evenly distributed
         tabs: [
-          SizedBox(
-            height: 46,
-            child: Tab(
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.grid_view_rounded, size: 16),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Grid',
-                      style: GoogleFonts.poppins(fontSize: 12),
-                    ),
-                  ],
+          Tab(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.grid_view_rounded, size: 16),
+                const SizedBox(width: 6),
+                Text(
+                  'Payment Grid',
+                  style: GoogleFonts.poppins(fontSize: 12),
                 ),
-              ),
+              ],
             ),
           ),
-          SizedBox(
-            height: 46,
-            child: Tab(
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.history_rounded, size: 16),
-                    const SizedBox(width: 4),
-                    Text(
-                      'History',
-                      style: GoogleFonts.poppins(fontSize: 12),
-                    ),
-                  ],
+          Tab(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.history_rounded, size: 16),
+                const SizedBox(width: 6),
+                Text(
+                  'History',
+                  style: GoogleFonts.poppins(fontSize: 12),
                 ),
-              ),
+              ],
             ),
           ),
-          SizedBox(
-            height: 46,
-            child: Tab(
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.analytics_rounded, size: 16),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Summary',
-                      style: GoogleFonts.poppins(fontSize: 12),
-                    ),
-                  ],
+          Tab(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.analytics_rounded, size: 16),
+                const SizedBox(width: 6),
+                Text(
+                  'Summary',
+                  style: GoogleFonts.poppins(fontSize: 12),
                 ),
-              ),
+              ],
             ),
           ),
         ],

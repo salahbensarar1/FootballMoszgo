@@ -2,7 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:footballtraining/views/coach/session_details_screen.dart';
+import 'package:footballtraining/views/admin/reports/session_report_screen.dart';
+
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'dart:math' as math;
@@ -826,7 +827,7 @@ class _DashboardScreenState extends State<DashboardScreen>
               context,
               MaterialPageRoute(
                 builder: (context) =>
-                    SessionDetailsScreen(sessionDoc: sessionDoc),
+                    SessionReportScreen(sessionDoc: sessionDoc),
               ),
             );
           },
