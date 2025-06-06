@@ -2,11 +2,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:footballtraining/views/coach/session_details_screen.dart';
+import 'package:footballtraining/views/admin/reports/player_report_screen.dart';
+import 'package:footballtraining/views/admin/reports/session_report_screen.dart';
+import 'package:footballtraining/views/admin/reports/team_report_screen.dart';
 import 'package:footballtraining/views/dashboard/dashboard_screen.dart';
 import 'package:footballtraining/views/login/login_page.dart';
-import 'package:footballtraining/views/player/player_details_screen.dart';
-import 'package:footballtraining/views/team/team_details_screen.dart';
+
 import 'package:footballtraining/views/admin/user_management_screen.dart';
 import 'package:footballtraining/views/admin/settings_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -736,7 +737,7 @@ class _AdminScreenState extends State<AdminScreen>
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => SessionDetailsScreen(sessionDoc: sessionDoc),
+            builder: (context) => SessionReportScreen(sessionDoc: sessionDoc),
           ),
         ),
         borderRadius: BorderRadius.circular(16),
@@ -858,7 +859,7 @@ class _AdminScreenState extends State<AdminScreen>
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => PlayerDetailsScreen(playerDoc: playerDoc),
+            builder: (context) => PlayerReportScreen(playerDoc: playerDoc),
           ),
         ),
         borderRadius: BorderRadius.circular(16),
@@ -976,8 +977,7 @@ class _AdminScreenState extends State<AdminScreen>
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => TeamDetailsScreen(teamDoc: teamDoc),
-          ),
+              builder: (context) => TeamReportScreen(teamDoc: teamDoc)),
         ),
         borderRadius: BorderRadius.circular(16),
         child: Padding(
