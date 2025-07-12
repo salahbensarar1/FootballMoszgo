@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:footballtraining/data/repositories/team_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -21,6 +22,7 @@ class AddEntryDialog extends StatefulWidget {
 class _AddEntryDialogState extends State<AddEntryDialog>
     with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
+  List<Map<String, dynamic>> selectedCoaches = [];
   final _scrollController = ScrollController();
 
   // Animation controllers
@@ -187,7 +189,12 @@ class _AddEntryDialogState extends State<AddEntryDialog>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   _buildHeader(l10n),
-                  Flexible(child: _buildBody(l10n, isSmallScreen)),
+                  Flexible(
+                    child: SingleChildScrollView(
+                      physics: BouncingScrollPhysics(),
+                      child: _buildBody(l10n, isSmallScreen),
+                    ),
+                  ),
                   _buildActions(l10n),
                 ],
               ),
@@ -399,7 +406,15 @@ class _AddEntryDialogState extends State<AddEntryDialog>
       _buildTextField(
         label: l10n.name,
         icon: Icons.person_outline_rounded,
-        validator: (value) => value!.isEmpty ? "Enter a name" : null,
+        validator: (value) {
+          if (value == null || value.trim().isEmpty) {
+            return "Coach name is required";
+          }
+          if (value.trim().length < 2) {
+            return "Name must be at least 2 characters";
+          }
+          return null;
+        },
         onSaved: (value) => name = value!.trim(),
         focusNode: _focusNodes[0],
         nextFocusNode: _focusNodes[1],
@@ -410,7 +425,15 @@ class _AddEntryDialogState extends State<AddEntryDialog>
         label: l10n.email,
         icon: Icons.email_outlined,
         keyboardType: TextInputType.emailAddress,
-        validator: (value) => value!.isEmpty ? "Enter an email" : null,
+        validator: (value) {
+          if (value == null || value.trim().isEmpty) {
+            return "Email is required";
+          }
+          if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+            return "Enter a valid email address";
+          }
+          return null;
+        },
         onSaved: (value) => email = value!.trim(),
         focusNode: _focusNodes[1],
         nextFocusNode: _focusNodes[2],
@@ -424,16 +447,758 @@ class _AddEntryDialogState extends State<AddEntryDialog>
         label: l10n.roleDescription,
         icon: Icons.description_outlined,
         maxLines: 2,
+        validator: (value) {
+          if (value != null && value.length > 100) {
+            return "Role description must be less than 100 characters";
+          }
+          return null;
+        },
         onSaved: (value) => roleDescription = value ?? "",
         focusNode: _focusNodes[3],
       ),
       const SizedBox(height: 24),
 
-      // Team Assignment
+      // Multi-Team Assignment
       _buildSectionHeader('Team Assignment', Icons.groups_rounded),
-      const SizedBox(height: 16),
-      _buildTeamDropdown(l10n, isCoach: true),
+      const SizedBox(height: 8),
+      Text(
+        'Select teams this coach will train',
+        style: GoogleFonts.poppins(
+          fontSize: isSmallScreen ? 12 : 13,
+          color: Colors.grey.shade600,
+          fontStyle: FontStyle.italic,
+        ),
+      ),
+      const SizedBox(height: 12),
+      _buildMultiTeamSelector(l10n, isSmallScreen),
     ];
+  }
+
+  List<Map<String, dynamic>> selectedTeamsForCoach = [];
+
+  Widget _buildMultiTeamSelector(AppLocalizations l10n, bool isSmallScreen) {
+    return Container(
+      padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade50,
+        borderRadius: BorderRadius.circular(isSmallScreen ? 8 : 12),
+        border: Border.all(color: Colors.blue.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Selected Teams Header
+          Row(
+            children: [
+              Icon(
+                Icons.groups_rounded,
+                size: isSmallScreen ? 16 : 18,
+                color: Colors.blue.shade700,
+              ),
+              SizedBox(width: 8),
+              Text(
+                'Assigned Teams (${selectedTeamsForCoach.length})',
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w600,
+                  fontSize: isSmallScreen ? 14 : 16,
+                  color: Colors.blue.shade800,
+                ),
+              ),
+              if (selectedTeamsForCoach.length >= 5) ...[
+                SizedBox(width: 8),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade100,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    'MANY',
+                    style: GoogleFonts.poppins(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.orange.shade700,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+
+          // Selected Teams List
+          if (selectedTeamsForCoach.isNotEmpty) ...[
+            SizedBox(height: isSmallScreen ? 8 : 12),
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: isSmallScreen ? 120 : 140,
+              ),
+              child: ListView.separated(
+                shrinkWrap: true,
+                physics: selectedTeamsForCoach.length > 2
+                    ? BouncingScrollPhysics()
+                    : NeverScrollableScrollPhysics(),
+                itemCount: selectedTeamsForCoach.length,
+                separatorBuilder: (_, __) => SizedBox(height: 6),
+                itemBuilder: (context, index) {
+                  final team = selectedTeamsForCoach[index];
+                  return _buildSelectedTeamCard(team, isSmallScreen);
+                },
+              ),
+            ),
+          ],
+
+          SizedBox(height: isSmallScreen ? 8 : 12),
+
+          // Add Team Button
+          StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance.collection('teams').snapshots(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                return _buildLoadingTeamButton(isSmallScreen);
+              }
+
+              final availableTeams = snapshot.data!.docs
+                  .where((doc) => !selectedTeamsForCoach
+                      .any((selected) => selected['id'] == doc.id))
+                  .toList();
+
+              final bool canAddMore =
+                  selectedTeamsForCoach.length < 10; // Max 10 teams
+              final bool hasAvailable = availableTeams.isNotEmpty;
+
+              return _buildAddTeamButton(
+                isEnabled: canAddMore && hasAvailable,
+                availableTeams: availableTeams,
+                isSmallScreen: isSmallScreen,
+              );
+            },
+          ),
+
+          // Optional message
+          if (selectedTeamsForCoach.isEmpty)
+            Padding(
+              padding: EdgeInsets.only(top: isSmallScreen ? 6 : 8),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline_rounded,
+                    size: isSmallScreen ? 14 : 16,
+                    color: Colors.blue.shade600,
+                  ),
+                  SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Coach can be assigned to multiple teams (optional)',
+                      style: GoogleFonts.poppins(
+                        fontSize: isSmallScreen ? 11 : 12,
+                        color: Colors.blue.shade600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAddTeamButton({
+    required bool isEnabled,
+    required List<QueryDocumentSnapshot> availableTeams,
+    required bool isSmallScreen,
+  }) {
+    String buttonText;
+    if (!isEnabled && selectedTeamsForCoach.length >= 10) {
+      buttonText = 'Maximum teams assigned';
+    } else if (!isEnabled && availableTeams.isEmpty) {
+      buttonText = selectedTeamsForCoach.isEmpty
+          ? 'No teams available'
+          : 'All teams assigned';
+    } else {
+      buttonText = 'Add Team';
+    }
+
+    return Container(
+      width: double.infinity,
+      height: isSmallScreen ? 44 : 48,
+      child: OutlinedButton.icon(
+        onPressed: isEnabled
+            ? () => _showTeamSelectionDialog(availableTeams, isSmallScreen)
+            : null,
+        icon: Icon(
+          isEnabled ? Icons.add_circle_outline : Icons.info_outline,
+          size: isSmallScreen ? 18 : 20,
+        ),
+        label: Text(
+          buttonText,
+          style: GoogleFonts.poppins(
+            fontSize: isSmallScreen ? 13 : 15,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        style: OutlinedButton.styleFrom(
+          foregroundColor:
+              isEnabled ? Colors.blue.shade600 : Colors.grey.shade500,
+          side: BorderSide(
+              color: isEnabled ? Colors.blue.shade300 : Colors.grey.shade300),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(isSmallScreen ? 8 : 10),
+          ),
+        ),
+      ),
+    );
+  }
+
+// PRODUCTION-READY: Loading state for team button
+  Widget _buildLoadingTeamButton(bool isSmallScreen) {
+    return Container(
+      width: double.infinity,
+      height: isSmallScreen ? 44 : 48,
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(isSmallScreen ? 8 : 10),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: isSmallScreen ? 16 : 20,
+            height: isSmallScreen ? 16 : 20,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+          SizedBox(width: 8),
+          Text(
+            'Loading teams...',
+            style: GoogleFonts.poppins(
+              fontSize: isSmallScreen ? 13 : 15,
+              color: Colors.grey.shade600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+// PRODUCTION-READY: Team selection dialog
+  void _showTeamSelectionDialog(
+      List<QueryDocumentSnapshot> availableTeams, bool isSmallScreen) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final dialogHeight = (screenHeight * 0.6).clamp(300.0, 500.0);
+
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(isSmallScreen ? 16 : 20),
+        ),
+        child: Container(
+          width:
+              MediaQuery.of(context).size.width * (isSmallScreen ? 0.9 : 0.8),
+          height: dialogHeight,
+          child: Column(
+            children: [
+              // Header
+              Container(
+                padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(isSmallScreen ? 16 : 20),
+                    topRight: Radius.circular(isSmallScreen ? 16 : 20),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.search_rounded,
+                      color: Colors.blue.shade600,
+                      size: isSmallScreen ? 20 : 24,
+                    ),
+                    SizedBox(width: isSmallScreen ? 8 : 12),
+                    Expanded(
+                      child: Text(
+                        'Select Team to Add',
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w600,
+                          fontSize: isSmallScreen ? 16 : 18,
+                          color: Colors.blue.shade800,
+                        ),
+                      ),
+                    ),
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(20),
+                        onTap: () => Navigator.pop(context),
+                        child: Container(
+                          padding: EdgeInsets.all(8),
+                          child: Icon(
+                            Icons.close_rounded,
+                            size: isSmallScreen ? 20 : 24,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Teams List
+              Expanded(
+                child: availableTeams.isEmpty
+                    ? _buildEmptyTeamsState(isSmallScreen)
+                    : ListView.separated(
+                        padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+                        physics: BouncingScrollPhysics(),
+                        itemCount: availableTeams.length,
+                        separatorBuilder: (context, index) =>
+                            SizedBox(height: 8),
+                        itemBuilder: (context, index) {
+                          final team = availableTeams[index];
+                          final teamData = team.data() as Map<String, dynamic>;
+                          return _buildTeamSelectionItem(
+                              team.id, teamData, isSmallScreen);
+                        },
+                      ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+// Empty teams state
+  Widget _buildEmptyTeamsState(bool isSmallScreen) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.group_off_rounded,
+            size: isSmallScreen ? 48 : 64,
+            color: Colors.grey.shade400,
+          ),
+          SizedBox(height: isSmallScreen ? 12 : 16),
+          Text(
+            'No teams available',
+            style: GoogleFonts.poppins(
+              fontSize: isSmallScreen ? 14 : 16,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey.shade600,
+            ),
+          ),
+          SizedBox(height: isSmallScreen ? 6 : 8),
+          Text(
+            'All teams are already assigned',
+            style: GoogleFonts.poppins(
+              fontSize: isSmallScreen ? 12 : 14,
+              color: Colors.grey.shade500,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+// Team selection item
+  Widget _buildTeamSelectionItem(
+      String teamId, Map<String, dynamic> teamData, bool isSmallScreen) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(isSmallScreen ? 8 : 12),
+        onTap: () {
+          Navigator.pop(context);
+          _showTeamRoleSelectionDialog(
+              teamId, teamData['team_name'], isSmallScreen);
+        },
+        child: Container(
+          padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.blue.shade200),
+            borderRadius: BorderRadius.circular(isSmallScreen ? 8 : 12),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(isSmallScreen ? 8 : 10),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade100,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.groups_rounded,
+                  color: Colors.blue.shade700,
+                  size: isSmallScreen ? 16 : 18,
+                ),
+              ),
+              SizedBox(width: isSmallScreen ? 12 : 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      teamData['team_name'],
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.w500,
+                        fontSize: isSmallScreen ? 14 : 16,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (teamData['team_description'] != null &&
+                        teamData['team_description'].isNotEmpty) ...[
+                      SizedBox(height: 4),
+                      Text(
+                        teamData['team_description'],
+                        style: GoogleFonts.poppins(
+                          fontSize: isSmallScreen ? 11 : 12,
+                          color: Colors.grey.shade600,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: Colors.blue.shade400,
+                size: isSmallScreen ? 20 : 24,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+// Team role selection dialog
+  void _showTeamRoleSelectionDialog(
+      String teamId, String teamName, bool isSmallScreen) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(isSmallScreen ? 16 : 20),
+        ),
+        child: Container(
+          width:
+              MediaQuery.of(context).size.width * (isSmallScreen ? 0.9 : 0.8),
+          padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header
+              Row(
+                children: [
+                  Icon(
+                    Icons.admin_panel_settings_rounded,
+                    color: Colors.blue.shade600,
+                    size: isSmallScreen ? 20 : 24,
+                  ),
+                  SizedBox(width: isSmallScreen ? 8 : 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Select Role',
+                          style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.w600,
+                            fontSize: isSmallScreen ? 16 : 18,
+                          ),
+                        ),
+                        Text(
+                          'for $teamName',
+                          style: GoogleFonts.poppins(
+                            fontSize: isSmallScreen ? 12 : 14,
+                            color: Colors.grey.shade600,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: isSmallScreen ? 16 : 20),
+
+              // Role options
+              ...TeamService.allCoachRoles.map((role) {
+                final isLast = role == TeamService.allCoachRoles.last;
+                return Column(
+                  children: [
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius:
+                            BorderRadius.circular(isSmallScreen ? 8 : 10),
+                        onTap: () {
+                          setState(() {
+                            selectedTeamsForCoach.add({
+                              'id': teamId,
+                              'team_name': teamName,
+                              'role': role,
+                            });
+                          });
+                          Navigator.pop(context);
+                        },
+                        child: Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.blue.shade200),
+                            borderRadius:
+                                BorderRadius.circular(isSmallScreen ? 8 : 10),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: EdgeInsets.all(isSmallScreen ? 6 : 8),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue.shade100,
+                                  borderRadius: BorderRadius.circular(
+                                      isSmallScreen ? 6 : 8),
+                                ),
+                                child: Icon(
+                                  Icons.sports_rounded,
+                                  color: Colors.blue.shade700,
+                                  size: isSmallScreen ? 16 : 18,
+                                ),
+                              ),
+                              SizedBox(width: isSmallScreen ? 12 : 16),
+                              Expanded(
+                                child: Text(
+                                  TeamService.getCoachRoleDisplayName(role),
+                                  style: GoogleFonts.poppins(
+                                    fontSize: isSmallScreen ? 14 : 16,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                              Icon(
+                                Icons.chevron_right_rounded,
+                                color: Colors.grey.shade400,
+                                size: isSmallScreen ? 18 : 20,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (!isLast) SizedBox(height: isSmallScreen ? 8 : 12),
+                  ],
+                );
+              }).toList(),
+
+              SizedBox(height: isSmallScreen ? 16 : 20),
+
+              // Cancel button
+              Container(
+                width: double.infinity,
+                height: isSmallScreen ? 44 : 48,
+                child: TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: TextButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(isSmallScreen ? 8 : 10),
+                    ),
+                  ),
+                  child: Text(
+                    'Cancel',
+                    style: GoogleFonts.poppins(
+                      fontSize: isSmallScreen ? 14 : 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+// PRODUCTION-READY: Updated coach creation method
+  Future<void> _addCoach() async {
+    final l10n = AppLocalizations.of(context)!;
+
+    if (!_formKey.currentState!.validate()) return;
+    _formKey.currentState!.save();
+
+    if (_uploadedImageUrl == null) {
+      _showErrorSnackBar("Please upload an image for the coach.");
+      return;
+    }
+
+    try {
+      // Create coach in Firebase Auth
+      UserCredential userCredential =
+          await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      final String coachUID = userCredential.user!.uid;
+
+      // Prepare teams data for coach
+      final List<Map<String, dynamic>> teamsData = selectedTeamsForCoach
+          .map((team) => {
+                'team_id': team['id'],
+                'team_name': team['team_name'],
+                'role': team['role'],
+                'assigned_at': Timestamp.now(),
+              })
+          .toList();
+
+      // Save coach details in users collection with multiple teams
+      await FirebaseFirestore.instance.collection('users').doc(coachUID).set({
+        "name": name,
+        "email": email,
+        "role": "coach",
+        "role_description": roleDescription,
+        "teams": teamsData, // Multiple teams
+        "primary_team": selectedTeamsForCoach.isNotEmpty
+            ? selectedTeamsForCoach.first['team_name']
+            : null,
+        "team_count": selectedTeamsForCoach.length,
+        "picture": _uploadedImageUrl,
+        "created_at": Timestamp.now(),
+      });
+
+      // Update each team to include this coach
+      if (selectedTeamsForCoach.isNotEmpty) {
+        final batch = FirebaseFirestore.instance.batch();
+
+        for (var teamAssignment in selectedTeamsForCoach) {
+          final teamRef = FirebaseFirestore.instance
+              .collection('teams')
+              .doc(teamAssignment['id']);
+
+          // Add coach to team's coaches array
+          batch.update(teamRef, {
+            'coaches': FieldValue.arrayUnion([
+              {
+                'coach_id': coachUID,
+                'coach_name': name,
+                'role': teamAssignment['role'],
+                'assigned_at': Timestamp.now(),
+              }
+            ]),
+            'coach_count': FieldValue.increment(1),
+          });
+        }
+
+        await batch.commit();
+      }
+
+      final teamCount = selectedTeamsForCoach.length;
+      final message = teamCount > 0
+          ? 'Coach added successfully to $teamCount team(s)!'
+          : 'Coach added successfully!';
+
+      _showSuccessSnackBar(message);
+      Navigator.pop(context);
+    } catch (e) {
+      _showErrorSnackBar('Error adding coach: $e');
+    }
+  }
+
+  Widget _buildSelectedTeamCard(Map<String, dynamic> team, bool isSmallScreen) {
+    return Container(
+      padding: EdgeInsets.all(isSmallScreen ? 10 : 12),
+      decoration: BoxDecoration(
+        color: Colors.green.shade50,
+        borderRadius: BorderRadius.circular(isSmallScreen ? 6 : 8),
+        border: Border.all(color: Colors.green.shade200),
+      ),
+      child: Row(
+        children: [
+          // Team Icon
+          Container(
+            padding: EdgeInsets.all(isSmallScreen ? 6 : 8),
+            decoration: BoxDecoration(
+              color: Colors.green.shade100,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Icon(
+              Icons.groups_rounded,
+              color: Colors.green.shade700,
+              size: isSmallScreen ? 14 : 16,
+            ),
+          ),
+          SizedBox(width: isSmallScreen ? 8 : 12),
+
+          // Team Info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  team['team_name'],
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.w500,
+                    fontSize: isSmallScreen ? 13 : 14,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (team['role'] != null) ...[
+                  SizedBox(height: 2),
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isSmallScreen ? 6 : 8,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.green.shade100,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      TeamService.getCoachRoleDisplayName(team['role']),
+                      style: GoogleFonts.poppins(
+                        fontSize: isSmallScreen ? 10 : 11,
+                        color: Colors.green.shade700,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+
+          // Remove Button
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: () {
+                setState(() {
+                  selectedTeamsForCoach
+                      .removeWhere((t) => t['id'] == team['id']);
+                });
+              },
+              child: Container(
+                padding: EdgeInsets.all(6),
+                child: Icon(
+                  Icons.close_rounded,
+                  color: Colors.red.shade400,
+                  size: isSmallScreen ? 16 : 18,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   List<Widget> _buildPlayerFields(AppLocalizations l10n, bool isSmallScreen) {
@@ -472,37 +1237,711 @@ class _AddEntryDialogState extends State<AddEntryDialog>
     ];
   }
 
+  // PRODUCTION-READY: Enhanced team fields with better validation
   List<Widget> _buildTeamFields(AppLocalizations l10n, bool isSmallScreen) {
     return [
-      // Team Information
+      // Team Information Section
       _buildSectionHeader('Team Information', Icons.groups_rounded),
-      const SizedBox(height: 16),
+      SizedBox(height: isSmallScreen ? 12 : 16),
 
+      // Team Name Field - REQUIRED with validation
       _buildTextField(
         label: l10n.teamName,
         icon: Icons.group_outlined,
-        validator: (value) => value!.isEmpty ? "Enter team name" : null,
+        validator: (value) {
+          if (value == null || value.trim().isEmpty) {
+            return "Team name is required";
+          }
+          if (value.trim().length < 2) {
+            return "Team name must be at least 2 characters";
+          }
+          if (value.trim().length > 30) {
+            return "Team name must be less than 30 characters";
+          }
+          return null;
+        },
         onSaved: (value) => teamName = value!.trim(),
         focusNode: _focusNodes[0],
         nextFocusNode: _focusNodes[1],
       ),
-      const SizedBox(height: 16),
+      SizedBox(height: isSmallScreen ? 12 : 16),
 
+      // Team Description Field - REQUIRED with validation
       _buildTextField(
         label: "Team Description",
         icon: Icons.description_outlined,
-        maxLines: 2,
-        validator: (value) => value!.isEmpty ? "Enter team description" : null,
+        maxLines: isSmallScreen ? 2 : 3,
+        validator: (value) {
+          if (value == null || value.trim().isEmpty) {
+            return "Team description is required";
+          }
+          if (value.trim().length < 10) {
+            return "Description must be at least 10 characters";
+          }
+          if (value.trim().length > 200) {
+            return "Description must be less than 200 characters";
+          }
+          return null;
+        },
         onSaved: (value) => teamDescription = value!.trim(),
         focusNode: _focusNodes[1],
       ),
-      const SizedBox(height: 24),
+      SizedBox(height: isSmallScreen ? 16 : 24),
 
-      // Coach Assignment
+      // Multi-Coach Assignment Section
       _buildSectionHeader('Coach Assignment', Icons.sports_rounded),
-      const SizedBox(height: 16),
-      _buildCoachDropdown(l10n),
+      SizedBox(height: isSmallScreen ? 12 : 16),
+      _buildOptimizedMultiCoachSelector(l10n, isSmallScreen),
     ];
+  }
+
+  // PRODUCTION-READY: Optimized multi-coach selector with better performance
+  Widget _buildOptimizedMultiCoachSelector(
+      AppLocalizations l10n, bool isSmallScreen) {
+    return Container(
+      padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+      decoration: BoxDecoration(
+        color: Colors.orange.shade50,
+        borderRadius: BorderRadius.circular(isSmallScreen ? 8 : 12),
+        border: Border.all(color: Colors.orange.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Selected Coaches Header with count and max indicator
+          Row(
+            children: [
+              Icon(
+                Icons.people_rounded,
+                size: isSmallScreen ? 16 : 18,
+                color: Colors.orange.shade700,
+              ),
+              SizedBox(width: 8),
+              Text(
+                'Assigned Coaches (${selectedCoaches.length})',
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w600,
+                  fontSize: isSmallScreen ? 14 : 16,
+                  color: Colors.orange.shade800,
+                ),
+              ),
+              if (selectedCoaches.length >= 3) ...[
+                SizedBox(width: 8),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade100,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    'MAX',
+                    style: GoogleFonts.poppins(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.green.shade700,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+
+          // Selected Coaches List
+          if (selectedCoaches.isNotEmpty) ...[
+            SizedBox(height: isSmallScreen ? 8 : 12),
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: isSmallScreen ? 140 : 160, // Fixed reasonable height
+              ),
+              child: ListView.separated(
+                shrinkWrap: true,
+                physics: selectedCoaches.length > 2
+                    ? BouncingScrollPhysics()
+                    : NeverScrollableScrollPhysics(),
+                itemCount: selectedCoaches.length,
+                separatorBuilder: (_, __) => SizedBox(height: 6),
+                itemBuilder: (context, index) {
+                  final coach = selectedCoaches[index];
+                  return _buildSelectedCoachCard(coach, isSmallScreen);
+                },
+              ),
+            ),
+          ],
+
+          SizedBox(height: isSmallScreen ? 8 : 12),
+
+          // Add Coach Button with Stream
+          StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('users')
+                .where('role', isEqualTo: 'coach')
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                return _buildLoadingButton(isSmallScreen);
+              }
+
+              final availableCoaches = snapshot.data!.docs
+                  .where((doc) => !selectedCoaches
+                      .any((selected) => selected['id'] == doc.id))
+                  .toList();
+
+              final bool canAddMore =
+                  selectedCoaches.length < 3; // Max 3 coaches per team
+              final bool hasAvailable = availableCoaches.isNotEmpty;
+
+              return _buildAddCoachButton(
+                isEnabled: canAddMore && hasAvailable,
+                availableCoaches: availableCoaches,
+                isSmallScreen: isSmallScreen,
+              );
+            },
+          ),
+
+          // Validation Warning
+          if (selectedCoaches.isEmpty) _buildValidationWarning(isSmallScreen),
+        ],
+      ),
+    );
+  }
+
+  // PRODUCTION-READY: Optimized selected coach card
+  Widget _buildSelectedCoachCard(
+      Map<String, dynamic> coach, bool isSmallScreen) {
+    return Container(
+      padding: EdgeInsets.all(isSmallScreen ? 10 : 12),
+      decoration: BoxDecoration(
+        color: Colors.green.shade50,
+        borderRadius: BorderRadius.circular(isSmallScreen ? 6 : 8),
+        border: Border.all(color: Colors.green.shade200),
+      ),
+      child: Row(
+        children: [
+          // Coach Avatar
+          CircleAvatar(
+            radius: isSmallScreen ? 14 : 16,
+            backgroundColor: Colors.green.shade100,
+            child: Text(
+              coach['name'].substring(0, 1).toUpperCase(),
+              style: TextStyle(
+                color: Colors.green.shade700,
+                fontWeight: FontWeight.w600,
+                fontSize: isSmallScreen ? 10 : 12,
+              ),
+            ),
+          ),
+          SizedBox(width: isSmallScreen ? 8 : 12),
+
+          // Coach Info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  coach['name'],
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.w500,
+                    fontSize: isSmallScreen ? 13 : 14,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(height: 2),
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isSmallScreen ? 6 : 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade100,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    TeamService.getCoachRoleDisplayName(coach['role']),
+                    style: GoogleFonts.poppins(
+                      fontSize: isSmallScreen ? 10 : 11,
+                      color: Colors.green.shade700,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Remove Button
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: () {
+                setState(() {
+                  selectedCoaches.removeWhere((c) => c['id'] == coach['id']);
+                });
+              },
+              child: Container(
+                padding: EdgeInsets.all(6),
+                child: Icon(
+                  Icons.close_rounded,
+                  color: Colors.red.shade400,
+                  size: isSmallScreen ? 16 : 18,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // PRODUCTION-READY: Add coach button with proper state management
+  Widget _buildAddCoachButton({
+    required bool isEnabled,
+    required List<QueryDocumentSnapshot> availableCoaches,
+    required bool isSmallScreen,
+  }) {
+    String buttonText;
+    if (!isEnabled && selectedCoaches.length >= 3) {
+      buttonText = 'Maximum coaches assigned';
+    } else if (!isEnabled && availableCoaches.isEmpty) {
+      buttonText = selectedCoaches.isEmpty
+          ? 'No coaches available'
+          : 'All coaches assigned';
+    } else {
+      buttonText = 'Add Coach';
+    }
+
+    return Container(
+      width: double.infinity,
+      height: isSmallScreen ? 44 : 48,
+      child: OutlinedButton.icon(
+        onPressed: isEnabled
+            ? () => _showCoachSelectionDialog(availableCoaches, isSmallScreen)
+            : null,
+        icon: Icon(
+          isEnabled ? Icons.person_add : Icons.info_outline,
+          size: isSmallScreen ? 18 : 20,
+        ),
+        label: Text(
+          buttonText,
+          style: GoogleFonts.poppins(
+            fontSize: isSmallScreen ? 13 : 15,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        style: OutlinedButton.styleFrom(
+          foregroundColor:
+              isEnabled ? Colors.blue.shade600 : Colors.grey.shade500,
+          side: BorderSide(
+              color: isEnabled ? Colors.blue.shade300 : Colors.grey.shade300),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(isSmallScreen ? 8 : 10),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // PRODUCTION-READY: Loading state for add button
+  Widget _buildLoadingButton(bool isSmallScreen) {
+    return Container(
+      width: double.infinity,
+      height: isSmallScreen ? 44 : 48,
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(isSmallScreen ? 8 : 10),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: isSmallScreen ? 16 : 20,
+            height: isSmallScreen ? 16 : 20,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+          SizedBox(width: 8),
+          Text(
+            'Loading coaches...',
+            style: GoogleFonts.poppins(
+              fontSize: isSmallScreen ? 13 : 15,
+              color: Colors.grey.shade600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // PRODUCTION-READY: Validation warning widget
+  Widget _buildValidationWarning(bool isSmallScreen) {
+    return Padding(
+      padding: EdgeInsets.only(top: isSmallScreen ? 8 : 12),
+      child: Row(
+        children: [
+          Icon(
+            Icons.warning_rounded,
+            size: isSmallScreen ? 14 : 16,
+            color: Colors.red.shade600,
+          ),
+          SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              'At least one coach must be assigned to create a team',
+              style: GoogleFonts.poppins(
+                fontSize: isSmallScreen ? 11 : 12,
+                color: Colors.red.shade600,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // PRODUCTION-READY: Optimized coach selection dialog
+  void _showCoachSelectionDialog(
+      List<QueryDocumentSnapshot> availableCoaches, bool isSmallScreen) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final dialogHeight = (screenHeight * 0.6).clamp(300.0, 500.0);
+
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(isSmallScreen ? 16 : 20),
+        ),
+        child: Container(
+          width:
+              MediaQuery.of(context).size.width * (isSmallScreen ? 0.9 : 0.8),
+          height: dialogHeight,
+          child: Column(
+            children: [
+              // Header
+              Container(
+                padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(isSmallScreen ? 16 : 20),
+                    topRight: Radius.circular(isSmallScreen ? 16 : 20),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.person_search_rounded,
+                      color: Colors.blue.shade600,
+                      size: isSmallScreen ? 20 : 24,
+                    ),
+                    SizedBox(width: isSmallScreen ? 8 : 12),
+                    Expanded(
+                      child: Text(
+                        'Select Coach to Add',
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w600,
+                          fontSize: isSmallScreen ? 16 : 18,
+                          color: Colors.blue.shade800,
+                        ),
+                      ),
+                    ),
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(20),
+                        onTap: () => Navigator.pop(context),
+                        child: Container(
+                          padding: EdgeInsets.all(8),
+                          child: Icon(
+                            Icons.close_rounded,
+                            size: isSmallScreen ? 20 : 24,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Coaches List
+              Expanded(
+                child: availableCoaches.isEmpty
+                    ? _buildEmptyCoachesState(isSmallScreen)
+                    : ListView.separated(
+                        padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+                        physics: BouncingScrollPhysics(),
+                        itemCount: availableCoaches.length,
+                        separatorBuilder: (context, index) =>
+                            SizedBox(height: 8),
+                        itemBuilder: (context, index) {
+                          final coach = availableCoaches[index];
+                          final coachData =
+                              coach.data() as Map<String, dynamic>;
+                          return _buildCoachSelectionItem(
+                              coach.id, coachData, isSmallScreen);
+                        },
+                      ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Empty coaches state
+  Widget _buildEmptyCoachesState(bool isSmallScreen) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.person_off_rounded,
+            size: isSmallScreen ? 48 : 64,
+            color: Colors.grey.shade400,
+          ),
+          SizedBox(height: isSmallScreen ? 12 : 16),
+          Text(
+            'No coaches available',
+            style: GoogleFonts.poppins(
+              fontSize: isSmallScreen ? 14 : 16,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey.shade600,
+            ),
+          ),
+          SizedBox(height: isSmallScreen ? 6 : 8),
+          Text(
+            'All coaches are already assigned',
+            style: GoogleFonts.poppins(
+              fontSize: isSmallScreen ? 12 : 14,
+              color: Colors.grey.shade500,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Responsive coach selection item
+  Widget _buildCoachSelectionItem(
+      String coachId, Map<String, dynamic> coachData, bool isSmallScreen) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(isSmallScreen ? 8 : 12),
+        onTap: () {
+          Navigator.pop(context);
+          _showRoleSelectionDialog(coachId, coachData['name'], isSmallScreen);
+        },
+        child: Container(
+          padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.blue.shade200),
+            borderRadius: BorderRadius.circular(isSmallScreen ? 8 : 12),
+          ),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: isSmallScreen ? 18 : 22,
+                backgroundColor: Colors.blue.shade100,
+                child: Text(
+                  coachData['name'].substring(0, 1).toUpperCase(),
+                  style: TextStyle(
+                    color: Colors.blue.shade700,
+                    fontWeight: FontWeight.w600,
+                    fontSize: isSmallScreen ? 12 : 14,
+                  ),
+                ),
+              ),
+              SizedBox(width: isSmallScreen ? 12 : 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      coachData['name'],
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.w500,
+                        fontSize: isSmallScreen ? 14 : 16,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (coachData['email'] != null &&
+                        coachData['email'].isNotEmpty) ...[
+                      SizedBox(height: 4),
+                      Text(
+                        coachData['email'],
+                        style: GoogleFonts.poppins(
+                          fontSize: isSmallScreen ? 11 : 12,
+                          color: Colors.grey.shade600,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: Colors.blue.shade400,
+                size: isSmallScreen ? 20 : 24,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Responsive role selection dialog
+  void _showRoleSelectionDialog(
+      String coachId, String coachName, bool isSmallScreen) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(isSmallScreen ? 16 : 20),
+        ),
+        child: Container(
+          width:
+              MediaQuery.of(context).size.width * (isSmallScreen ? 0.9 : 0.8),
+          padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header
+              Row(
+                children: [
+                  Icon(
+                    Icons.admin_panel_settings_rounded,
+                    color: Colors.orange.shade600,
+                    size: isSmallScreen ? 20 : 24,
+                  ),
+                  SizedBox(width: isSmallScreen ? 8 : 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Select Role',
+                          style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.w600,
+                            fontSize: isSmallScreen ? 16 : 18,
+                          ),
+                        ),
+                        Text(
+                          'for $coachName',
+                          style: GoogleFonts.poppins(
+                            fontSize: isSmallScreen ? 12 : 14,
+                            color: Colors.grey.shade600,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: isSmallScreen ? 16 : 20),
+
+              // Role options
+              ...TeamService.allCoachRoles.map((role) {
+                final isLast = role == TeamService.allCoachRoles.last;
+                return Column(
+                  children: [
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius:
+                            BorderRadius.circular(isSmallScreen ? 8 : 10),
+                        onTap: () {
+                          setState(() {
+                            selectedCoaches.add({
+                              'id': coachId,
+                              'name': coachName,
+                              'role': role,
+                            });
+                          });
+                          Navigator.pop(context);
+                        },
+                        child: Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.orange.shade200),
+                            borderRadius:
+                                BorderRadius.circular(isSmallScreen ? 8 : 10),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: EdgeInsets.all(isSmallScreen ? 6 : 8),
+                                decoration: BoxDecoration(
+                                  color: Colors.orange.shade100,
+                                  borderRadius: BorderRadius.circular(
+                                      isSmallScreen ? 6 : 8),
+                                ),
+                                child: Icon(
+                                  Icons.sports_rounded,
+                                  color: Colors.orange.shade700,
+                                  size: isSmallScreen ? 16 : 18,
+                                ),
+                              ),
+                              SizedBox(width: isSmallScreen ? 12 : 16),
+                              Expanded(
+                                child: Text(
+                                  TeamService.getCoachRoleDisplayName(role),
+                                  style: GoogleFonts.poppins(
+                                    fontSize: isSmallScreen ? 14 : 16,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                              Icon(
+                                Icons.chevron_right_rounded,
+                                color: Colors.grey.shade400,
+                                size: isSmallScreen ? 18 : 20,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (!isLast) SizedBox(height: isSmallScreen ? 8 : 12),
+                  ],
+                );
+              }).toList(),
+
+              SizedBox(height: isSmallScreen ? 16 : 20),
+
+              // Cancel button
+              Container(
+                width: double.infinity,
+                height: isSmallScreen ? 44 : 48,
+                child: TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: TextButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(isSmallScreen ? 8 : 10),
+                    ),
+                  ),
+                  child: Text(
+                    'Cancel',
+                    style: GoogleFonts.poppins(
+                      fontSize: isSmallScreen ? 14 : 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildSectionHeader(String title, IconData icon) {
@@ -783,78 +2222,6 @@ class _AddEntryDialogState extends State<AddEntryDialog>
     );
   }
 
-  Widget _buildCoachDropdown(AppLocalizations l10n) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('users')
-          .where('role', isEqualTo: 'coach')
-          .snapshots(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade300),
-            ),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  'Loading coaches...',
-                  style: GoogleFonts.poppins(color: Colors.grey.shade600),
-                ),
-              ],
-            ),
-          );
-        }
-
-        List<DropdownMenuItem<String>> coachItems =
-            snapshot.data!.docs.map<DropdownMenuItem<String>>((doc) {
-          final coachName = doc['name'];
-          final coachId = doc.id;
-          return DropdownMenuItem<String>(
-            value: coachId,
-            child: Text(
-              coachName,
-              style: GoogleFonts.poppins(),
-            ),
-          );
-        }).toList();
-
-        return Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade300),
-          ),
-          child: DropdownButtonFormField<String>(
-            decoration: InputDecoration(
-              labelText: l10n.assignCoach,
-              labelStyle: GoogleFonts.poppins(color: Colors.grey.shade600),
-              prefixIcon: Icon(Icons.person_outline_rounded,
-                  color: Colors.grey.shade500),
-              border: InputBorder.none,
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            ),
-            items: coachItems,
-            onChanged: (value) => selectedCoachForTeam = value,
-            dropdownColor: Colors.white,
-            style: GoogleFonts.poppins(color: Colors.grey.shade800),
-          ),
-        );
-      },
-    );
-  }
-
   Widget _buildImageSection(AppLocalizations l10n) {
     return Column(
       children: [
@@ -1085,62 +2452,6 @@ class _AddEntryDialogState extends State<AddEntryDialog>
     }
   }
 
-  Future<void> _addCoach() async {
-    final l10n = AppLocalizations.of(context)!;
-
-    if (!_formKey.currentState!.validate()) return;
-    _formKey.currentState!.save();
-
-    if (_uploadedImageUrl == null) {
-      _showErrorSnackBar("Please upload an image for the coach.");
-      return;
-    }
-
-    try {
-      // Create coach in Firebase Auth
-      UserCredential userCredential =
-          await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-
-      final String coachUID = userCredential.user!.uid;
-
-      // Save coach details in users collection
-      await FirebaseFirestore.instance.collection('users').doc(coachUID).set({
-        "name": name,
-        "email": email,
-        "role": "coach",
-        "role_description": roleDescription,
-        "team": selectedTeamForCoach ?? "Unassigned",
-        "picture": _uploadedImageUrl,
-        "created_at": Timestamp.now(),
-      });
-
-      // Update the selected team with coach UID
-      if (selectedTeamForCoach != null) {
-        final teamSnapshot = await FirebaseFirestore.instance
-            .collection('teams')
-            .where('team_name', isEqualTo: selectedTeamForCoach)
-            .limit(1)
-            .get();
-
-        if (teamSnapshot.docs.isNotEmpty) {
-          final teamDocId = teamSnapshot.docs.first.id;
-          await FirebaseFirestore.instance
-              .collection('teams')
-              .doc(teamDocId)
-              .update({'coach': coachUID});
-        }
-      }
-
-      _showSuccessSnackBar('Coach added successfully!');
-      Navigator.pop(context);
-    } catch (e) {
-      _showErrorSnackBar('Error adding coach: $e');
-    }
-  }
-
   Future<void> _addPlayer() async {
     final l10n = AppLocalizations.of(context)!;
 
@@ -1196,25 +2507,79 @@ class _AddEntryDialogState extends State<AddEntryDialog>
     }
   }
 
+  // PRODUCTION-READY: Enhanced team creation with multi-coach support
   Future<void> _addTeam() async {
     final l10n = AppLocalizations.of(context)!;
 
+    // Form validation
     if (!_formKey.currentState!.validate()) return;
     _formKey.currentState!.save();
 
+    // Critical validation: At least one coach required
+    if (selectedCoaches.isEmpty) {
+      _showErrorSnackBar("At least one coach must be assigned to the team.");
+      return;
+    }
+
+    String? teamDocId;
+
     try {
-      await FirebaseFirestore.instance.collection('teams').add({
-        "team_name": teamName,
-        "team_description": teamDescription,
+      // Prepare coaches data for storage
+      final List<Map<String, dynamic>> coachesData = selectedCoaches
+          .map((coach) => {
+                'coach_id': coach['id'],
+                'coach_name': coach['name'],
+                'role': coach['role'],
+                'assigned_at': Timestamp.now(),
+              })
+          .toList();
+
+      // Create team document with all coaches
+      final teamRef = await FirebaseFirestore.instance.collection('teams').add({
+        "team_name": teamName.trim(),
+        "team_description": teamDescription.trim(),
         "number_of_players": 0,
-        "coach": selectedCoachForTeam ?? "",
+        "coaches": coachesData,
+        "primary_coach": selectedCoaches.first['id'], // First coach is primary
+        "coach_count": selectedCoaches.length,
         "created_at": Timestamp.now(),
       });
 
-      _showSuccessSnackBar('Team created successfully!');
+      teamDocId = teamRef.id;
+
+      // Update all coach documents in a single batch
+      final batch = FirebaseFirestore.instance.batch();
+
+      for (var coach in selectedCoaches) {
+        final coachRef =
+            FirebaseFirestore.instance.collection('users').doc(coach['id']);
+        batch.update(coachRef, {
+          'team': teamName.trim(),
+          'team_id': teamDocId,
+          'team_role': coach['role'],
+        });
+      }
+
+      await batch.commit();
+
+      _showSuccessSnackBar(
+          'Team "${teamName.trim()}" created with ${selectedCoaches.length} coach(es)!');
       Navigator.pop(context);
     } catch (e) {
-      _showErrorSnackBar('Error adding team: $e');
+      // Critical: Rollback team creation if coach updates fail
+      if (teamDocId != null) {
+        try {
+          await FirebaseFirestore.instance
+              .collection('teams')
+              .doc(teamDocId)
+              .delete();
+        } catch (rollbackError) {
+          print('Rollback failed: $rollbackError');
+        }
+      }
+
+      _showErrorSnackBar('Failed to create team. Please try again.');
+      print('Team creation error: $e'); // For debugging
     }
   }
 
