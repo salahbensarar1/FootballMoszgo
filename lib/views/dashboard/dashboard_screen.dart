@@ -2,6 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:footballtraining/data/models/team_model.dart';
+import 'package:footballtraining/data/models/user_model.dart';
+import 'package:footballtraining/data/repositories/team_service.dart';
 import 'package:footballtraining/views/admin/reports/session_report_screen.dart';
 
 import 'package:google_fonts/google_fonts.dart';
@@ -603,6 +606,25 @@ class _DashboardScreenState extends State<DashboardScreen>
             ),
           ),
           const SizedBox(height: 16),
+
+          //THIS TEST BUTTON HERE (TEMPORARY)
+          Container(
+            width: double.infinity,
+            margin: EdgeInsets.only(bottom: 12),
+            child: ElevatedButton(
+              onPressed: _testModels,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.purple.shade600,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text('🧪 Test Models'),
+            ),
+          ),
+          //END TEST BUTTON
+
           Row(
             children: [
               Expanded(
@@ -636,6 +658,48 @@ class _DashboardScreenState extends State<DashboardScreen>
       ),
     );
   }
+
+//  method to test the models
+  Future<void> _testModels() async {
+    try {
+      print('🧪 Testing models...');
+
+      // Test Team model
+      final teamsSnapshot =
+          await FirebaseFirestore.instance.collection('teams').limit(1).get();
+
+      if (teamsSnapshot.docs.isNotEmpty) {
+        final team = Team.fromFirestore(teamsSnapshot.docs.first);
+        print('✅ Team model works: ${team.teamName}');
+        print('✅ Coach ID: ${team.singleCoachId}');
+        print('✅ Active coaches: ${team.activeCoachIds}');
+      }
+
+      // Test User model
+      final usersSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .where('role', isEqualTo: 'coach')
+          .limit(1)
+          .get();
+
+      if (usersSnapshot.docs.isNotEmpty) {
+        final user = User.fromFirestore(usersSnapshot.docs.first);
+        print('✅ User model works: ${user.name}');
+        print('✅ Role: ${user.displayRole}');
+        print('✅ Is Coach: ${user.isCoach}');
+      }
+
+      // Test TeamService
+      final teamService = TeamService();
+      final coaches = await teamService.getAvailableCoaches();
+      print('✅ TeamService works: ${coaches.length} coaches found');
+
+      print('🎉 All models working perfectly!');
+    } catch (e) {
+      print('❌ Model test failed: $e');
+    }
+  }
+//*******************************************************************************************************************************************************/
 
   Widget _buildQuickActionCard({
     required String title,

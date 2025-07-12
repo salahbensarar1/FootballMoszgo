@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:footballtraining/views/login/login_page.dart';
 import 'package:intl/intl.dart';
+import 'package:footballtraining/data/models/team_model.dart';
 
 class CoachScreen extends StatefulWidget {
   const CoachScreen({super.key});
@@ -435,15 +436,28 @@ class _CoachScreenState extends State<CoachScreen> {
                       StreamBuilder<QuerySnapshot>(
                         stream: FirebaseFirestore.instance
                             .collection('teams')
-                            .where('coach', isEqualTo: coachUid)
                             .snapshots(),
                         builder: (context, snapshot) {
                           if (!snapshot.hasData)
                             return CircularProgressIndicator();
-
+                          final myTeams = snapshot.data!.docs.where((doc) {
+                            try {
+                              final team =
+                                  Team.fromFirestore(doc); // Use new model
+                              return team.activeCoachIds
+                                  .contains(coachUid); // Multi-coach support
+                            } catch (e) {
+                              // Fallback to old structure if team model fails
+                              final data = doc.data() as Map<String, dynamic>;
+                              return data['coach'] == coachUid;
+                            }
+                          }).toList();
                           List<DropdownMenuItem<String>> teamItems =
-                              snapshot.data!.docs.map((doc) {
-                            final teamName = doc['team_name'];
+                              myTeams.map((doc) {
+                            final data = doc.data()
+                                as Map<String, dynamic>; // Convert to Map first
+                            final teamName = data['team_name'] ??
+                                'Unknown Team'; // Get team name safely
                             return DropdownMenuItem<String>(
                               value: teamName,
                               child: Text(

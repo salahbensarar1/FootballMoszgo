@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:footballtraining/views/login/login_page.dart';
 import 'package:footballtraining/views/receptionist/dialogs/add_entry_dialog.dart';
+import 'package:footballtraining/views/receptionist/dialogs/coach_assignment_dialog.dart';
 import 'package:footballtraining/views/receptionist/payment_overview_screen.dart';
 import 'package:footballtraining/views/shared/widgets/payment_month_indicator.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -1540,46 +1541,64 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                 ],
                 if (currentTab == 2) ...[
                   const SizedBox(height: 16),
-                  StreamBuilder<QuerySnapshot>(
-                    stream: FirebaseFirestore.instance
-                        .collection('users')
-                        .where('role', isEqualTo: 'coach')
-                        .snapshots(),
-                    builder: (context, snapshot) {
-                      if (!snapshot.hasData) {
-                        return const CircularProgressIndicator();
-                      }
-
-                      final coachItems = snapshot.data!.docs.map((doc) {
-                        final coachName = doc['name'];
-                        final coachId = doc.id;
-                        return DropdownMenuItem<String>(
-                          value: coachId,
-                          child: Text(coachName),
-                        );
-                      }).toList();
-
-                      return Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey.shade300),
-                          borderRadius: BorderRadius.circular(12),
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade300),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.people_outline,
+                                color: Colors.blue.shade600),
+                            SizedBox(width: 8),
+                            Text(
+                              'Coaches Management',
+                              style: GoogleFonts.poppins(
+                                  fontWeight: FontWeight.w500),
+                            ),
+                          ],
                         ),
-                        child: DropdownButtonFormField<String>(
-                          value:
-                              selectedCoach.isNotEmpty ? selectedCoach : null,
-                          items: coachItems,
-                          onChanged: (value) => selectedCoach = value!,
-                          decoration: InputDecoration(
-                            labelText: "Assign Coach",
-                            prefixIcon: Icon(Icons.person_rounded,
-                                color: Colors.grey.shade600),
-                            border: InputBorder.none,
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 12),
+                        SizedBox(height: 12),
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.pop(context); // Close current dialog
+                            showDialog(
+                              context: context,
+                              builder: (context) => CoachAssignmentDialog(
+                                teamId: doc.id,
+                                teamName: data['team_name'] ?? 'Unknown Team',
+                                onChanged: () {
+                                  // Refresh the data when coaches are changed
+                                  setState(() {});
+                                },
+                              ),
+                            );
+                          },
+                          icon: Icon(Icons.group_add_rounded),
+                          label: Text('Manage Team Coaches'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue.shade600,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                           ),
                         ),
-                      );
-                    },
+                        SizedBox(height: 8),
+                        Text(
+                          'Assign multiple coaches with different roles',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ],
