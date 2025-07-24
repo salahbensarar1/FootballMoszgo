@@ -1,9 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:footballtraining/views/admin/admin_screen.dart';
 import 'package:footballtraining/views/coach/coach_screen.dart';
 import 'package:footballtraining/views/receptionist/receptionist_screen.dart';
+import 'package:footballtraining/utils/responsive_utils.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class Loginpage extends StatefulWidget {
@@ -14,73 +16,31 @@ class Loginpage extends StatefulWidget {
 }
 
 class _LoginpageState extends State<Loginpage> with TickerProviderStateMixin {
+  // Controllers
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
-  bool isLoading = false;
-  bool _obscurePassword = true;
-  bool _emailFocused = false;
-  bool _passwordFocused = false;
-
+  // Animation Controllers
   late AnimationController _animationController;
   late AnimationController _pulseController;
+
+  // Animations
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
   late Animation<double> _scaleAnimation;
   late Animation<double> _pulseAnimation;
 
+  // State
+  bool isLoading = false;
+  bool _obscurePassword = true;
+  bool _emailFocused = false;
+  bool _passwordFocused = false;
+
   @override
   void initState() {
     super.initState();
     _setupAnimations();
-  }
-
-  void _setupAnimations() {
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 1500),
-      vsync: this,
-    );
-
-    _pulseController = AnimationController(
-      duration: const Duration(milliseconds: 2000),
-      vsync: this,
-    );
-
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: const Interval(0.0, 0.5, curve: Curves.easeOut),
-    ));
-
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.5),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: const Interval(0.3, 0.8, curve: Curves.elasticOut),
-    ));
-
-    _scaleAnimation = Tween<double>(
-      begin: 0.8,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: const Interval(0.5, 1.0, curve: Curves.elasticOut),
-    ));
-
-    _pulseAnimation = Tween<double>(
-      begin: 1.0,
-      end: 1.05,
-    ).animate(CurvedAnimation(
-      parent: _pulseController,
-      curve: Curves.easeInOut,
-    ));
-
-    _animationController.forward();
-    _pulseController.repeat(reverse: true);
   }
 
   @override
@@ -92,70 +52,137 @@ class _LoginpageState extends State<Loginpage> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  Future<void> loginUser() async {
+  void _setupAnimations() {
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 1200),
+      vsync: this,
+    );
+
+    _pulseController = AnimationController(
+      duration: const Duration(milliseconds: 2000),
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
+      ),
+    );
+
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.5), end: Offset.zero).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.3, 0.9, curve: Curves.elasticOut),
+      ),
+    );
+
+    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.5, 1.0, curve: Curves.elasticOut),
+      ),
+    );
+
+    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.05).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+
+    _animationController.forward();
+    _pulseController.repeat(reverse: true);
+  }
+
+  Future<void> _loginUser() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() {
-      isLoading = true;
-    });
+    setState(() => isLoading = true);
+    HapticFeedback.lightImpact();
 
     try {
-      FirebaseAuth auth = FirebaseAuth.instance;
-      UserCredential userCredential = await auth.signInWithEmailAndPassword(
+      // Sign in with Firebase Auth
+      final userCredential =
+          await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
       );
 
-      User? user = userCredential.user;
+      final user = userCredential.user;
+      if (user == null) throw Exception("Authentication failed");
 
-      if (user != null) {
-        QuerySnapshot userQuery = await FirebaseFirestore.instance
-            .collection('users')
-            .where('email', isEqualTo: user.email)
-            .limit(1)
-            .get();
+      // Get user role from Firestore
+      final userQuery = await FirebaseFirestore.instance
+          .collection('users')
+          .where('email', isEqualTo: user.email)
+          .limit(1)
+          .get();
 
-        if (userQuery.docs.isEmpty) {
-          throw Exception("User not found in Firestore.");
-        }
+      if (userQuery.docs.isEmpty) {
+        throw Exception("User not found in database");
+      }
 
-        DocumentSnapshot userDoc = userQuery.docs.first;
+      final userDoc = userQuery.docs.first;
+      final userData = userDoc.data();
+      final role = userData['role'];
 
-        if (!userDoc.data().toString().contains("role")) {
-          throw Exception("Role field missing in Firestore.");
-        }
+      if (role == null) throw Exception("User role not defined");
 
-        String role = userDoc['role'];
+      // Navigate based on role
+      Widget destination;
+      switch (role) {
+        case 'admin':
+          destination = const AdminScreen();
+          break;
+        case 'receptionist':
+          destination = const ReceptionistScreen();
+          break;
+        case 'coach':
+          destination = const CoachScreen();
+          break;
+        default:
+          throw Exception("Unauthorized role: $role");
+      }
 
-        if (role == 'admin') {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const AdminScreen()),
-          );
-        } else if (role == 'receptionist') {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const ReceptionistScreen()),
-          );
-        } else if (role == 'coach') {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const CoachScreen()),
-          );
-        } else {
-          _showErrorSnackBar("Unauthorized role: $role");
-        }
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                destination,
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+              return FadeTransition(opacity: animation, child: child);
+            },
+            transitionDuration: const Duration(milliseconds: 300),
+          ),
+        );
       }
     } catch (e) {
-      _showErrorSnackBar("Login failed: $e");
+      if (mounted) {
+        _showErrorMessage(_getErrorMessage(e.toString()));
+      }
     } finally {
-      setState(() {
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
     }
   }
 
-  void _showErrorSnackBar(String message) {
+  String _getErrorMessage(String error) {
+    final l10n = AppLocalizations.of(context)!;
+    if (error.contains('user-not-found'))
+      return l10n.userNotFound;
+    if (error.contains('wrong-password')) return l10n.wrongPassword;
+    if (error.contains('invalid-email')) return l10n.invalidEmail;
+    if (error.contains('user-disabled')) return l10n.userDisabled;
+    if (error.contains('too-many-requests'))
+      return l10n.tooManyRequests;
+    if (error.contains('network-request-failed'))
+      return l10n.networkError;
+    return l10n.loginFailed;
+  }
+
+  void _showErrorMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -167,19 +194,21 @@ class _LoginpageState extends State<Loginpage> with TickerProviderStateMixin {
         ),
         backgroundColor: Colors.red.shade600,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final screenSize = MediaQuery.of(context).size;
-    final isSmallScreen = screenSize.width < 600;
+    final size = ResponsiveUtils.getScreenSize(context);
+    final isMobile = ResponsiveUtils.isMobile(context);
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       body: Container(
-        height: screenSize.height,
+        height: size.height,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
@@ -199,31 +228,53 @@ class _LoginpageState extends State<Loginpage> with TickerProviderStateMixin {
               return SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
                 child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minHeight: constraints.maxHeight,
-                  ),
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
                   child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: isSmallScreen ? 20 : 40,
-                      vertical: 20,
+                    padding: ResponsiveUtils.getPadding(context,
+                      mobile: 20.0,
+                      tablet: 40.0,
+                      desktop: 60.0,
                     ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // Logo and Title Section
                         FadeTransition(
                           opacity: _fadeAnimation,
-                          child: _buildHeaderSection(context, isSmallScreen),
+                          child: _buildHeader(isMobile, l10n),
                         ),
-
-                        SizedBox(height: isSmallScreen ? 40 : 60),
-
-                        // Login Form
-                        SlideTransition(
-                          position: _slideAnimation,
-                          child: ScaleTransition(
-                            scale: _scaleAnimation,
-                            child: _buildLoginForm(context, isSmallScreen),
+                        SizedBox(height: ResponsiveUtils.getSpacing(context,
+                          mobile: 40.0,
+                          tablet: 60.0,
+                          desktop: 80.0,
+                        )),
+                        ResponsiveUtils.responsiveLayout(
+                          context: context,
+                          mobile: SlideTransition(
+                            position: _slideAnimation,
+                            child: ScaleTransition(
+                              scale: _scaleAnimation,
+                              child: _buildLoginForm(isMobile, l10n),
+                            ),
+                          ),
+                          tablet: Container(
+                            width: ResponsiveUtils.getWidthPercentage(context, tablet: 0.6),
+                            child: SlideTransition(
+                              position: _slideAnimation,
+                              child: ScaleTransition(
+                                scale: _scaleAnimation,
+                                child: _buildLoginForm(false, l10n),
+                              ),
+                            ),
+                          ),
+                          desktop: Container(
+                            width: ResponsiveUtils.getWidthPercentage(context, desktop: 0.4),
+                            child: SlideTransition(
+                              position: _slideAnimation,
+                              child: ScaleTransition(
+                                scale: _scaleAnimation,
+                                child: _buildLoginForm(false, l10n),
+                              ),
+                            ),
                           ),
                         ),
                       ],
@@ -238,10 +289,10 @@ class _LoginpageState extends State<Loginpage> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildHeaderSection(BuildContext context, bool isSmallScreen) {
+  Widget _buildHeader(bool isSmallScreen, AppLocalizations l10n) {
     return Column(
       children: [
-        // Football/Sports Icon with Pulse Animation
+        // Animated Logo
         AnimatedBuilder(
           animation: _pulseAnimation,
           builder: (context, child) {
@@ -270,12 +321,11 @@ class _LoginpageState extends State<Loginpage> with TickerProviderStateMixin {
             );
           },
         ),
-
         SizedBox(height: isSmallScreen ? 20 : 30),
 
         // App Title
         Text(
-          "Football Training",
+          l10n.appTitle,
           style: TextStyle(
             fontSize: isSmallScreen ? 28 : 36,
             fontWeight: FontWeight.bold,
@@ -290,11 +340,9 @@ class _LoginpageState extends State<Loginpage> with TickerProviderStateMixin {
             ],
           ),
         ),
-
         SizedBox(height: isSmallScreen ? 8 : 12),
-
         Text(
-          AppLocalizations.of(context)!.welcomeBack,
+          l10n.welcomeBack,
           style: TextStyle(
             fontSize: isSmallScreen ? 16 : 18,
             color: Colors.white.withOpacity(0.9),
@@ -305,11 +353,10 @@ class _LoginpageState extends State<Loginpage> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildLoginForm(BuildContext context, bool isSmallScreen) {
+  Widget _buildLoginForm(bool isSmallScreen, AppLocalizations l10n) {
     return Container(
-      constraints: BoxConstraints(
-        maxWidth: isSmallScreen ? double.infinity : 400,
-      ),
+      constraints:
+          BoxConstraints(maxWidth: isSmallScreen ? double.infinity : 400),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(isSmallScreen ? 20 : 30),
@@ -329,9 +376,9 @@ class _LoginpageState extends State<Loginpage> with TickerProviderStateMixin {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Login Title
+              // Form Title
               Text(
-                AppLocalizations.of(context)!.login,
+                l10n.login,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: isSmallScreen ? 24 : 28,
@@ -339,26 +386,22 @@ class _LoginpageState extends State<Loginpage> with TickerProviderStateMixin {
                   color: const Color(0xFF2D3748),
                 ),
               ),
-
               SizedBox(height: isSmallScreen ? 30 : 40),
 
               // Email Field
-              _buildEmailField(context),
-
+              _buildEmailField(l10n),
               SizedBox(height: isSmallScreen ? 16 : 20),
 
               // Password Field
-              _buildPasswordField(context),
-
+              _buildPasswordField(l10n),
               SizedBox(height: isSmallScreen ? 30 : 40),
 
               // Login Button
-              _buildLoginButton(context, isSmallScreen),
-
+              _buildLoginButton(isSmallScreen, l10n),
               SizedBox(height: isSmallScreen ? 20 : 24),
 
-              // Admin Management Button
-              _buildAdminButton(context),
+              // Admin Button
+              _buildAdminButton(l10n),
             ],
           ),
         ),
@@ -366,7 +409,7 @@ class _LoginpageState extends State<Loginpage> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildEmailField(BuildContext context) {
+  Widget _buildEmailField(AppLocalizations l10n) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       decoration: BoxDecoration(
@@ -381,7 +424,7 @@ class _LoginpageState extends State<Loginpage> with TickerProviderStateMixin {
                   color: const Color(0xFF667eea).withOpacity(0.1),
                   blurRadius: 8,
                   spreadRadius: 2,
-                )
+                ),
               ]
             : [],
       ),
@@ -389,21 +432,21 @@ class _LoginpageState extends State<Loginpage> with TickerProviderStateMixin {
         controller: emailController,
         keyboardType: TextInputType.emailAddress,
         textInputAction: TextInputAction.next,
-        onChanged: (value) => setState(() {}),
+        autofillHints: const [AutofillHints.email],
+        onChanged: (_) => setState(() {}),
         onTap: () => setState(() => _emailFocused = true),
         onFieldSubmitted: (_) => setState(() => _emailFocused = false),
         onEditingComplete: () => setState(() => _emailFocused = false),
         validator: (value) {
-          if (value == null || value.isEmpty) {
-            return 'Please enter your email';
-          }
-          if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-            return 'Please enter a valid email';
+          final l10n = AppLocalizations.of(context)!;
+          if (value?.isEmpty ?? true) return l10n.pleaseEnterEmail;
+          if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value!)) {
+            return l10n.pleaseEnterValidEmail;
           }
           return null;
         },
         decoration: InputDecoration(
-          hintText: AppLocalizations.of(context)!.email,
+          hintText: l10n.email,
           hintStyle: TextStyle(color: Colors.grey.shade500),
           prefixIcon: Icon(
             Icons.email_outlined,
@@ -418,7 +461,7 @@ class _LoginpageState extends State<Loginpage> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildPasswordField(BuildContext context) {
+  Widget _buildPasswordField(AppLocalizations l10n) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       decoration: BoxDecoration(
@@ -434,7 +477,7 @@ class _LoginpageState extends State<Loginpage> with TickerProviderStateMixin {
                   color: const Color(0xFF667eea).withOpacity(0.1),
                   blurRadius: 8,
                   spreadRadius: 2,
-                )
+                ),
               ]
             : [],
       ),
@@ -442,24 +485,23 @@ class _LoginpageState extends State<Loginpage> with TickerProviderStateMixin {
         controller: passwordController,
         obscureText: _obscurePassword,
         textInputAction: TextInputAction.done,
-        onChanged: (value) => setState(() {}),
+        autofillHints: const [AutofillHints.password],
+        onChanged: (_) => setState(() {}),
         onTap: () => setState(() => _passwordFocused = true),
         onFieldSubmitted: (_) {
           setState(() => _passwordFocused = false);
-          loginUser();
+          _loginUser();
         },
         onEditingComplete: () => setState(() => _passwordFocused = false),
         validator: (value) {
-          if (value == null || value.isEmpty) {
-            return 'Please enter your password';
-          }
-          if (value.length < 6) {
-            return 'Password must be at least 6 characters';
-          }
+          final l10n = AppLocalizations.of(context)!;
+          if (value?.isEmpty ?? true) return l10n.pleaseEnterPassword;
+          if (value!.length < 6)
+            return l10n.passwordMinLength;
           return null;
         },
         decoration: InputDecoration(
-          hintText: AppLocalizations.of(context)!.password,
+          hintText: l10n.password,
           hintStyle: TextStyle(color: Colors.grey.shade500),
           prefixIcon: Icon(
             Icons.lock_outline,
@@ -473,9 +515,8 @@ class _LoginpageState extends State<Loginpage> with TickerProviderStateMixin {
               color: Colors.grey.shade500,
             ),
             onPressed: () {
-              setState(() {
-                _obscurePassword = !_obscurePassword;
-              });
+              HapticFeedback.lightImpact();
+              setState(() => _obscurePassword = !_obscurePassword);
             },
           ),
           border: InputBorder.none,
@@ -486,7 +527,7 @@ class _LoginpageState extends State<Loginpage> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildLoginButton(BuildContext context, bool isSmallScreen) {
+  Widget _buildLoginButton(bool isSmallScreen, AppLocalizations l10n) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       height: isSmallScreen ? 50 : 56,
@@ -507,13 +548,12 @@ class _LoginpageState extends State<Loginpage> with TickerProviderStateMixin {
         ],
       ),
       child: ElevatedButton(
-        onPressed: isLoading ? null : loginUser,
+        onPressed: isLoading ? null : _loginUser,
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.transparent,
           shadowColor: Colors.transparent,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
         child: isLoading
             ? const SizedBox(
@@ -534,7 +574,7 @@ class _LoginpageState extends State<Loginpage> with TickerProviderStateMixin {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    AppLocalizations.of(context)!.loginButton,
+                    l10n.loginButton,
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: isSmallScreen ? 16 : 18,
@@ -547,10 +587,11 @@ class _LoginpageState extends State<Loginpage> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildAdminButton(BuildContext context) {
+  Widget _buildAdminButton(AppLocalizations l10n) {
     return TextButton.icon(
       onPressed: () {
-        // Add your admin management navigation here
+        HapticFeedback.lightImpact();
+        // Add admin management navigation if needed
       },
       icon: const Icon(
         Icons.admin_panel_settings_outlined,
@@ -558,7 +599,7 @@ class _LoginpageState extends State<Loginpage> with TickerProviderStateMixin {
         size: 20,
       ),
       label: Text(
-        AppLocalizations.of(context)!.adminManagement,
+        l10n.adminManagement,
         style: const TextStyle(
           color: Color(0xFF667eea),
           fontWeight: FontWeight.w500,
@@ -566,9 +607,7 @@ class _LoginpageState extends State<Loginpage> with TickerProviderStateMixin {
       ),
       style: TextButton.styleFrom(
         padding: const EdgeInsets.symmetric(vertical: 12),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
   }

@@ -1,3 +1,5 @@
+// lib/views/receptionist/components/player_payment_card.dart
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -46,16 +48,22 @@ class PlayerPaymentCard extends StatelessWidget {
                     ),
                   ),
                   child: Center(
-                    child: Text(
-                      player.name.isNotEmpty
-                          ? player.name[0].toUpperCase()
-                          : 'P',
-                      style: GoogleFonts.poppins(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                    ),
+                    child: player.status == PaymentStatus.notActive
+                        ? Icon(
+                            Icons.do_not_disturb_rounded,
+                            color: Colors.white,
+                            size: 24,
+                          )
+                        : Text(
+                            player.name.isNotEmpty
+                                ? player.name[0].toUpperCase()
+                                : 'P',
+                            style: GoogleFonts.poppins(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -120,7 +128,7 @@ class PlayerPaymentCard extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        '${player.paidMonths}/${player.totalMonths} months',
+                        _getProgressText(),
                         style: GoogleFonts.poppins(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
@@ -131,9 +139,7 @@ class PlayerPaymentCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   LinearProgressIndicator(
-                    value: player.totalMonths > 0
-                        ? player.paidMonths / player.totalMonths
-                        : 0,
+                    value: _getProgressValue(),
                     backgroundColor: Colors.grey.shade200,
                     valueColor: AlwaysStoppedAnimation<Color>(
                       _getStatusColor(player.status),
@@ -141,6 +147,37 @@ class PlayerPaymentCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(4),
                   ),
                   const SizedBox(height: 8),
+                  // Show additional info for inactive players
+                  if (player.status == PaymentStatus.notActive) ...[
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.grey.shade300),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.info_outline_rounded,
+                            size: 16,
+                            color: Colors.grey.shade600,
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              'Player inactive for ${player.inactiveMonths} months',
+                              style: GoogleFonts.poppins(
+                                fontSize: 11,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
                   Row(
                     children: [
                       Expanded(
@@ -154,9 +191,15 @@ class PlayerPaymentCard extends StatelessWidget {
                       const SizedBox(width: 8),
                       Expanded(
                         child: _buildActionButton(
-                          'Send Reminder',
-                          Icons.email_rounded,
-                          const Color(0xFFF59E0B),
+                          player.status == PaymentStatus.notActive
+                              ? 'Activate'
+                              : 'Send Reminder',
+                          player.status == PaymentStatus.notActive
+                              ? Icons.play_arrow_rounded
+                              : Icons.email_rounded,
+                          player.status == PaymentStatus.notActive
+                              ? const Color(0xFF10B981)
+                              : const Color(0xFFF59E0B),
                           () => onSendReminder(player),
                         ),
                       ),
@@ -188,18 +231,39 @@ class PlayerPaymentCard extends StatelessWidget {
           children: [
             Icon(icon, color: color, size: 14),
             const SizedBox(width: 6),
-            Text(
-              title,
-              style: GoogleFonts.poppins(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: color,
+            Flexible(
+              child: Text(
+                title,
+                style: GoogleFonts.poppins(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: color,
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  String _getProgressText() {
+    switch (player.status) {
+      case PaymentStatus.notActive:
+        return 'Inactive (${player.inactiveMonths}/12 months)';
+      default:
+        return '${player.paidMonths}/${player.effectiveTotalMonths} active months';
+    }
+  }
+
+  double _getProgressValue() {
+    switch (player.status) {
+      case PaymentStatus.notActive:
+        return player.inactiveMonths / 12.0;
+      default:
+        return player.paymentProgress; // This excludes inactive months
+    }
   }
 
   List<Color> _getStatusGradient(PaymentStatus status) {
@@ -210,6 +274,11 @@ class PlayerPaymentCard extends StatelessWidget {
         return [const Color(0xFFF59E0B), const Color(0xFFD97706)];
       case PaymentStatus.unpaid:
         return [const Color(0xFFEF4444), const Color(0xFFDC2626)];
+      case PaymentStatus.notActive:
+        return [
+          const Color(0xFF6B7280),
+          const Color(0xFF4B5563)
+        ]; // Grey gradient
     }
   }
 
@@ -221,6 +290,8 @@ class PlayerPaymentCard extends StatelessWidget {
         return const Color(0xFFF59E0B);
       case PaymentStatus.unpaid:
         return const Color(0xFFEF4444);
+      case PaymentStatus.notActive:
+        return const Color(0xFF6B7280); // Grey color for not active
     }
   }
 
@@ -232,6 +303,8 @@ class PlayerPaymentCard extends StatelessWidget {
         return 'Partial';
       case PaymentStatus.unpaid:
         return 'Unpaid';
+      case PaymentStatus.notActive:
+        return 'Not Active'; // New status text
     }
   }
 }

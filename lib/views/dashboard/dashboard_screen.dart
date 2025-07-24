@@ -2,12 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:footballtraining/data/models/team_model.dart';
-import 'package:footballtraining/data/models/user_model.dart';
 import 'package:footballtraining/data/repositories/team_service.dart';
 import 'package:footballtraining/views/admin/reports/session_report_screen.dart';
-
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'dart:math' as math;
 
@@ -21,127 +17,58 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen>
     with TickerProviderStateMixin {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final TeamService _teamService = TeamService();
 
   // Animation Controllers
   late AnimationController _fadeController;
-  late AnimationController _scaleController;
-  late AnimationController _slideController;
   late AnimationController _rotationController;
-
-  // Animations
   late Animation<double> _fadeAnimation;
-  late Animation<double> _scaleAnimation;
-  late Animation<Offset> _slideAnimation;
   late Animation<double> _rotationAnimation;
 
-  // State variables
-  int playerCount = 0;
-  int teamCount = 0;
-  int coachCount = 0;
-  int sessionCount = 0;
-  double attendanceRate = 0.0;
+  // Dashboard Stats
+  DashboardStats stats = DashboardStats();
   bool isLoadingStats = true;
-
-  // Stream for recent sessions
-  Stream<QuerySnapshot>? recentSessionsStream;
-
-  // Greeting based on time
-  String greeting = '';
 
   @override
   void initState() {
     super.initState();
     _initializeAnimations();
-    _setGreeting();
-    _fetchAllStats();
-    _setupRecentSessionsStream();
+    _loadDashboardData();
   }
 
   @override
   void dispose() {
     _fadeController.dispose();
-    _scaleController.dispose();
-    _slideController.dispose();
     _rotationController.dispose();
     super.dispose();
   }
 
   void _initializeAnimations() {
-    // Fade Animation
     _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 1000),
-      vsync: this,
-    );
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _fadeController,
-      curve: Curves.easeInOut,
-    ));
-
-    // Scale Animation
-    _scaleController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    _scaleAnimation = Tween<double>(
-      begin: 0.8,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _scaleController,
-      curve: Curves.elasticOut,
-    ));
-
-    // Slide Animation
-    _slideController = AnimationController(
-      duration: const Duration(milliseconds: 600),
-      vsync: this,
-    );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.5),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _slideController,
-      curve: Curves.easeOutCubic,
-    ));
-
-    // Rotation Animation (for refresh icon)
     _rotationController = AnimationController(
       duration: const Duration(seconds: 1),
       vsync: this,
     );
-    _rotationAnimation = Tween<double>(
-      begin: 0,
-      end: 2 * math.pi,
-    ).animate(CurvedAnimation(
-      parent: _rotationController,
-      curve: Curves.linear,
-    ));
 
-    // Start animations
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _fadeController, curve: Curves.easeOut),
+    );
+    _rotationAnimation = Tween<double>(begin: 0, end: 2 * math.pi).animate(
+      CurvedAnimation(parent: _rotationController, curve: Curves.linear),
+    );
+
     _fadeController.forward();
-    _scaleController.forward();
-    _slideController.forward();
   }
 
-  void _setGreeting() {
-    final hour = DateTime.now().hour;
-    if (hour < 12) {
-      greeting = 'Good Morning';
-    } else if (hour < 17) {
-      greeting = 'Good Afternoon';
-    } else {
-      greeting = 'Good Evening';
-    }
-  }
-
-  Future<void> _fetchAllStats() async {
+  Future<void> _loadDashboardData() async {
     setState(() => isLoadingStats = true);
     _rotationController.repeat();
 
     try {
-      // Fetch all counts in parallel
+      // Load all stats in parallel for better performance
       final results = await Future.wait([
         _firestore.collection('players').count().get(),
         _firestore.collection('teams').count().get(),
@@ -151,9 +78,33 @@ class _DashboardScreenState extends State<DashboardScreen>
             .count()
             .get(),
         _firestore.collection('training_sessions').count().get(),
+        _calculateAttendanceRate(),
       ]);
 
-      // Calculate attendance rate
+      if (mounted) {
+        setState(() {
+          stats = DashboardStats(
+            playerCount: (results[0] as AggregateQuerySnapshot).count ?? 0,
+            teamCount: (results[1] as AggregateQuerySnapshot).count ?? 0,
+            coachCount: (results[2] as AggregateQuerySnapshot).count ?? 0,
+            sessionCount: (results[3] as AggregateQuerySnapshot).count ?? 0,
+            attendanceRate: results[4] as double,
+          );
+          isLoadingStats = false;
+        });
+        _rotationController.stop();
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => isLoadingStats = false);
+        _rotationController.stop();
+        _showErrorMessage('Error loading dashboard data: $e');
+      }
+    }
+  }
+
+  Future<double> _calculateAttendanceRate() async {
+    try {
       final sessionsSnapshot = await _firestore
           .collection('training_sessions')
           .orderBy('start_time', descending: true)
@@ -172,41 +123,34 @@ class _DashboardScreenState extends State<DashboardScreen>
         }
       }
 
-      if (mounted) {
-        setState(() {
-          playerCount = results[0].count ?? 0;
-          teamCount = results[1].count ?? 0;
-          coachCount = results[2].count ?? 0;
-          sessionCount = results[3].count ?? 0;
-          attendanceRate =
-              totalPossible > 0 ? (totalAttendance / totalPossible) * 100 : 0;
-          isLoadingStats = false;
-        });
-        _rotationController.stop();
-      }
+      return totalPossible > 0 ? (totalAttendance / totalPossible) * 100 : 0;
     } catch (e) {
-      if (mounted) {
-        setState(() => isLoadingStats = false);
-        _rotationController.stop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error loading statistics: $e'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        );
-      }
+      return 0;
     }
   }
 
-  void _setupRecentSessionsStream() {
-    recentSessionsStream = _firestore
-        .collection('training_sessions')
-        .orderBy('start_time', descending: true)
-        .limit(5)
-        .snapshots();
+  void _showErrorMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.error_outline, color: Colors.white),
+            const SizedBox(width: 8),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+
+  String get _greeting {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Good Morning';
+    if (hour < 17) return 'Good Afternoon';
+    return 'Good Evening';
   }
 
   @override
@@ -226,10 +170,10 @@ class _DashboardScreenState extends State<DashboardScreen>
               opacity: _fadeAnimation,
               child: Column(
                 children: [
-                  _buildWelcomeSection(l10n, isSmallScreen),
+                  _buildWelcomeSection(isSmallScreen),
                   _buildStatsSection(l10n, isTablet, size),
                   _buildQuickActions(l10n, size),
-                  _buildRecentSessionsSection(l10n, size),
+                  _buildRecentSessionsSection(l10n, isSmallScreen),
                   const SizedBox(height: 32),
                 ],
               ),
@@ -242,14 +186,14 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   Widget _buildSliverAppBar(AppLocalizations l10n, bool isSmallScreen) {
     return SliverAppBar(
-      expandedHeight: isSmallScreen ? 120 : 200,
+      expandedHeight: isSmallScreen ? 120 : 180,
       floating: true,
       pinned: true,
       elevation: 0,
       flexibleSpace: FlexibleSpaceBar(
         title: Text(
           l10n.dashboardOverview,
-          style: GoogleFonts.poppins(
+          style: TextStyle(
             fontWeight: FontWeight.w600,
             fontSize: isSmallScreen ? 16 : 20,
             shadows: [
@@ -262,20 +206,16 @@ class _DashboardScreenState extends State<DashboardScreen>
           ),
         ),
         background: Container(
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [
-                Color(0xFFF27121),
-                Color(0xFFE94057),
-                Color(0xFF8A2387),
-              ],
+              colors: [Color(0xFFF27121), Color(0xFFE94057), Color(0xFF8A2387)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
           ),
           child: Stack(
             children: [
-              // Decorative circles
+              // Decorative elements
               Positioned(
                 top: -50,
                 right: -50,
@@ -312,23 +252,8 @@ class _DashboardScreenState extends State<DashboardScreen>
               angle: _rotationAnimation.value,
               child: IconButton(
                 icon: const Icon(Icons.refresh_rounded, color: Colors.white),
-                onPressed: _fetchAllStats,
+                onPressed: _loadDashboardData,
                 tooltip: 'Refresh',
-              ),
-            );
-          },
-        ),
-        IconButton(
-          icon: const Icon(Icons.notifications_outlined, color: Colors.white),
-          onPressed: () {
-            HapticFeedback.lightImpact();
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Notifications coming soon!'),
-                backgroundColor: Color(0xFFF27121),
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
               ),
             );
           },
@@ -337,15 +262,15 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  Widget _buildWelcomeSection(AppLocalizations l10n, bool isSmallScreen) {
+  Widget _buildWelcomeSection(bool isSmallScreen) {
     return Container(
       padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            greeting,
-            style: GoogleFonts.poppins(
+            _greeting,
+            style: TextStyle(
               fontSize: isSmallScreen ? 24 : 28,
               fontWeight: FontWeight.w700,
               color: Colors.grey.shade800,
@@ -354,7 +279,7 @@ class _DashboardScreenState extends State<DashboardScreen>
           const SizedBox(height: 8),
           Text(
             'Here\'s your club overview for today',
-            style: GoogleFonts.poppins(
+            style: TextStyle(
               fontSize: isSmallScreen ? 14 : 16,
               color: Colors.grey.shade600,
             ),
@@ -377,7 +302,7 @@ class _DashboardScreenState extends State<DashboardScreen>
             children: [
               Text(
                 'Key Metrics',
-                style: GoogleFonts.poppins(
+                style: TextStyle(
                   fontSize: isSmallScreen ? 18 : 20,
                   fontWeight: FontWeight.w600,
                   color: Colors.grey.shade800,
@@ -385,17 +310,17 @@ class _DashboardScreenState extends State<DashboardScreen>
               ),
               TextButton.icon(
                 onPressed: () {
+                  HapticFeedback.lightImpact();
                   // Navigate to detailed stats
                 },
                 icon: Icon(Icons.arrow_forward_rounded,
                     size: isSmallScreen ? 14 : 16),
                 label: Text(
                   'View All',
-                  style: GoogleFonts.poppins(fontSize: isSmallScreen ? 12 : 14),
+                  style: TextStyle(fontSize: isSmallScreen ? 12 : 14),
                 ),
                 style: TextButton.styleFrom(
-                  foregroundColor: Color(0xFFF27121),
-                ),
+                    foregroundColor: const Color(0xFFF27121)),
               ),
             ],
           ),
@@ -410,7 +335,6 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   Widget _buildLoadingStats(bool isTablet, Size size) {
     final cardHeight = _calculateCardHeight(size);
-
     return GridView.count(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -418,22 +342,11 @@ class _DashboardScreenState extends State<DashboardScreen>
       childAspectRatio: isTablet ? 1.2 : (size.width / 2 - 24) / cardHeight,
       crossAxisSpacing: 12,
       mainAxisSpacing: 12,
-      children: List.generate(4, (index) => _buildLoadingStatCard()),
+      children: List.generate(5, (_) => _buildLoadingCard()),
     );
   }
 
-  double _calculateCardHeight(Size size) {
-    final isSmallScreen = size.height < 700;
-    if (isSmallScreen) {
-      return 100; // Smaller height for small screens
-    } else if (size.height < 800) {
-      return 120; // Medium height
-    } else {
-      return 140; // Default height
-    }
-  }
-
-  Widget _buildLoadingStatCard() {
+  Widget _buildLoadingCard() {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -447,46 +360,52 @@ class _DashboardScreenState extends State<DashboardScreen>
         ],
       ),
       child: const Center(
-        child: CircularProgressIndicator(
-          color: Color(0xFFF27121),
-          strokeWidth: 2,
-        ),
+        child:
+            CircularProgressIndicator(color: Color(0xFFF27121), strokeWidth: 2),
       ),
     );
+  }
+
+  double _calculateCardHeight(Size size) {
+    if (size.height < 700) return 100;
+    if (size.height < 800) return 120;
+    return 140;
   }
 
   Widget _buildStatsGrid(AppLocalizations l10n, bool isTablet, Size size) {
     final cardHeight = _calculateCardHeight(size);
     final isSmallScreen = size.height < 700;
 
-    final stats = [
+    final statItems = [
       StatItem(
         title: l10n.players,
-        value: playerCount.toString(),
+        value: stats.playerCount.toString(),
         icon: Icons.people_rounded,
-        gradient: [Color(0xFF667eea), Color(0xFF764ba2)],
-        delay: 0,
+        gradient: [const Color(0xFF667eea), const Color(0xFF764ba2)],
       ),
       StatItem(
         title: l10n.teams,
-        value: teamCount.toString(),
+        value: stats.teamCount.toString(),
         icon: Icons.groups_rounded,
-        gradient: [Color(0xFFF093fb), Color(0xFFF5576c)],
-        delay: 100,
+        gradient: [const Color(0xFFF093fb), const Color(0xFFF5576c)],
       ),
       StatItem(
         title: 'Coaches',
-        value: coachCount.toString(),
+        value: stats.coachCount.toString(),
         icon: Icons.sports_rounded,
-        gradient: [Color(0xFF4facfe), Color(0xFF00f2fe)],
-        delay: 200,
+        gradient: [const Color(0xFF4facfe), const Color(0xFF00f2fe)],
       ),
       StatItem(
         title: 'Sessions',
-        value: sessionCount.toString(),
+        value: stats.sessionCount.toString(),
         icon: Icons.event_available_rounded,
-        gradient: [Color(0xFFfa709a), Color(0xFFfee140)],
-        delay: 300,
+        gradient: [const Color(0xFFfa709a), const Color(0xFFfee140)],
+      ),
+      StatItem(
+        title: 'Attendance',
+        value: '${stats.attendanceRate.round()}%',
+        icon: Icons.trending_up_rounded,
+        gradient: [const Color(0xFF11998e), const Color(0xFF38ef7d)],
       ),
     ];
 
@@ -494,21 +413,21 @@ class _DashboardScreenState extends State<DashboardScreen>
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: isTablet ? 4 : 2,
+        crossAxisCount: isTablet ? 5 : 2,
         childAspectRatio: isTablet ? 1.2 : (size.width / 2 - 24) / cardHeight,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
       ),
-      itemCount: stats.length,
+      itemCount: statItems.length,
       itemBuilder: (context, index) {
         return TweenAnimationBuilder<double>(
           tween: Tween(begin: 0.0, end: 1.0),
-          duration: Duration(milliseconds: 600 + stats[index].delay),
+          duration: Duration(milliseconds: 400 + (index * 100)),
           curve: Curves.easeOutBack,
           builder: (context, value, child) {
             return Transform.scale(
               scale: value,
-              child: _buildStatCard(stats[index], isSmallScreen),
+              child: _buildStatCard(statItems[index], isSmallScreen),
             );
           },
         );
@@ -564,7 +483,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                   fit: BoxFit.scaleDown,
                   child: Text(
                     stat.value,
-                    style: GoogleFonts.poppins(
+                    style: TextStyle(
                       fontSize: isSmallScreen ? 24 : 28,
                       fontWeight: FontWeight.w700,
                       color: Colors.white,
@@ -575,7 +494,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                   fit: BoxFit.scaleDown,
                   child: Text(
                     stat.title,
-                    style: GoogleFonts.poppins(
+                    style: TextStyle(
                       fontSize: isSmallScreen ? 12 : 14,
                       color: Colors.white.withOpacity(0.9),
                     ),
@@ -599,42 +518,23 @@ class _DashboardScreenState extends State<DashboardScreen>
         children: [
           Text(
             'Quick Actions',
-            style: GoogleFonts.poppins(
+            style: TextStyle(
               fontSize: isSmallScreen ? 18 : 20,
               fontWeight: FontWeight.w600,
               color: Colors.grey.shade800,
             ),
           ),
           const SizedBox(height: 16),
-
-          //THIS TEST BUTTON HERE (TEMPORARY)
-          Container(
-            width: double.infinity,
-            margin: EdgeInsets.only(bottom: 12),
-            child: ElevatedButton(
-              onPressed: _testModels,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.purple.shade600,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: Text('🧪 Test Models'),
-            ),
-          ),
-          //END TEST BUTTON
-
           Row(
             children: [
               Expanded(
                 child: _buildQuickActionCard(
-                  title: 'Add Session',
-                  icon: Icons.add_circle_outline_rounded,
-                  color: Color(0xFF10B981),
+                  title: 'Manage Teams',
+                  icon: Icons.groups_rounded,
+                  color: const Color(0xFF10B981),
                   onTap: () {
                     HapticFeedback.mediumImpact();
-                    // Navigate to add session
+                    // Navigate to team management
                   },
                   isSmallScreen: isSmallScreen,
                 ),
@@ -644,10 +544,23 @@ class _DashboardScreenState extends State<DashboardScreen>
                 child: _buildQuickActionCard(
                   title: 'View Reports',
                   icon: Icons.analytics_outlined,
-                  color: Color(0xFF6366F1),
+                  color: const Color(0xFF6366F1),
                   onTap: () {
                     HapticFeedback.mediumImpact();
                     // Navigate to reports
+                  },
+                  isSmallScreen: isSmallScreen,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildQuickActionCard(
+                  title: 'User Management',
+                  icon: Icons.people_outline,
+                  color: const Color(0xFFEF4444),
+                  onTap: () {
+                    HapticFeedback.mediumImpact();
+                    // Navigate to user management
                   },
                   isSmallScreen: isSmallScreen,
                 ),
@@ -658,48 +571,6 @@ class _DashboardScreenState extends State<DashboardScreen>
       ),
     );
   }
-
-//  method to test the models
-  Future<void> _testModels() async {
-    try {
-      print('🧪 Testing models...');
-
-      // Test Team model
-      final teamsSnapshot =
-          await FirebaseFirestore.instance.collection('teams').limit(1).get();
-
-      if (teamsSnapshot.docs.isNotEmpty) {
-        final team = Team.fromFirestore(teamsSnapshot.docs.first);
-        print('✅ Team model works: ${team.teamName}');
-        print('✅ Coach ID: ${team.singleCoachId}');
-        print('✅ Active coaches: ${team.activeCoachIds}');
-      }
-
-      // Test User model
-      final usersSnapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .where('role', isEqualTo: 'coach')
-          .limit(1)
-          .get();
-
-      if (usersSnapshot.docs.isNotEmpty) {
-        final user = User.fromFirestore(usersSnapshot.docs.first);
-        print('✅ User model works: ${user.name}');
-        print('✅ Role: ${user.displayRole}');
-        print('✅ Is Coach: ${user.isCoach}');
-      }
-
-      // Test TeamService
-      final teamService = TeamService();
-      final coaches = await teamService.getAvailableCoaches();
-      print('✅ TeamService works: ${coaches.length} coaches found');
-
-      print('🎉 All models working perfectly!');
-    } catch (e) {
-      print('❌ Model test failed: $e');
-    }
-  }
-//*******************************************************************************************************************************************************/
 
   Widget _buildQuickActionCard({
     required String title,
@@ -727,35 +598,31 @@ class _DashboardScreenState extends State<DashboardScreen>
           onTap: onTap,
           borderRadius: BorderRadius.circular(16),
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: isSmallScreen ? 12 : 16),
-            child: Row(
+            padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Container(
-                  width: isSmallScreen ? 40 : 48,
-                  height: isSmallScreen ? 40 : 48,
+                  width: isSmallScreen ? 32 : 40,
+                  height: isSmallScreen ? 32 : 40,
                   decoration: BoxDecoration(
                     color: color.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   child:
-                      Icon(icon, color: color, size: isSmallScreen ? 20 : 24),
+                      Icon(icon, color: color, size: isSmallScreen ? 16 : 20),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: GoogleFonts.poppins(
-                      fontSize: isSmallScreen ? 14 : 16,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.grey.shade800,
-                    ),
-                    overflow: TextOverflow.ellipsis,
+                const SizedBox(height: 4),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: isSmallScreen ? 10 : 12,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.grey.shade800,
                   ),
-                ),
-                Icon(
-                  Icons.chevron_right_rounded,
-                  color: Colors.grey.shade400,
-                  size: isSmallScreen ? 20 : 24,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -765,9 +632,8 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  Widget _buildRecentSessionsSection(AppLocalizations l10n, Size size) {
-    final isSmallScreen = size.height < 700;
-
+  Widget _buildRecentSessionsSection(
+      AppLocalizations l10n, bool isSmallScreen) {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -776,30 +642,27 @@ class _DashboardScreenState extends State<DashboardScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(
-                child: Text(
-                  'Recent Sessions',
-                  style: GoogleFonts.poppins(
-                    fontSize: isSmallScreen ? 18 : 20,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey.shade800,
-                  ),
-                  overflow: TextOverflow.ellipsis,
+              Text(
+                'Recent Sessions',
+                style: TextStyle(
+                  fontSize: isSmallScreen ? 18 : 20,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey.shade800,
                 ),
               ),
               TextButton.icon(
                 onPressed: () {
+                  HapticFeedback.lightImpact();
                   // Navigate to all sessions
                 },
                 icon: Icon(Icons.arrow_forward_rounded,
                     size: isSmallScreen ? 14 : 16),
                 label: Text(
                   'See All',
-                  style: GoogleFonts.poppins(fontSize: isSmallScreen ? 12 : 14),
+                  style: TextStyle(fontSize: isSmallScreen ? 12 : 14),
                 ),
                 style: TextButton.styleFrom(
-                  foregroundColor: Color(0xFFF27121),
-                ),
+                    foregroundColor: const Color(0xFFF27121)),
               ),
             ],
           ),
@@ -812,14 +675,18 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   Widget _buildSessionsList(bool isSmallScreen) {
     return StreamBuilder<QuerySnapshot>(
-      stream: recentSessionsStream,
+      stream: _firestore
+          .collection('training_sessions')
+          .orderBy('start_time', descending: true)
+          .limit(5)
+          .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return _buildLoadingSession();
+          return _buildLoadingSessions();
         }
 
         if (snapshot.hasError) {
-          return _buildErrorWidget('Error loading sessions');
+          return _buildErrorWidget('Error loading sessions: ${snapshot.error}');
         }
 
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
@@ -827,29 +694,26 @@ class _DashboardScreenState extends State<DashboardScreen>
         }
 
         final sessions = snapshot.data!.docs;
-        return SlideTransition(
-          position: _slideAnimation,
-          child: Column(
-            children: sessions.asMap().entries.map((entry) {
-              final index = entry.key;
-              final sessionDoc = entry.value;
+        return Column(
+          children: sessions.asMap().entries.map((entry) {
+            final index = entry.key;
+            final sessionDoc = entry.value;
 
-              return TweenAnimationBuilder<double>(
-                tween: Tween(begin: 0.0, end: 1.0),
-                duration: Duration(milliseconds: 400 + (index * 100)),
-                curve: Curves.easeOutCubic,
-                builder: (context, value, child) {
-                  return Transform.translate(
-                    offset: Offset(0, 20 * (1 - value)),
-                    child: Opacity(
-                      opacity: value,
-                      child: _buildSessionCard(sessionDoc, isSmallScreen),
-                    ),
-                  );
-                },
-              );
-            }).toList(),
-          ),
+            return TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0.0, end: 1.0),
+              duration: Duration(milliseconds: 300 + (index * 100)),
+              curve: Curves.easeOutCubic,
+              builder: (context, value, child) {
+                return Transform.translate(
+                  offset: Offset(0, 20 * (1 - value)),
+                  child: Opacity(
+                    opacity: value,
+                    child: _buildSessionCard(sessionDoc, isSmallScreen),
+                  ),
+                );
+              },
+            );
+          }).toList(),
         );
       },
     );
@@ -904,7 +768,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                   width: isSmallScreen ? 48 : 56,
                   height: isSmallScreen ? 48 : 56,
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
+                    gradient: const LinearGradient(
                       colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
@@ -924,7 +788,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                     children: [
                       Text(
                         '$teamName - $trainingType',
-                        style: GoogleFonts.poppins(
+                        style: TextStyle(
                           fontSize: isSmallScreen ? 14 : 16,
                           fontWeight: FontWeight.w600,
                           color: Colors.grey.shade800,
@@ -947,7 +811,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                                 Flexible(
                                   child: Text(
                                     coachName,
-                                    style: GoogleFonts.poppins(
+                                    style: TextStyle(
                                       fontSize: isSmallScreen ? 12 : 14,
                                       color: Colors.grey.shade600,
                                     ),
@@ -966,7 +830,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                           const SizedBox(width: 4),
                           Text(
                             _formatTimestamp(startTime),
-                            style: GoogleFonts.poppins(
+                            style: TextStyle(
                               fontSize: isSmallScreen ? 12 : 14,
                               color: Colors.grey.shade600,
                             ),
@@ -990,7 +854,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                       child: Center(
                         child: Text(
                           '$attendancePercentage%',
-                          style: GoogleFonts.poppins(
+                          style: TextStyle(
                             fontSize: isSmallScreen ? 12 : 14,
                             fontWeight: FontWeight.w700,
                             color: _getAttendanceColor(attendancePercentage),
@@ -1001,7 +865,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                     const SizedBox(height: 4),
                     Text(
                       '$presentCount/$totalCount',
-                      style: GoogleFonts.poppins(
+                      style: TextStyle(
                         fontSize: isSmallScreen ? 10 : 12,
                         color: Colors.grey.shade600,
                       ),
@@ -1016,7 +880,7 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  Widget _buildLoadingSession() {
+  Widget _buildLoadingSessions() {
     return Column(
       children: List.generate(
         3,
@@ -1029,9 +893,7 @@ class _DashboardScreenState extends State<DashboardScreen>
           ),
           child: const Center(
             child: CircularProgressIndicator(
-              color: Color(0xFFF27121),
-              strokeWidth: 2,
-            ),
+                color: Color(0xFFF27121), strokeWidth: 2),
           ),
         ),
       ),
@@ -1054,15 +916,11 @@ class _DashboardScreenState extends State<DashboardScreen>
       ),
       child: Column(
         children: [
-          Icon(
-            Icons.event_busy_rounded,
-            size: 48,
-            color: Colors.grey.shade400,
-          ),
+          Icon(Icons.event_busy_rounded, size: 48, color: Colors.grey.shade400),
           const SizedBox(height: 16),
           Text(
             'No sessions yet',
-            style: GoogleFonts.poppins(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w500,
               color: Colors.grey.shade800,
@@ -1071,10 +929,7 @@ class _DashboardScreenState extends State<DashboardScreen>
           const SizedBox(height: 8),
           Text(
             'Training sessions will appear here',
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              color: Colors.grey.shade600,
-            ),
+            style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
           ),
         ],
       ),
@@ -1095,10 +950,7 @@ class _DashboardScreenState extends State<DashboardScreen>
           Expanded(
             child: Text(
               message,
-              style: GoogleFonts.poppins(
-                color: Colors.red.shade700,
-                fontSize: 14,
-              ),
+              style: TextStyle(color: Colors.red.shade700, fontSize: 14),
             ),
           ),
         ],
@@ -1112,11 +964,10 @@ class _DashboardScreenState extends State<DashboardScreen>
     return Colors.red.shade600;
   }
 
-  String _formatTimestamp(Timestamp? timestamp,
-      {String format = 'dd MMM, HH:mm'}) {
+  String _formatTimestamp(Timestamp? timestamp) {
     if (timestamp == null) return 'N/A';
     try {
-      return DateFormat(format).format(timestamp.toDate());
+      return DateFormat('dd MMM, HH:mm').format(timestamp.toDate());
     } catch (e) {
       return 'Invalid Date';
     }
@@ -1124,18 +975,32 @@ class _DashboardScreenState extends State<DashboardScreen>
 }
 
 // Helper Classes
+class DashboardStats {
+  final int playerCount;
+  final int teamCount;
+  final int coachCount;
+  final int sessionCount;
+  final double attendanceRate;
+
+  DashboardStats({
+    this.playerCount = 0,
+    this.teamCount = 0,
+    this.coachCount = 0,
+    this.sessionCount = 0,
+    this.attendanceRate = 0.0,
+  });
+}
+
 class StatItem {
   final String title;
   final String value;
   final IconData icon;
   final List<Color> gradient;
-  final int delay;
 
   StatItem({
     required this.title,
     required this.value,
     required this.icon,
     required this.gradient,
-    required this.delay,
   });
 }

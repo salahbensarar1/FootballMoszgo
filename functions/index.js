@@ -1,5 +1,11 @@
 const functions = require('firebase-functions');
+const admin = require('firebase-admin');
 const { Resend } = require('resend');
+
+// Initialize Firebase Admin SDK
+if (!admin.apps.length) {
+  admin.initializeApp();
+}
 
 // Initialize Resend with your API key
 const resend = new Resend('re_QQUf69Ve_89uwd9qCqYVTGqR4jnpACQsj'); // Replace with your real API key
@@ -52,5 +58,89 @@ exports.sendPaymentReminder = functions.https.onCall(async (data, context) => {
   } catch (error) {
     console.error('Email sending error:', error);
     throw new functions.https.HttpsError('internal', 'Failed to send email: ' + error.message);
+  }
+});
+
+/**
+ * AUTOMATIC: Delete Firebase Auth when coach user document is deleted
+ * This triggers automatically when CoachManagementService.deleteCoachCompletely() runs
+ */
+exports.autoDeleteCoachAuth = functions.firestore
+  .document('users/{userId}')
+  .onDelete(async (snap, context) => {
+    const userId = context.params.userId;
+    const userData = snap.data();
+    
+    try {
+      // Only auto-delete auth for coaches (safety measure)
+      if (userData.role === 'coach') {
+        await admin.auth().deleteUser(userId);
+        console.log(`✅ Automatically deleted Firebase Auth for coach: ${userData.email}`);
+      }
+    } catch (error) {
+      if (error.code !== 'auth/user-not-found') {
+        console.error('❌ Error auto-deleting Firebase Auth:', error);
+      }
+    }
+  });
+
+/**
+ * MANUAL: Explicit Cloud Function to delete coach authentication
+ * Can be called from Flutter if you need manual control
+ */
+exports.deleteCoachAuth = functions.https.onCall(async (data, context) => {
+  // Verify caller is authenticated
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'Authentication required');
+  }
+
+  // Verify caller has admin/receptionist privileges
+  const callerUid = context.auth.uid;
+  const callerDoc = await admin.firestore().collection('users').doc(callerUid).get();
+  
+  if (!callerDoc.exists) {
+    throw new functions.https.HttpsError('permission-denied', 'User document not found');
+  }
+
+  const callerRole = callerDoc.data().role;
+  if (!['admin', 'receptionist'].includes(callerRole)) {
+    throw new functions.https.HttpsError('permission-denied', 'Only admins and receptionists can delete coaches');
+  }
+
+  const { coachId } = data;
+  if (!coachId) {
+    throw new functions.https.HttpsError('invalid-argument', 'coachId is required');
+  }
+
+  try {
+    // Verify the user is actually a coach
+    const coachDoc = await admin.firestore().collection('users').doc(coachId).get();
+    
+    if (!coachDoc.exists) {
+      throw new functions.https.HttpsError('not-found', 'Coach not found');
+    }
+
+    const coachData = coachDoc.data();
+    if (coachData.role !== 'coach') {
+      throw new functions.https.HttpsError('invalid-argument', 'User is not a coach');
+    }
+
+    // Delete from Firebase Authentication
+    await admin.auth().deleteUser(coachId);
+
+    return {
+      success: true,
+      message: 'Coach authentication deleted successfully',
+      coachEmail: coachData.email
+    };
+
+  } catch (error) {
+    console.error('Error deleting coach auth:', error);
+    
+    if (error.code === 'auth/user-not-found') {
+      return { success: true, message: 'Coach authentication was already deleted' };
+    }
+
+    throw new functions.https.HttpsError('internal', `Failed to delete coach auth: ${error.message}`);
   }
 });
