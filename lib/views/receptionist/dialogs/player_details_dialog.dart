@@ -778,7 +778,7 @@ class _PlayerDetailsDialogState extends State<PlayerDetailsDialog>
     );
   }
 
-  // Helper methods
+// Helper methods for PaymentOverviewScreen
   List<Color> _getStatusGradient(PaymentStatus status) {
     switch (status) {
       case PaymentStatus.paid:
@@ -787,6 +787,11 @@ class _PlayerDetailsDialogState extends State<PlayerDetailsDialog>
         return [const Color(0xFFF59E0B), const Color(0xFFD97706)];
       case PaymentStatus.unpaid:
         return [const Color(0xFFEF4444), const Color(0xFFDC2626)];
+      case PaymentStatus.notActive:
+        return [
+          const Color(0xFF6B7280),
+          const Color(0xFF4B5563)
+        ]; // Grey gradient
     }
   }
 
@@ -798,6 +803,8 @@ class _PlayerDetailsDialogState extends State<PlayerDetailsDialog>
         return const Color(0xFFF59E0B);
       case PaymentStatus.unpaid:
         return const Color(0xFFEF4444);
+      case PaymentStatus.notActive:
+        return const Color(0xFF6B7280); // Grey color for not active
     }
   }
 
@@ -809,6 +816,8 @@ class _PlayerDetailsDialogState extends State<PlayerDetailsDialog>
         return 'Partially Paid';
       case PaymentStatus.unpaid:
         return 'Unpaid';
+      case PaymentStatus.notActive:
+        return 'Not Active'; // New status text
     }
   }
 

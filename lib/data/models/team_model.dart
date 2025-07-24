@@ -80,16 +80,19 @@ class Team {
     this.updatedAt,
   });
 
-  // BACKWARDS COMPATIBILITY: Get single coach for old queries
+  // BACKWARDS COMPATIBILITY: Get primary coach for old queries
   String? get singleCoachId {
     final activeCoaches = coaches.where((c) => c.isActive).toList();
-    if (activeCoaches.isNotEmpty) {
-      // Prioritize head coach, otherwise return first active coach
-      final headCoach =
-          activeCoaches.where((c) => c.role == 'head_coach').firstOrNull;
-      return headCoach?.userId ?? activeCoaches.first.userId;
-    }
-    return null;
+    if (activeCoaches.isEmpty) return null;
+    
+    // Priority: head_coach > assistant_coach > first active coach
+    final headCoach = activeCoaches.where((c) => c.role == 'head_coach').firstOrNull;
+    if (headCoach != null) return headCoach.userId;
+    
+    final assistantCoach = activeCoaches.where((c) => c.role == 'assistant_coach').firstOrNull;
+    if (assistantCoach != null) return assistantCoach.userId;
+    
+    return activeCoaches.first.userId;
   }
 
   // Get active coaches only
@@ -125,13 +128,12 @@ class Team {
     }
   }
 
-  // CRITICAL: Backwards compatible factory that works with your existing data
+  // 🔥 FIXED: Factory that handles YOUR ACTUAL data structure
   factory Team.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
-
     List<TeamCoach> coachesList = [];
 
-    // Handle NEW structure first (coaches array)
+    // PRIMARY: Handle coaches array (new standard structure)
     if (data['coaches'] != null && data['coaches'] is List) {
       final coachesData = data['coaches'] as List<dynamic>;
       coachesList = coachesData
@@ -144,7 +146,20 @@ class Team {
           .whereType<TeamCoach>()
           .toList();
     }
-    // Handle OLD structure (your current single coach field)
+    // FALLBACK: Handle coach_ids array (migration support)
+    else if (data['coach_ids'] != null && data['coach_ids'] is List) {
+      final coachIds = List<String>.from(data['coach_ids']);
+      coachesList = coachIds.map((coachId) {
+        return TeamCoach(
+          userId: coachId,
+          role: 'head_coach', // Default role for migrated data
+          assignedAt: data['created_at']?.toDate() ?? DateTime.now(),
+          assignedBy: 'system_migration',
+          isActive: true,
+        );
+      }).toList();
+    }
+    // LEGACY: Handle single coach (backwards compatibility)
     else if (data['coach'] != null && data['coach'].toString().isNotEmpty) {
       coachesList = [
         TeamCoach(
@@ -169,7 +184,7 @@ class Team {
     );
   }
 
-  // Convert back to Firestore format (maintains backwards compatibility)
+  // 🔥 UPDATED: toFirestore that maintains both structures for compatibility
   Map<String, dynamic> toFirestore() {
     final result = {
       'team_name': teamName,
@@ -179,12 +194,23 @@ class Team {
       'updated_at': FieldValue.serverTimestamp(),
     };
 
-    // Add new coaches array
     if (coaches.isNotEmpty) {
+      // PRIMARY: New coaches array (single source of truth)
       result['coaches'] = coaches.map((coach) => coach.toJson()).toList();
 
-      // BACKWARDS COMPATIBILITY: Keep single coach field for existing queries
-      result['coach'] = singleCoachId!;
+      // COMPATIBILITY: Add coach_ids array for existing queries
+      result['coach_ids'] = activeCoachIds;
+
+      // COMPATIBILITY: Keep single coach field (nullable for safety)
+      final primaryCoach = singleCoachId;
+      if (primaryCoach != null) {
+        result['coach'] = primaryCoach;
+      }
+    } else {
+      // Handle empty coaches case
+      result['coaches'] = <Map<String, dynamic>>[];
+      result['coach_ids'] = <String>[];
+      result.remove('coach'); // Remove field completely if no coaches
     }
 
     return result;
@@ -192,17 +218,25 @@ class Team {
 
   // Helper method to get data as Map (for existing code that expects Map)
   Map<String, dynamic> get asMap {
-    return {
+    final map = {
       'id': id,
       'team_name': teamName,
       'team_description': teamDescription,
       'number_of_players': numberOfPlayers,
-      'coach': singleCoachId, // For backwards compatibility
+      'coach_ids': activeCoachIds,
       'coaches': coaches.map((c) => c.toJson()).toList(),
       'payment': payment,
       'created_at': createdAt != null ? Timestamp.fromDate(createdAt!) : null,
       'updated_at': updatedAt != null ? Timestamp.fromDate(updatedAt!) : null,
     };
+    
+    // Only add coach field if we have a primary coach
+    final primaryCoach = singleCoachId;
+    if (primaryCoach != null) {
+      map['coach'] = primaryCoach;
+    }
+    
+    return map;
   }
 
   // Copy with method for easy updates

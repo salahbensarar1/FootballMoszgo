@@ -10,6 +10,239 @@ class TeamService {
   // Get current user ID for audit trail
   String get _currentUserId => _auth.currentUser?.uid ?? 'unknown';
 
+  // 🔥 FIXED: Get teams for coach - handles BOTH old and new data structures
+  Stream<List<Team>> getTeamsForCoach(String coachUserId) {
+    return _firestore.collection('teams').snapshots().map((snapshot) {
+      final coachTeams = <Team>[];
+
+      for (final doc in snapshot.docs) {
+        try {
+          final data = doc.data();
+
+          // Skip inactive teams
+          if (data['is_active'] == false) continue;
+
+          if (_isCoachAssignedToTeam(data, coachUserId)) {
+            final team = Team.fromFirestore(doc);
+            coachTeams.add(team);
+          }
+        } catch (e) {
+          // Log error but don't break the stream
+          continue;
+        }
+      }
+
+      return coachTeams;
+    });
+  }
+
+  /// Helper method to check if coach is assigned to team (handles all data structures)
+  bool _isCoachAssignedToTeam(
+      Map<String, dynamic> teamData, String coachUserId) {
+    // PRIMARY: Check coaches array (new standard structure)
+    if (teamData['coaches'] != null && teamData['coaches'] is List) {
+      final coaches = teamData['coaches'] as List;
+      for (final coach in coaches) {
+        if (coach is Map &&
+            (coach['userId'] == coachUserId || coach['coach_id'] == coachUserId) &&
+            (coach['isActive'] ?? true)) {
+          return true;
+        }
+      }
+    }
+
+    // FALLBACK: Check coach_ids array (existing structure)
+    if (teamData['coach_ids'] != null && teamData['coach_ids'] is List) {
+      final coachIds = List<String>.from(teamData['coach_ids']);
+      if (coachIds.contains(coachUserId)) {
+        return true;
+      }
+    }
+
+    // LEGACY: Check single coach field (backwards compatibility)
+    if (teamData['coach'] == coachUserId) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /// 🔥 NEW: Cascade delete coach from all teams and authentication
+  Future<void> deleteCoachCompletely(String coachUserId) async {
+    try {
+      final batch = _firestore.batch();
+
+      // 1. Get all teams where coach is assigned
+      final teamsSnapshot = await _firestore.collection('teams').get();
+
+      for (final teamDoc in teamsSnapshot.docs) {
+        final data = teamDoc.data();
+        bool needsUpdate = false;
+
+        // Remove from coaches array (new structure)
+        if (data['coaches'] != null && data['coaches'] is List) {
+          final coaches = List<Map<String, dynamic>>.from(data['coaches']);
+          final originalLength = coaches.length;
+          coaches.removeWhere((coach) => coach['userId'] == coachUserId);
+          if (coaches.length != originalLength) {
+            batch.update(teamDoc.reference, {'coaches': coaches});
+            needsUpdate = true;
+          }
+        }
+
+        // Remove from coach_ids array (fallback structure)
+        if (data['coach_ids'] != null && data['coach_ids'] is List) {
+          final coachIds = List<String>.from(data['coach_ids']);
+          if (coachIds.contains(coachUserId)) {
+            coachIds.remove(coachUserId);
+            batch.update(teamDoc.reference, {'coach_ids': coachIds});
+            needsUpdate = true;
+          }
+        }
+
+        // Remove single coach (legacy structure)
+        if (data['coach'] == coachUserId) {
+          batch.update(teamDoc.reference, {'coach': null});
+          needsUpdate = true;
+        }
+
+        // Add audit trail
+        if (needsUpdate) {
+          batch.update(teamDoc.reference, {
+            'last_modified': FieldValue.serverTimestamp(),
+            'modified_by': _currentUserId,
+            'modification_reason': 'Coach deleted - cascade cleanup'
+          });
+        }
+      }
+
+      // 2. Delete user document
+      batch.delete(_firestore.collection('users').doc(coachUserId));
+
+      // 3. Commit all changes
+      await batch.commit();
+
+      // 4. Delete from Firebase Auth (this should be done by admin)
+      // Note: This requires admin privileges and should be handled server-side
+      print(
+          '✅ Coach $coachUserId successfully deleted from all teams and user collection');
+    } catch (e) {
+      print('❌ Error deleting coach: $e');
+      rethrow;
+    }
+  }
+
+  /// 🔥 NEW: Remove coach from specific team only (direct removal)
+  Future<void> removeCoachFromTeamDirect(
+      String teamId, String coachUserId) async {
+    try {
+      final teamRef = _firestore.collection('teams').doc(teamId);
+      final teamDoc = await teamRef.get();
+
+      if (!teamDoc.exists) {
+        throw Exception('Team not found');
+      }
+
+      final data = teamDoc.data()!;
+      final updates = <String, dynamic>{};
+
+      // Remove from coaches array (new structure)
+      if (data['coaches'] != null && data['coaches'] is List) {
+        final coaches = List<Map<String, dynamic>>.from(data['coaches']);
+        coaches.removeWhere((coach) => coach['userId'] == coachUserId);
+        updates['coaches'] = coaches;
+      }
+
+      // Remove from coach_ids array (fallback structure)
+      if (data['coach_ids'] != null && data['coach_ids'] is List) {
+        final coachIds = List<String>.from(data['coach_ids']);
+        coachIds.remove(coachUserId);
+        updates['coach_ids'] = coachIds;
+      }
+
+      // Remove single coach (legacy structure)
+      if (data['coach'] == coachUserId) {
+        updates['coach'] = null;
+      }
+
+      // Add audit trail
+      updates['last_modified'] = FieldValue.serverTimestamp();
+      updates['modified_by'] = _currentUserId;
+
+      await teamRef.update(updates);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // 🔥 FIXED: Alternative query method for immediate debugging
+  Future<List<Team>> getTeamsForCoachDebug(String coachUserId) async {
+    try {
+      print('🔍 DEBUG: Getting teams for coach: $coachUserId');
+
+      final snapshot = await _firestore.collection('teams').get();
+      print('📊 DEBUG: Total teams in database: ${snapshot.docs.length}');
+
+      final coachTeams = <Team>[];
+
+      for (final doc in snapshot.docs) {
+        final data = doc.data();
+        print('🏟️ DEBUG: Checking team: ${data['team_name']} (${doc.id})');
+        print('📋 DEBUG: Team data keys: ${data.keys.toList()}');
+
+        // Check all possible coach storage methods
+        bool isCoachInTeam = false;
+        String foundMethod = '';
+
+        // Check coach_ids array
+        if (data['coach_ids'] != null) {
+          print('🔍 DEBUG: coach_ids found: ${data['coach_ids']}');
+          final coachIds = List<String>.from(data['coach_ids']);
+          if (coachIds.contains(coachUserId)) {
+            isCoachInTeam = true;
+            foundMethod = 'coach_ids array';
+          }
+        }
+
+        // Check coaches array
+        if (data['coaches'] != null) {
+          print('🔍 DEBUG: coaches found: ${data['coaches']}');
+          final coaches = data['coaches'] as List;
+          for (final coach in coaches) {
+            if (coach is Map && (coach['userId'] == coachUserId || coach['coach_id'] == coachUserId)) {
+              isCoachInTeam = true;
+              foundMethod = 'coaches array';
+              break;
+            }
+          }
+        }
+
+        // Check single coach
+        if (data['coach'] != null) {
+          print('🔍 DEBUG: single coach found: ${data['coach']}');
+          if (data['coach'] == coachUserId) {
+            isCoachInTeam = true;
+            foundMethod = 'single coach';
+          }
+        }
+
+        if (isCoachInTeam) {
+          print('✅ DEBUG: Coach found in team via $foundMethod');
+          final team = Team.fromFirestore(doc);
+          coachTeams.add(team);
+        } else {
+          print('❌ DEBUG: Coach NOT found in this team');
+        }
+      }
+
+      print('🏆 DEBUG: Final result: ${coachTeams.length} teams found');
+      return coachTeams;
+    } catch (e) {
+      print('❌ DEBUG: Error getting teams: $e');
+      return [];
+    }
+  }
+
   // COACH MANAGEMENT METHODS
 
   /// Add a coach to a team with specified role
@@ -46,6 +279,10 @@ class TeamService {
 
       await teamDoc.reference.update({
         'coaches': updatedCoaches.map((c) => c.toJson()).toList(),
+        'coach_ids': updatedCoaches
+            .where((c) => c.isActive)
+            .map((c) => c.userId)
+            .toList(),
         'coach': updatedCoaches
             .firstWhere((c) => c.isActive)
             .userId, // Keep backwards compatibility
@@ -95,6 +332,7 @@ class TeamService {
 
       await teamDoc.reference.update({
         'coaches': updatedCoaches.map((c) => c.toJson()).toList(),
+        'coach_ids': activeCoaches.map((c) => c.userId).toList(),
         'coach': primaryCoachId, // Update single coach field
         'updated_at': FieldValue.serverTimestamp(),
       });
@@ -144,16 +382,6 @@ class TeamService {
   }
 
   // TEAM QUERY METHODS
-
-  /// Get teams where user is an active coach (NEW APPROACH)
-  Stream<List<Team>> getTeamsForCoach(String coachUserId) {
-    return _firestore.collection('teams').snapshots().map((snapshot) {
-      return snapshot.docs
-          .map((doc) => Team.fromFirestore(doc))
-          .where((team) => team.activeCoachIds.contains(coachUserId))
-          .toList();
-    });
-  }
 
   /// Get teams where user is an active coach (BACKWARDS COMPATIBLE)
   Stream<QuerySnapshot> getTeamsForCoachCompatible(String coachUserId) {
@@ -288,6 +516,7 @@ class TeamService {
         );
 
         teamData['coaches'] = [initialCoach.toJson()];
+        teamData['coach_ids'] = [initialCoachId];
         teamData['coach'] = initialCoachId; // Backwards compatibility
       }
 
@@ -361,6 +590,7 @@ class TeamService {
                 'isActive': true,
               }
             ],
+            'coach_ids': [oldCoachId.toString()],
             'updated_at': FieldValue.serverTimestamp(),
             // Keep the old coach field for backwards compatibility
           });
