@@ -250,5 +250,160 @@
         "type": "String"
       }
     }
-  }
+  },
+
+  "close": "Bezárás",
+  "adding": "Hozzáadás...",
+  "personalInformation": "Személyes adatok",
+  "coachNameRequired": "Az edző neve kötelező",
+  "nameMinLength": "A névnek legalább 2 karakterből kell állnia",
+  "emailRequired": "Az e-mail cím kötelező",
+  "validEmailRequired": "Adjon meg egy érvényes e-mail címet",
+  "roleDescriptionMaxLength": "A szerepkör leírása kevesebb mint 100 karakterből kell álljon",
+  "teamAssignment": "Csapat hozzárendelés",
+  "selectTeamsToTrain": "Válassza ki a csapatokat, amelyeket ez az edző edzeni fog",
+  "assignedTeams": "Hozzárendelt csapatok ({count})",
+  "@assignedTeams": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "many": "TÖBB",
+  "addTeam": "Csapat hozzáadása",
+  "maximumTeamsAssigned": "Maximum csapatok hozzárendelve",
+  "noTeamsAvailable": "Nincsenek elérhető csapatok",
+  "allTeamsAssigned": "Minden csapat hozzárendelve",
+  "loadingTeams": "Csapatok betöltése...",
+  "selectTeamToAdd": "Válassza ki a hozzáadandó csapatot",
+  "selectRole": "Szerepkör kiválasztása",
+  "forTeam": "{teamName} számára",
+  "@forTeam": {
+    "placeholders": {
+      "teamName": {
+        "type": "String"
+      }
+    }
+  },
+  "coachOptionalAssignment": "Az edző több csapathoz is hozzárendelhető (opcionális)",
+  "playerInformation": "Játékos adatok",
+  "enterPlayerName": "Adja meg a játékos nevét",
+  "selectBirthDate": "Válassza ki a születési dátumot",
+  "enterPosition": "Adja meg a pozíciót",
+  "teamInformation": "Csapat adatok",
+  "teamNameRequired": "A csapat neve kötelező",
+  "teamNameMinLength": "A csapat nevének legalább 2 karakterből kell állnia",
+  "teamNameMaxLength": "A csapat neve kevesebb mint 30 karakterből kell álljon",
+  "teamDescription": "Csapat leírása",
+  "teamDescriptionRequired": "A csapat leírása kötelező",
+  "descriptionMinLength": "A leírásnak legalább 10 karakterből kell állnia",
+  "descriptionMaxLength": "A leírás kevesebb mint 200 karakterből kell álljon",
+  "coachAssignment": "Edző hozzárendelés",
+  "assignedCoaches": "Hozzárendelt edzők ({count})",
+  "@assignedCoaches": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "max": "MAX",
+  "addCoach": "Edző hozzáadása",
+  "maximumCoachesAssigned": "Maximum edzők hozzárendelve",
+  "noCoachesAvailable": "Nincsenek elérhető edzők",
+  "allCoachesAssigned": "Minden edző hozzárendelve",
+  "loadingCoaches": "Edzők betöltése...",
+  "selectCoachToAdd": "Válassza ki a hozzáadandó edzőt",
+  "atLeastOneCoachRequired": "Legalább egy edzőt hozzá kell rendelni a csapat létrehozásához",
+  "profilePicture": "Profilkép",
+  "tapToSelectPicture": "Kattintson a fenti körre profilkép kiválasztásához",
+  "uploadImage": "Kép feltöltése",
+  "uploading": "Feltöltés...",
+  "addNewCoach": "Új edző hozzáadása a rendszerhez",
+  "registerNewPlayer": "Új játékos regisztrálása",
+  "createNewTeam": "Új csapat létrehozása",
+  "addNewEntry": "Új bejegyzés hozzáadása",
+  "assignToTeam": "Csapathoz rendelés",
+  "passwordMinLengthSix": "A jelszónak legalább 6 karakterből kell állnia",
+  "failedToPickImage": "Kép kiválasztása sikertelen",
+  "imageUploadedSuccessfully": "Kép sikeresen feltöltve!",
+  "uploadFailed": "Feltöltés sikertelen",
+  "coachAddedSuccessfully": "Edző sikeresen hozzáadva {teamCount} csapathoz!",
+  "@coachAddedSuccessfully": {
+    "placeholders": {
+      "teamCount": {
+        "type": "String"
+      }
+    }
+  },
+  "coachAddedSuccessfullySimple": "Edző sikeresen hozzáadva!",
+  "errorAddingCoach": "Hiba az edző hozzáadásakor",
+  "pleaseSelectTeamForPlayer": "Kérjük, válasszon csapatot a játékos számára.",
+  "playerAddedSuccessfully": "Játékos sikeresen hozzáadva!",
+  "errorAddingPlayer": "Hiba a játékos hozzáadásakor",
+  "atLeastOneCoachTeamRequired": "Legalább egy edzőt hozzá kell rendelni a csapathoz.",
+  "teamCreatedSuccessfully": "\"{teamName}\" csapat létrehozva {coachCount} edzővel!",
+  "@teamCreatedSuccessfully": {
+    "placeholders": {
+      "teamName": {
+        "type": "String"
+      },
+      "coachCount": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToCreateTeam": "Csapat létrehozása sikertelen. Kérjük, próbálja újra.",
+
+  "headCoach": "Főedző",
+  "assistantCoach": "Másodedző",
+  "tacticsCoach": "Taktikai edző",
+  "fitnessCoach": "Erőnléti edző",
+  "goalkeepingCoach": "Kapusedző",
+  "youthCoach": "Utánpótlás edző",
+
+  "markPayment": "Fizetés jelölése",
+  "recordPaymentFor": "Fizetés rögzítése {year}-ra",
+  "@recordPaymentFor": {
+    "placeholders": {
+      "year": {
+        "type": "String"
+      }
+    }
+  },
+  "selectPlayer": "Játékos kiválasztása",
+  "selectMonth": "Hónap kiválasztása",
+  "paymentStatus": "Fizetési állapot",
+  "paymentSummary": "Fizetési összesítő",
+  "year": "Év",
+  "month": "Hónap",
+  "amount": "Összeg",
+  "paymentMethod": "Fizetési mód",
+  "manualEntry": "Kézi bevitel",
+  "noFeeConfigured": "Ehhez a csapathoz nincs fizetési díj beállítva",
+  "notes": "Megjegyzések",
+  "optionalNotes": "Opcionális megjegyzések vagy kommentek...",
+  
+  "fullyPaid": "Teljesen Fizetve",
+  "partiallyPaid": "Részben Fizetve",
+  "unpaid": "Nem Fizetve",
+  "notActive": "Nem Aktív",
+  "inactive": "Inaktív",
+  
+  "paymentFullyCompleted": "Fizetés teljesen teljesítve",
+  "partialPaymentReceived": "Részfizetés érkezett",
+  "noPaymentReceived": "Nem érkezett fizetés",
+  "playerInactiveSuspended": "Játékos inaktív/felfüggesztett",
+  
+  "markAsPaid": "Jelölés fizetettként",
+  "markAsPartial": "Jelölés részben fizetettként",
+  "markAsUnpaid": "Jelölés nem fizetettként",
+  "markAsInactive": "Jelölés inaktívként",
+  
+  "paymentMarkedPaidSuccess": "Fizetés sikeresen FIZETETT-re jelölve!",
+  "paymentMarkedPartialSuccess": "Fizetés sikeresen RÉSZBEN FIZETVE-re jelölve!",
+  "paymentMarkedUnpaidSuccess": "Fizetés sikeresen FIZETETLEN-re jelölve!",
+  "playerMarkedInactiveSuccess": "Játékos sikeresen INAKTÍV-ra jelölve!",
+  "errorMarkingPayment": "Hiba a fizetés jelölésekor"
 }
