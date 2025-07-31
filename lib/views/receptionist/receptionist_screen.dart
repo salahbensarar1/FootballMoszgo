@@ -7,7 +7,6 @@ import 'package:footballtraining/views/login/login_page.dart';
 import 'package:footballtraining/views/receptionist/dialogs/add_entry_dialog.dart';
 import 'package:footballtraining/views/receptionist/dialogs/coach_assignment_dialog.dart';
 import 'package:footballtraining/views/receptionist/payment_overview_screen.dart';
-import 'package:footballtraining/views/receptionist/widgets/cleanupButton.dart';
 import 'package:footballtraining/views/shared/widgets/payment_month_indicator.dart';
 import 'package:footballtraining/data/repositories/coach_management_service.dart';
 import 'package:footballtraining/utils/responsive_utils.dart';
@@ -23,13 +22,12 @@ class ReceptionistScreen extends StatefulWidget {
 /// Production-ready ReceptionistScreen with comprehensive optimizations:
 /// - Full responsive design using ResponsiveUtils
 /// - Memory leak prevention with proper disposal
-/// - Enhanced error handling and loading states  
+/// - Enhanced error handling and loading states
 /// - Complete localization support
 /// - Performance optimizations with memoization
 /// - Cross-device compatibility (phones/tablets/desktop)
 class _ReceptionistScreenState extends State<ReceptionistScreen>
     with TickerProviderStateMixin, AutomaticKeepAliveClientMixin {
-  
   // Performance: Keep widget alive to prevent rebuilds
   @override
   bool get wantKeepAlive => true;
@@ -50,7 +48,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
   bool isLoading = false;
   bool isInitialized = false;
   String? errorMessage;
-  
+
   // Stream subscriptions for proper disposal (prevent memory leaks)
   final List<StreamSubscription> _subscriptions = [];
 
@@ -59,6 +57,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
   late AnimationController _fabAnimationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
+  // ignore: unused_field
   late Animation<double> _scaleAnimation;
 
   // Tab configuration
@@ -100,13 +99,13 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
     _fabAnimationController.dispose();
     _tabController.dispose();
     _searchController.dispose();
-    
+
     // Cancel all stream subscriptions
     for (final subscription in _subscriptions) {
       subscription.cancel();
     }
     _subscriptions.clear();
-    
+
     super.dispose();
   }
 
@@ -234,19 +233,21 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context); // Required for AutomaticKeepAliveClientMixin
-    
+
     final l10n = AppLocalizations.of(context)!;
-    
+
     // Enhanced responsive breakpoints using ResponsiveUtils
     final isSmallScreen = ResponsiveUtils.isMobile(context);
+    // ignore: unused_local_variable
     final isTablet = ResponsiveUtils.isTablet(context);
+    // ignore: unused_local_variable
     final isDesktop = ResponsiveUtils.isDesktop(context);
-    
+
     // Error boundary for production stability
     if (errorMessage != null && !isInitialized) {
       return _buildErrorScaffold(l10n);
     }
-    
+
     // Enhanced loading state
     if (isLoading && !isInitialized) {
       return _buildLoadingScaffold(l10n);
@@ -255,7 +256,9 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: _buildAppBar(l10n),
-      drawer: isSmallScreen ? _buildDrawer(l10n) : null, // Only show drawer on mobile
+      drawer: isSmallScreen
+          ? _buildDrawer(l10n)
+          : null, // Only show drawer on mobile
       body: FadeTransition(
         opacity: _fadeAnimation,
         child: Column(
@@ -1225,7 +1228,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
       ),
     );
   }
-  
+
   Widget _buildLoadingScaffold(AppLocalizations l10n) {
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
@@ -1246,7 +1249,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
       ),
     );
   }
-  
+
   void _refreshData() {
     setState(() {
       isInitialized = false;
@@ -1254,7 +1257,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
     });
     _getUserDetails();
   }
-  
+
   // Helper methods
   void _showComingSoon(BuildContext context, AppLocalizations l10n) {
     Navigator.pop(context);
@@ -1903,6 +1906,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
               .delete();
         }
       } else if (currentTab == 1) {
+        // ignore: unused_local_variable
         String collection = 'players'; // Player
 
         // Decrement the number_of_players in the assigned team

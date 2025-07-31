@@ -261,7 +261,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
           IconButton(
             onPressed: () => Navigator.of(context).pop(),
             icon: const Icon(Icons.close_rounded, color: Colors.white),
-            tooltip: 'Close',
+            tooltip: l10n.close,
           ),
         ],
       ),
@@ -362,7 +362,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
                             size: 20,
                           ),
                     label: Text(
-                      _isSubmitting ? 'Adding...' : l10n.add,
+                      _isSubmitting ? l10n.adding : l10n.add,
                       style: GoogleFonts.poppins(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -400,7 +400,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
       const SizedBox(height: 24),
 
       // Personal Information
-      _buildSectionHeader('Personal Information', Icons.person_rounded),
+      _buildSectionHeader(l10n.personalInformation, Icons.person_rounded),
       const SizedBox(height: 16),
 
       _buildTextField(
@@ -408,10 +408,10 @@ class _AddEntryDialogState extends State<AddEntryDialog>
         icon: Icons.person_outline_rounded,
         validator: (value) {
           if (value == null || value.trim().isEmpty) {
-            return "Coach name is required";
+            return l10n.coachNameRequired;
           }
           if (value.trim().length < 2) {
-            return "Name must be at least 2 characters";
+            return l10n.nameMinLength;
           }
           return null;
         },
@@ -427,10 +427,10 @@ class _AddEntryDialogState extends State<AddEntryDialog>
         keyboardType: TextInputType.emailAddress,
         validator: (value) {
           if (value == null || value.trim().isEmpty) {
-            return "Email is required";
+            return l10n.emailRequired;
           }
           if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-            return "Enter a valid email address";
+            return l10n.validEmailRequired;
           }
           return null;
         },
@@ -449,7 +449,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
         maxLines: 2,
         validator: (value) {
           if (value != null && value.length > 100) {
-            return "Role description must be less than 100 characters";
+            return l10n.roleDescriptionMaxLength;
           }
           return null;
         },
@@ -459,10 +459,10 @@ class _AddEntryDialogState extends State<AddEntryDialog>
       const SizedBox(height: 24),
 
       // Multi-Team Assignment
-      _buildSectionHeader('Team Assignment', Icons.groups_rounded),
+      _buildSectionHeader(l10n.teamAssignment, Icons.groups_rounded),
       const SizedBox(height: 8),
       Text(
-        'Select teams this coach will train',
+        l10n.selectTeamsToTrain,
         style: GoogleFonts.poppins(
           fontSize: isSmallScreen ? 12 : 13,
           color: Colors.grey.shade600,
@@ -497,7 +497,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
               ),
               SizedBox(width: 8),
               Text(
-                'Assigned Teams (${selectedTeamsForCoach.length})',
+                l10n.assignedTeams('${selectedTeamsForCoach.length}'),
                 style: GoogleFonts.poppins(
                   fontWeight: FontWeight.w600,
                   fontSize: isSmallScreen ? 14 : 16,
@@ -513,7 +513,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    'MANY',
+                    l10n.many,
                     style: GoogleFonts.poppins(
                       fontSize: 10,
                       fontWeight: FontWeight.w600,
@@ -554,7 +554,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
             stream: FirebaseFirestore.instance.collection('teams').snapshots(),
             builder: (context, snapshot) {
               if (!snapshot.hasData) {
-                return _buildLoadingTeamButton(isSmallScreen);
+                return _buildLoadingTeamButton(isSmallScreen, l10n);
               }
 
               final availableTeams = snapshot.data!.docs
@@ -570,6 +570,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
                 isEnabled: canAddMore && hasAvailable,
                 availableTeams: availableTeams,
                 isSmallScreen: isSmallScreen,
+                l10n: l10n,
               );
             },
           ),
@@ -588,7 +589,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
                   SizedBox(width: 6),
                   Expanded(
                     child: Text(
-                      'Coach can be assigned to multiple teams (optional)',
+                      l10n.coachOptionalAssignment,
                       style: GoogleFonts.poppins(
                         fontSize: isSmallScreen ? 11 : 12,
                         color: Colors.blue.shade600,
@@ -607,16 +608,17 @@ class _AddEntryDialogState extends State<AddEntryDialog>
     required bool isEnabled,
     required List<QueryDocumentSnapshot> availableTeams,
     required bool isSmallScreen,
+    required AppLocalizations l10n,
   }) {
     String buttonText;
     if (!isEnabled && selectedTeamsForCoach.length >= 10) {
-      buttonText = 'Maximum teams assigned';
+      buttonText = l10n.maximumTeamsAssigned;
     } else if (!isEnabled && availableTeams.isEmpty) {
       buttonText = selectedTeamsForCoach.isEmpty
-          ? 'No teams available'
-          : 'All teams assigned';
+          ? l10n.noTeamsAvailable
+          : l10n.allTeamsAssigned;
     } else {
-      buttonText = 'Add Team';
+      buttonText = l10n.addTeam;
     }
 
     return Container(
@@ -651,7 +653,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
   }
 
 // PRODUCTION-READY: Loading state for team button
-  Widget _buildLoadingTeamButton(bool isSmallScreen) {
+  Widget _buildLoadingTeamButton(bool isSmallScreen, AppLocalizations l10n) {
     return Container(
       width: double.infinity,
       height: isSmallScreen ? 44 : 48,
@@ -669,7 +671,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
           ),
           SizedBox(width: 8),
           Text(
-            'Loading teams...',
+            l10n.loadingTeams,
             style: GoogleFonts.poppins(
               fontSize: isSmallScreen ? 13 : 15,
               color: Colors.grey.shade600,
@@ -815,7 +817,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
         onTap: () {
           Navigator.pop(context);
           _showTeamRoleSelectionDialog(
-              teamId, teamData['team_name'], isSmallScreen);
+              teamId, teamData['team_name'], isSmallScreen, AppLocalizations.of(context)!);
         },
         child: Container(
           padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
@@ -880,7 +882,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
 
 // Team role selection dialog
   void _showTeamRoleSelectionDialog(
-      String teamId, String teamName, bool isSmallScreen) {
+      String teamId, String teamName, bool isSmallScreen, AppLocalizations l10n) {
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -975,7 +977,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
                               SizedBox(width: isSmallScreen ? 12 : 16),
                               Expanded(
                                 child: Text(
-                                  TeamService.getCoachRoleDisplayName(role),
+                                  TeamService.getCoachRoleDisplayName(role, AppLocalizations.of(context)!),
                                   style: GoogleFonts.poppins(
                                     fontSize: isSmallScreen ? 14 : 16,
                                     fontWeight: FontWeight.w500,
@@ -1162,7 +1164,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
-                      TeamService.getCoachRoleDisplayName(team['role']),
+                      TeamService.getCoachRoleDisplayName(team['role'], AppLocalizations.of(context)),
                       style: GoogleFonts.poppins(
                         fontSize: isSmallScreen ? 10 : 11,
                         color: Colors.green.shade700,
@@ -1456,7 +1458,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
-                    TeamService.getCoachRoleDisplayName(coach['role']),
+                    TeamService.getCoachRoleDisplayName(coach['role'], AppLocalizations.of(context)),
                     style: GoogleFonts.poppins(
                       fontSize: isSmallScreen ? 10 : 11,
                       color: Colors.green.shade700,
@@ -1733,7 +1735,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
         borderRadius: BorderRadius.circular(isSmallScreen ? 8 : 12),
         onTap: () {
           Navigator.pop(context);
-          _showRoleSelectionDialog(coachId, coachData['name'], isSmallScreen);
+          _showRoleSelectionDialog(coachId, coachData['name'], isSmallScreen, AppLocalizations.of(context)!);
         },
         child: Container(
           padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
@@ -1797,7 +1799,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
 
   // Responsive role selection dialog
   void _showRoleSelectionDialog(
-      String coachId, String coachName, bool isSmallScreen) {
+      String coachId, String coachName, bool isSmallScreen, AppLocalizations l10n) {
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -1892,7 +1894,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
                               SizedBox(width: isSmallScreen ? 12 : 16),
                               Expanded(
                                 child: Text(
-                                  TeamService.getCoachRoleDisplayName(role),
+                                  TeamService.getCoachRoleDisplayName(role, AppLocalizations.of(context)!),
                                   style: GoogleFonts.poppins(
                                     fontSize: isSmallScreen ? 14 : 16,
                                     fontWeight: FontWeight.w500,
@@ -2055,7 +2057,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
         onFieldSubmitted: (_) =>
             FocusScope.of(context).requestFocus(_focusNodes[3]),
         validator: (value) =>
-            value!.length < 6 ? "Password must be at least 6 characters" : null,
+            value!.length < 6 ? l10n.passwordMinLengthSix : null,
         onSaved: (value) => password = value!,
         decoration: InputDecoration(
           labelText: l10n.password,

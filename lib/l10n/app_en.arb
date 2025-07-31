@@ -250,5 +250,160 @@
         "type": "String"
       }
     }
-  }
+  },
+  
+  "close": "Close",
+  "adding": "Adding...",
+  "personalInformation": "Personal Information",
+  "coachNameRequired": "Coach name is required",
+  "nameMinLength": "Name must be at least 2 characters",
+  "emailRequired": "Email is required",
+  "validEmailRequired": "Enter a valid email address",
+  "roleDescriptionMaxLength": "Role description must be less than 100 characters",
+  "teamAssignment": "Team Assignment",
+  "selectTeamsToTrain": "Select teams this coach will train",
+  "assignedTeams": "Assigned Teams ({count})",
+  "@assignedTeams": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "many": "MANY",
+  "addTeam": "Add Team",
+  "maximumTeamsAssigned": "Maximum teams assigned",
+  "noTeamsAvailable": "No teams available",
+  "allTeamsAssigned": "All teams assigned",
+  "loadingTeams": "Loading teams...",
+  "selectTeamToAdd": "Select Team to Add",
+  "selectRole": "Select Role",
+  "forTeam": "for {teamName}",
+  "@forTeam": {
+    "placeholders": {
+      "teamName": {
+        "type": "String"
+      }
+    }
+  },
+  "coachOptionalAssignment": "Coach can be assigned to multiple teams (optional)",
+  "playerInformation": "Player Information",
+  "enterPlayerName": "Enter player name",
+  "selectBirthDate": "Select birth date",
+  "enterPosition": "Enter position",
+  "teamInformation": "Team Information",
+  "teamNameRequired": "Team name is required",
+  "teamNameMinLength": "Team name must be at least 2 characters",
+  "teamNameMaxLength": "Team name must be less than 30 characters",
+  "teamDescription": "Team Description",
+  "teamDescriptionRequired": "Team description is required",
+  "descriptionMinLength": "Description must be at least 10 characters",
+  "descriptionMaxLength": "Description must be less than 200 characters",
+  "coachAssignment": "Coach Assignment",
+  "assignedCoaches": "Assigned Coaches ({count})",
+  "@assignedCoaches": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "max": "MAX",
+  "addCoach": "Add Coach",
+  "maximumCoachesAssigned": "Maximum coaches assigned",
+  "noCoachesAvailable": "No coaches available",
+  "allCoachesAssigned": "All coaches assigned",
+  "loadingCoaches": "Loading coaches...",
+  "selectCoachToAdd": "Select Coach to Add",
+  "atLeastOneCoachRequired": "At least one coach must be assigned to create a team",
+  "profilePicture": "Profile Picture",
+  "tapToSelectPicture": "Tap the circle above to select a profile picture",
+  "uploadImage": "Upload Image",
+  "uploading": "Uploading...",
+  "addNewCoach": "Add a new coach to the system",
+  "registerNewPlayer": "Register a new player",
+  "createNewTeam": "Create a new team",
+  "addNewEntry": "Add new entry",
+  "assignToTeam": "Assign to Team",
+  "passwordMinLengthSix": "Password must be at least 6 characters",
+  "failedToPickImage": "Failed to pick image",
+  "imageUploadedSuccessfully": "Image uploaded successfully!",
+  "uploadFailed": "Upload failed",
+  "coachAddedSuccessfully": "Coach added successfully to {teamCount} team(s)!",
+  "@coachAddedSuccessfully": {
+    "placeholders": {
+      "teamCount": {
+        "type": "String"
+      }
+    }
+  },
+  "coachAddedSuccessfullySimple": "Coach added successfully!",
+  "errorAddingCoach": "Error adding coach",
+  "pleaseSelectTeamForPlayer": "Please select a team for the player.",
+  "playerAddedSuccessfully": "Player added successfully!",
+  "errorAddingPlayer": "Error adding player",
+  "atLeastOneCoachTeamRequired": "At least one coach must be assigned to the team.",
+  "teamCreatedSuccessfully": "Team \"{teamName}\" created with {coachCount} coach(es)!",
+  "@teamCreatedSuccessfully": {
+    "placeholders": {
+      "teamName": {
+        "type": "String"
+      },
+      "coachCount": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToCreateTeam": "Failed to create team. Please try again.",
+  
+  "headCoach": "Head Coach",
+  "assistantCoach": "Assistant Coach",
+  "tacticsCoach": "Tactics Coach",
+  "fitnessCoach": "Fitness Coach",
+  "goalkeepingCoach": "Goalkeeping Coach",
+  "youthCoach": "Youth Coach",
+
+  "markPayment": "Mark Payment",
+  "recordPaymentFor": "Record a payment for {year}",
+  "@recordPaymentFor": {
+    "placeholders": {
+      "year": {
+        "type": "String"
+      }
+    }
+  },
+  "selectPlayer": "Select Player",
+  "selectMonth": "Select Month",
+  "paymentStatus": "Payment Status",
+  "paymentSummary": "Payment Summary",
+  "year": "Year",
+  "month": "Month",
+  "amount": "Amount",
+  "paymentMethod": "Payment Method",
+  "manualEntry": "Manual Entry",
+  "noFeeConfigured": "This team has no payment fee configured",
+  "notes": "Notes",
+  "optionalNotes": "Optional notes or comments...",
+  
+  "fullyPaid": "Fully Paid",
+  "partiallyPaid": "Partially Paid",
+  "unpaid": "Unpaid",
+  "notActive": "Not Active",
+  "inactive": "Inactive",
+  
+  "paymentFullyCompleted": "Payment fully completed",
+  "partialPaymentReceived": "Partial payment received",
+  "noPaymentReceived": "No payment received",
+  "playerInactiveSuspended": "Player inactive/suspended",
+  
+  "markAsPaid": "Mark as Paid",
+  "markAsPartial": "Mark as Partial",
+  "markAsUnpaid": "Mark as Unpaid",
+  "markAsInactive": "Mark as Inactive",
+  
+  "paymentMarkedPaidSuccess": "Payment marked as PAID successfully!",
+  "paymentMarkedPartialSuccess": "Payment marked as PARTIAL successfully!",
+  "paymentMarkedUnpaidSuccess": "Payment marked as UNPAID successfully!",
+  "playerMarkedInactiveSuccess": "Player marked as INACTIVE successfully!",
+  "errorMarkingPayment": "Error marking payment"
 }
