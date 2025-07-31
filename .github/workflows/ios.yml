@@ -1,42 +1,86 @@
-name: Build iOS App (No Signing)
-
+name: Build iOS App (Manual Only)
 on:
+  # 💰 MANUAL ONLY - iOS builds are 10x more expensive!
   workflow_dispatch:
+    inputs:
+      deploy_to_firebase:
+        description: 'Deploy to Firebase App Distribution?'
+        required: false
+        default: false
+        type: boolean
+  # 🎯 Only on releases or critical changes
   push:
     branches: [ main ]
+    paths:
+      - 'ios/**'          # Only iOS-specific changes
+      - 'pubspec.yaml'    # Only dependency changes
+    # Don't run on every code change!
 
 jobs:
+  # 🚨 Add a cost warning
+  cost-warning:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cost Warning
+        run: |
+          echo "⚠️  iOS builds cost ~$1.20 per run (10x more than Android)"
+          echo "💡 Only run this workflow when you really need iOS builds"
+          echo "🎯 Consider using manual trigger (workflow_dispatch) for testing"
+          
   build_ios:
     runs-on: macos-latest
-
+    needs: cost-warning
+    # 🛡️ Only run on manual trigger or iOS-specific changes
+    if: |
+      github.event_name == 'workflow_dispatch' || 
+      (github.event_name == 'push' && 
+       (contains(github.event.head_commit.modified, 'ios/') || 
+        contains(github.event.head_commit.modified, 'pubspec.yaml')))
     steps:
     - name: ⬇️ Checkout code
-      uses: actions/checkout@v3
-
+      uses: actions/checkout@v4
+      
     - name: 💻 Set up Flutter
       uses: subosito/flutter-action@v2
       with:
-        flutter-version: '3.27.1' # or your Flutter version
-
+        flutter-version: '3.27.1'
+        cache: true
+        
+    # 🚀 Cache CocoaPods and Flutter deps
+    - name: Cache iOS Dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.pub-cache
+          ios/Pods
+          ios/.symlinks
+        key: ios-deps-${{ runner.os }}-${{ hashFiles('**/pubspec.lock') }}-${{ hashFiles('**/Podfile.lock') }}
+        restore-keys: |
+          ios-deps-${{ runner.os }}-
+          
     - name: 📦 Install Flutter dependencies
       run: flutter pub get
-
+      
+    - name: 🍎 Install CocoaPods dependencies
+      run: |
+        cd ios
+        pod install --repo-update
+        
     - name: 🧪 Build iOS app (no code signing)
       run: |
         flutter build ios --release --no-codesign
-
-    - name: 📁 Upload .app artifact (for manual testing or inspection)
+        
+    - name: 📁 Upload .app artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ios-app
+        name: ios-app-${{ github.sha }}
         path: build/ios/iphoneos/
-
-    - name: 🔒 Upload to Firebase App Distribution (DISABLED until you get Apple Developer)
-      if: false  # Skips this step for now
+        retention-days: 7  # Shorter retention for iOS artifacts
+        
+    # 🔒 Only deploy if manually requested
+    - name: 🚀 Upload to Firebase App Distribution
+      if: github.event.inputs.deploy_to_firebase == 'true'
       run: |
-        echo "${{ secrets.FIREBASE_CREDENTIALS }}" > "${HOME}/firebase-service-account.json"
-        firebase appdistribution:distribute \
-          build/ios/ipa/Runner.ipa \
-          --app "${{ secrets.FIREBASE_APP_ID_IOS }}" \
-          --groups "testers" \
-          --release-notes "Automated release from GitHub Actions"
+        echo "Firebase deployment would happen here"
+        echo "Currently disabled - needs Apple Developer account"
+

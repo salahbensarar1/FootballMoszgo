@@ -1,0 +1,81 @@
+
+# NEW FILE: .github/workflows/cost-monitor.yml - Go DevOps Tool!
+name: Monitor GitHub Actions Costs
+on:
+  schedule:
+    - cron: '0 9 * * *'  # Daily at 9 AM
+  workflow_dispatch:
+
+jobs:
+  cost-monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+          
+      - name: Create Cost Monitor Tool
+        run: |
+          cat > cost_monitor.go << 'EOF'
+          package main
+          
+          import (
+              "encoding/json"
+              "fmt"
+              "log"
+              "net/http"
+              "os"
+              "time"
+          )
+          
+          type BillingResponse struct {
+              TotalMinutesUsed int `json:"total_minutes_used"`
+              TotalPaidMinutesUsed int `json:"total_paid_minutes_used"`
+              IncludedMinutes int `json:"included_minutes"`
+          }
+          
+          func main() {
+              token := os.Getenv("GITHUB_TOKEN")
+              if token == "" {
+                  log.Fatal("GITHUB_TOKEN not set")
+              }
+              
+              // Get current usage
+              client := &http.Client{Timeout: 10 * time.Second}
+              req, _ := http.NewRequest("GET", 
+                  "https://api.github.com/user/settings/billing/actions", nil)
+              req.Header.Set("Authorization", "Bearer " + token)
+              req.Header.Set("Accept", "application/vnd.github.v3+json")
+              
+              resp, err := client.Do(req)
+              if err != nil {
+                  log.Fatal("Failed to get billing info:", err)
+              }
+              defer resp.Body.Close()
+              
+              var billing BillingResponse
+              json.NewDecoder(resp.Body).Decode(&billing)
+              
+              // Calculate costs and alerts
+              overageMinutes := billing.TotalMinutesUsed - billing.IncludedMinutes
+              if overageMinutes > 0 {
+                  cost := float64(overageMinutes) * 0.008
+                  fmt.Printf("🚨 COST ALERT: $%.2f in overages this month!\n", cost)
+                  fmt.Printf("📊 Minutes used: %d/%d (%.1f%%)\n", 
+                      billing.TotalMinutesUsed, billing.IncludedMinutes,
+                      float64(billing.TotalMinutesUsed)/float64(billing.IncludedMinutes)*100)
+              } else {
+                  remaining := billing.IncludedMinutes - billing.TotalMinutesUsed
+                  fmt.Printf("✅ Within limits: %d minutes remaining\n", remaining)
+              }
+          }
+          EOF
+          
+      - name: Run Cost Monitor
+        run: go run cost_monitor.go
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

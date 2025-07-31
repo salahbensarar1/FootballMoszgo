@@ -1,57 +1,89 @@
 name: Build & Deploy Android APK
-
 on:
+  # 🎯 SMART TRIGGERS - Only run when needed
   push:
     branches:
       - main
+    paths:
+      - 'lib/**'           # Only when app code changes
+      - 'android/**'       # Only when Android config changes
+      - 'pubspec.yaml'     # Only when dependencies change
+      - 'pubspec.lock'     # Only when dependency versions change
   pull_request:
     branches:
       - main
+    paths:
+      - 'lib/**'
+      - 'android/**'
+      - 'pubspec.yaml'
+  workflow_dispatch:       # Manual trigger option
 
 jobs:
   build-android:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
-
+        uses: actions/checkout@v4
+        
       - name: Set up Java 17
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
-
+          
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.27.1'  # Update to match your local version
+          flutter-version: '3.27.1'
           channel: 'stable'
           cache: true
-
-      - name: Clean Previous Builds
-        run: flutter clean
-
+          
+      # 🚀 SUPER IMPORTANT: Cache dependencies to save 3-5 minutes per build
+      - name: Cache Flutter Dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: flutter-deps-${{ runner.os }}-${{ hashFiles('**/pubspec.lock') }}-${{ hashFiles('**/gradle-wrapper.properties') }}
+          restore-keys: |
+            flutter-deps-${{ runner.os }}-
+            
+      # Skip flutter clean - wastes time when we have caching
       - name: Install Dependencies
         run: flutter pub get
-
-      # Optional: Re-enable when you want to add tests
-      # - name: Run Flutter Tests
-      #   run: flutter test
-
+        
+      # 🧪 Conditional testing - only run if test files exist
+      - name: Check for tests
+        id: check_tests
+        run: |
+          if [ -d "test" ] && [ "$(ls -A test)" ]; then
+            echo "has_tests=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_tests=false" >> $GITHUB_OUTPUT
+          fi
+          
+      - name: Run Flutter Tests
+        if: steps.check_tests.outputs.has_tests == 'true'
+        run: flutter test
+        
       - name: Build APK
         run: flutter build apk --release
-
+        
+      # 🔥 Only deploy on main branch (not PRs)
       - name: Upload APK to Firebase App Distribution
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         uses: wzieba/Firebase-Distribution-Github-Action@v1
         with:
           appId: ${{ secrets.FIREBASE_APP_ID_ANDROID }}
           serviceCredentialsFileContent: ${{ secrets.FIREBASE_CREDENTIALS }}
           groups: testers
           file: build/app/outputs/flutter-apk/app-release.apk
-
+          
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: app-release.apk
+          name: app-release-${{ github.sha }}
           path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 30
