@@ -1,12 +1,14 @@
 import 'dart:io';
+import 'dart:async';
+import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:footballtraining/data/repositories/team_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -34,6 +36,14 @@ class _AddEntryDialogState extends State<AddEntryDialog>
 
   // Focus nodes for better UX
   final List<FocusNode> _focusNodes = [];
+  
+  // PRODUCTION-FIX: Stream subscriptions to prevent memory leaks
+  StreamSubscription<QuerySnapshot>? _teamsSubscription;
+  StreamSubscription<QuerySnapshot>? _coachesSubscription;
+  List<QueryDocumentSnapshot> _teams = [];
+  List<QueryDocumentSnapshot> _coaches = [];
+  bool _teamsLoading = true;
+  bool _coachesLoading = true;
 
   // Common fields
   String name = "";
@@ -85,6 +95,45 @@ class _AddEntryDialogState extends State<AddEntryDialog>
     super.initState();
     _setupAnimations();
     _setupFocusNodes();
+    _initializeStreams();
+  }
+  
+  // PRODUCTION-FIX: Initialize streams once to prevent memory leaks
+  void _initializeStreams() {
+    // Teams stream
+    _teamsSubscription = FirebaseFirestore.instance
+        .collection('teams')
+        .snapshots()
+        .listen((snapshot) {
+      if (mounted) {
+        setState(() {
+          _teams = snapshot.docs;
+          _teamsLoading = false;
+        });
+      }
+    }, onError: (error) {
+      if (mounted) {
+        setState(() => _teamsLoading = false);
+      }
+    });
+
+    // Coaches stream
+    _coachesSubscription = FirebaseFirestore.instance
+        .collection('users')
+        .where('role', isEqualTo: 'coach')
+        .snapshots()
+        .listen((snapshot) {
+      if (mounted) {
+        setState(() {
+          _coaches = snapshot.docs;
+          _coachesLoading = false;
+        });
+      }
+    }, onError: (error) {
+      if (mounted) {
+        setState(() => _coachesLoading = false);
+      }
+    });
   }
 
   @override
@@ -95,6 +144,9 @@ class _AddEntryDialogState extends State<AddEntryDialog>
     for (var node in _focusNodes) {
       node.dispose();
     }
+    // PRODUCTION-FIX: Cancel stream subscriptions to prevent memory leaks
+    _teamsSubscription?.cancel();
+    _coachesSubscription?.cancel();
     super.dispose();
   }
 
@@ -549,31 +601,28 @@ class _AddEntryDialogState extends State<AddEntryDialog>
 
           SizedBox(height: isSmallScreen ? 8 : 12),
 
-          // Add Team Button
-          StreamBuilder<QuerySnapshot>(
-            stream: FirebaseFirestore.instance.collection('teams').snapshots(),
-            builder: (context, snapshot) {
-              if (!snapshot.hasData) {
-                return _buildLoadingTeamButton(isSmallScreen, l10n);
-              }
+          // PRODUCTION-FIX: Use cached data instead of StreamBuilder
+          _teamsLoading
+              ? _buildLoadingTeamButton(isSmallScreen, l10n)
+              : Builder(
+                  builder: (context) {
+                    final availableTeams = _teams
+                        .where((doc) => !selectedTeamsForCoach
+                            .any((selected) => selected['id'] == doc.id))
+                        .toList();
 
-              final availableTeams = snapshot.data!.docs
-                  .where((doc) => !selectedTeamsForCoach
-                      .any((selected) => selected['id'] == doc.id))
-                  .toList();
+                    final bool canAddMore =
+                        selectedTeamsForCoach.length < 10; // Max 10 teams
+                    final bool hasAvailable = availableTeams.isNotEmpty;
 
-              final bool canAddMore =
-                  selectedTeamsForCoach.length < 10; // Max 10 teams
-              final bool hasAvailable = availableTeams.isNotEmpty;
-
-              return _buildAddTeamButton(
-                isEnabled: canAddMore && hasAvailable,
-                availableTeams: availableTeams,
-                isSmallScreen: isSmallScreen,
-                l10n: l10n,
-              );
-            },
-          ),
+                    return _buildAddTeamButton(
+                      isEnabled: canAddMore && hasAvailable,
+                      availableTeams: availableTeams,
+                      isSmallScreen: isSmallScreen,
+                      l10n: l10n,
+                    );
+                  },
+                ),
 
           // Optional message
           if (selectedTeamsForCoach.isEmpty)
@@ -1372,33 +1421,27 @@ class _AddEntryDialogState extends State<AddEntryDialog>
 
           SizedBox(height: isSmallScreen ? 8 : 12),
 
-          // Add Coach Button with Stream
-          StreamBuilder<QuerySnapshot>(
-            stream: FirebaseFirestore.instance
-                .collection('users')
-                .where('role', isEqualTo: 'coach')
-                .snapshots(),
-            builder: (context, snapshot) {
-              if (!snapshot.hasData) {
-                return _buildLoadingButton(isSmallScreen);
-              }
+          // PRODUCTION-FIX: Use cached data instead of StreamBuilder
+          _coachesLoading
+              ? _buildLoadingButton(isSmallScreen)
+              : Builder(
+                  builder: (context) {
+                    final availableCoaches = _coaches
+                        .where((doc) => !selectedCoaches
+                            .any((selected) => selected['id'] == doc.id))
+                        .toList();
 
-              final availableCoaches = snapshot.data!.docs
-                  .where((doc) => !selectedCoaches
-                      .any((selected) => selected['id'] == doc.id))
-                  .toList();
+                    final bool canAddMore =
+                        selectedCoaches.length < 3; // Max 3 coaches per team
+                    final bool hasAvailable = availableCoaches.isNotEmpty;
 
-              final bool canAddMore =
-                  selectedCoaches.length < 3; // Max 3 coaches per team
-              final bool hasAvailable = availableCoaches.isNotEmpty;
-
-              return _buildAddCoachButton(
-                isEnabled: canAddMore && hasAvailable,
-                availableCoaches: availableCoaches,
-                isSmallScreen: isSmallScreen,
-              );
-            },
-          ),
+                    return _buildAddCoachButton(
+                      isEnabled: canAddMore && hasAvailable,
+                      availableCoaches: availableCoaches,
+                      isSmallScreen: isSmallScreen,
+                    );
+                  },
+                ),
 
           // Validation Warning
           if (selectedCoaches.isEmpty) _buildValidationWarning(isSmallScreen),
@@ -2151,76 +2194,73 @@ class _AddEntryDialogState extends State<AddEntryDialog>
   }
 
   Widget _buildTeamDropdown(AppLocalizations l10n, {required bool isCoach}) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('teams').snapshots(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade300),
+    // PRODUCTION-FIX: Use cached data instead of StreamBuilder
+    if (_teamsLoading) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade300),
+        ),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
+              ),
             ),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  'Loading teams...',
-                  style: GoogleFonts.poppins(color: Colors.grey.shade600),
-                ),
-              ],
+            const SizedBox(width: 12),
+            Text(
+              'Loading teams...',
+              style: GoogleFonts.poppins(color: Colors.grey.shade600),
             ),
-          );
-        }
+          ],
+        ),
+      );
+    }
 
-        List<DropdownMenuItem<String>> teamItems =
-            snapshot.data!.docs.map<DropdownMenuItem<String>>((doc) {
-          final tName = doc['team_name'] as String;
-          return DropdownMenuItem<String>(
-            value: tName,
-            child: Text(
-              tName,
-              style: GoogleFonts.poppins(),
-            ),
-          );
-        }).toList();
+    List<DropdownMenuItem<String>> teamItems =
+        _teams.map<DropdownMenuItem<String>>((doc) {
+      final data = doc.data() as Map<String, dynamic>;
+      final tName = data['team_name'] as String;
+      return DropdownMenuItem<String>(
+        value: tName,
+        child: Text(
+          tName,
+          style: GoogleFonts.poppins(),
+        ),
+      );
+    }).toList();
 
-        return Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade300),
-          ),
-          child: DropdownButtonFormField<String>(
-            decoration: InputDecoration(
-              labelText: isCoach ? 'Assign to Team' : l10n.selectTeam,
-              labelStyle: GoogleFonts.poppins(color: Colors.grey.shade600),
-              prefixIcon:
-                  Icon(Icons.groups_outlined, color: Colors.grey.shade500),
-              border: InputBorder.none,
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            ),
-            items: teamItems,
-            onChanged: (value) {
-              if (isCoach) {
-                selectedTeamForCoach = value;
-              } else {
-                selectedTeamForPlayer = value;
-              }
-            },
-            dropdownColor: Colors.white,
-            style: GoogleFonts.poppins(color: Colors.grey.shade800),
-          ),
-        );
-      },
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: DropdownButtonFormField<String>(
+        decoration: InputDecoration(
+          labelText: isCoach ? 'Assign to Team' : l10n.selectTeam,
+          labelStyle: GoogleFonts.poppins(color: Colors.grey.shade600),
+          prefixIcon:
+              Icon(Icons.groups_outlined, color: Colors.grey.shade500),
+          border: InputBorder.none,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        ),
+        items: teamItems,
+        onChanged: (value) {
+          if (isCoach) {
+            selectedTeamForCoach = value;
+          } else {
+            selectedTeamForPlayer = value;
+          }
+        },
+        dropdownColor: Colors.white,
+        style: GoogleFonts.poppins(color: Colors.grey.shade800),
+      ),
     );
   }
 
@@ -2405,25 +2445,40 @@ class _AddEntryDialogState extends State<AddEntryDialog>
       );
 
       request.fields['upload_preset'] = uploadPreset;
+      // PRODUCTION-FIX: Add timeout and compression settings
+      request.fields['quality'] = 'auto:eco';
+      request.fields['fetch_format'] = 'auto';
+      
       request.files
           .add(await http.MultipartFile.fromPath('file', _imageFile!.path));
 
-      var response = await request.send();
+      // PRODUCTION-FIX: Add timeout for better UX
+      var response = await request.send().timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          throw Exception('Upload timeout. Please check your connection.');
+        },
+      );
+      
       var responseData = await response.stream.bytesToString();
       var jsonData = json.decode(responseData);
 
       if (response.statusCode == 200) {
-        setState(() {
-          _uploadedImageUrl = jsonData['secure_url'];
-          _isUploading = false;
-        });
-        _showSuccessSnackBar('Image uploaded successfully!');
+        if (mounted) {
+          setState(() {
+            _uploadedImageUrl = jsonData['secure_url'];
+            _isUploading = false;
+          });
+          _showSuccessSnackBar('Image uploaded successfully!');
+        }
       } else {
-        throw Exception(jsonData['error']['message']);
+        throw Exception(jsonData['error']['message'] ?? 'Upload failed');
       }
     } catch (e) {
-      setState(() => _isUploading = false);
-      _showErrorSnackBar('Upload failed: $e');
+      if (mounted) {
+        setState(() => _isUploading = false);
+        _showErrorSnackBar('Upload failed: ${e.toString().replaceAll('Exception: ', '')}');
+      }
     }
   }
 
@@ -2455,8 +2510,6 @@ class _AddEntryDialogState extends State<AddEntryDialog>
   }
 
   Future<void> _addPlayer() async {
-    final l10n = AppLocalizations.of(context)!;
-
     if (!_formKey.currentState!.validate()) return;
     _formKey.currentState!.save();
 
@@ -2503,7 +2556,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
       });
 
       _showSuccessSnackBar('Player added successfully!');
-      Navigator.pop(context);
+      if (mounted) Navigator.pop(context);
     } catch (e) {
       _showErrorSnackBar('Error adding player: $e');
     }
@@ -2511,8 +2564,6 @@ class _AddEntryDialogState extends State<AddEntryDialog>
 
   // PRODUCTION-READY: Enhanced team creation with multi-coach support
   Future<void> _addTeam() async {
-    final l10n = AppLocalizations.of(context)!;
-
     // Form validation
     if (!_formKey.currentState!.validate()) return;
     _formKey.currentState!.save();
@@ -2566,7 +2617,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
 
       _showSuccessSnackBar(
           'Team "${teamName.trim()}" created with ${selectedCoaches.length} coach(es)!');
-      Navigator.pop(context);
+      if (mounted) Navigator.pop(context);
     } catch (e) {
       // Critical: Rollback team creation if coach updates fail
       if (teamDocId != null) {
@@ -2576,12 +2627,13 @@ class _AddEntryDialogState extends State<AddEntryDialog>
               .doc(teamDocId)
               .delete();
         } catch (rollbackError) {
-          print('Rollback failed: $rollbackError');
+          // PRODUCTION-FIX: Use debugPrint instead of print
+          debugPrint('Rollback failed: $rollbackError');
         }
       }
 
       _showErrorSnackBar('Failed to create team. Please try again.');
-      print('Team creation error: $e'); // For debugging
+      debugPrint('Team creation error: $e'); // For debugging
     }
   }
 

@@ -109,7 +109,7 @@ class _PlayerDetailsDialogState extends State<PlayerDetailsDialog>
                   widget.player.team,
                   style: GoogleFonts.poppins(
                     fontSize: 14,
-                    color: Colors.white.withOpacity(0.8),
+                    color: Colors.white.withValues(alpha: 0.8),
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -117,7 +117,7 @@ class _PlayerDetailsDialogState extends State<PlayerDetailsDialog>
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -274,22 +274,25 @@ class _PlayerDetailsDialogState extends State<PlayerDetailsDialog>
                 final monthNumber = (index + 1).toString().padLeft(2, '0');
                 final payment = paymentMap[monthNumber];
                 final isPaid = payment?.isPaid ?? false;
+                final isActive = payment?.isActive ?? true;
                 final monthName = months[index];
+                
+                // ENTERPRISE-GRADE: 3-State Payment Status
+                final PaymentStatus status = _getPaymentStatus(isPaid, isActive);
+                final statusColors = _getStatusColors(status);
+                final statusIcon = _getStatusIcon(status);
 
                 return GestureDetector(
                   onTap: () => _showMonthDetails(monthNumber, payment),
                   child: Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: isPaid
-                            ? [Colors.green.shade400, Colors.green.shade600]
-                            : [Colors.red.shade400, Colors.red.shade600],
+                        colors: statusColors,
                       ),
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: (isPaid ? Colors.green : Colors.red)
-                              .withOpacity(0.3),
+                          color: statusColors[0].withValues(alpha: 0.3),
                           blurRadius: 6,
                           offset: const Offset(0, 3),
                         ),
@@ -308,9 +311,7 @@ class _PlayerDetailsDialogState extends State<PlayerDetailsDialog>
                         ),
                         const SizedBox(height: 4),
                         Icon(
-                          isPaid
-                              ? Icons.check_circle_rounded
-                              : Icons.cancel_rounded,
+                          statusIcon,
                           color: Colors.white,
                           size: 20,
                         ),
@@ -320,7 +321,7 @@ class _PlayerDetailsDialogState extends State<PlayerDetailsDialog>
                             DateFormat('dd/MM').format(payment.updatedAt),
                             style: GoogleFonts.poppins(
                               fontSize: 8,
-                              color: Colors.white.withOpacity(0.8),
+                              color: Colors.white.withValues(alpha: 0.8),
                             ),
                           ),
                         ],
@@ -388,7 +389,7 @@ class _PlayerDetailsDialogState extends State<PlayerDetailsDialog>
             border: Border.all(color: Colors.grey.shade200),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -612,7 +613,7 @@ class _PlayerDetailsDialogState extends State<PlayerDetailsDialog>
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, color: color, size: 24),
@@ -878,7 +879,7 @@ class _PlayerDetailsDialogState extends State<PlayerDetailsDialog>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildDetailRow(
-                'Status:', payment?.isPaid == true ? 'Paid' : 'Unpaid'),
+                'Status:', _getStatusTextFromPayment(payment)),
             if (payment?.isPaid == true) ...[
               _buildDetailRow('Payment Date:',
                   DateFormat('MMM dd, yyyy').format(payment!.updatedAt)),
@@ -966,5 +967,63 @@ class _PlayerDetailsDialogState extends State<PlayerDetailsDialog>
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
+  }
+
+  /// ENTERPRISE-GRADE: Determine payment status from payment record
+  PaymentStatus _getPaymentStatus(bool isPaid, bool isActive) {
+    if (!isActive) {
+      return PaymentStatus.notActive;  // Grey - Not Active
+    } else if (isPaid) {
+      return PaymentStatus.paid;       // Green - Paid
+    } else {
+      return PaymentStatus.unpaid;     // Red - Unpaid
+    }
+  }
+
+  /// ENTERPRISE-GRADE: Get gradient colors for payment status
+  List<Color> _getStatusColors(PaymentStatus status) {
+    switch (status) {
+      case PaymentStatus.paid:
+        return [Colors.green.shade400, Colors.green.shade600];    // Green gradient
+      case PaymentStatus.unpaid:
+        return [Colors.red.shade400, Colors.red.shade600];        // Red gradient  
+      case PaymentStatus.notActive:
+        return [Colors.grey.shade400, Colors.grey.shade600];      // Grey gradient
+      case PaymentStatus.partial:
+        return [Colors.orange.shade400, Colors.orange.shade600];  // Orange gradient
+    }
+  }
+
+  /// ENTERPRISE-GRADE: Get appropriate icon for payment status
+  IconData _getStatusIcon(PaymentStatus status) {
+    switch (status) {
+      case PaymentStatus.paid:
+        return Icons.check_circle_rounded;        // Green checkmark
+      case PaymentStatus.unpaid:
+        return Icons.cancel_rounded;              // Red X
+      case PaymentStatus.notActive:
+        return Icons.do_not_disturb_rounded;      // Grey circle with line
+      case PaymentStatus.partial:
+        return Icons.schedule_rounded;            // Orange clock
+    }
+  }
+
+  /// ENTERPRISE-GRADE: Get status text from payment record
+  String _getStatusTextFromPayment(PaymentRecord? payment) {
+    if (payment == null) {
+      return 'Unpaid';
+    }
+    
+    final status = _getPaymentStatus(payment.isPaid, payment.isActive);
+    switch (status) {
+      case PaymentStatus.paid:
+        return 'Paid';
+      case PaymentStatus.unpaid:
+        return 'Unpaid';
+      case PaymentStatus.notActive:
+        return 'Not Active';
+      case PaymentStatus.partial:
+        return 'Partial';
+    }
   }
 }

@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 // Import your payment models
 import '../../../data/models/payment_model.dart';
@@ -97,7 +98,7 @@ class PlayerPaymentCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    _getStatusText(player.status),
+                    _getStatusText(player.status, context),
                     style: GoogleFonts.poppins(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -120,7 +121,7 @@ class PlayerPaymentCard extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Payment Progress',
+                        AppLocalizations.of(context)!.paymentProgress,
                         style: GoogleFonts.poppins(
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
@@ -128,7 +129,7 @@ class PlayerPaymentCard extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        _getProgressText(),
+                        _getProgressText(context),
                         style: GoogleFonts.poppins(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
@@ -166,7 +167,7 @@ class PlayerPaymentCard extends StatelessWidget {
                           const SizedBox(width: 6),
                           Expanded(
                             child: Text(
-                              'Player inactive for ${player.inactiveMonths} months',
+                              AppLocalizations.of(context)!.playerInactiveMonths(player.inactiveMonths.toString()),
                               style: GoogleFonts.poppins(
                                 fontSize: 11,
                                 color: Colors.grey.shade600,
@@ -182,7 +183,7 @@ class PlayerPaymentCard extends StatelessWidget {
                     children: [
                       Expanded(
                         child: _buildActionButton(
-                          'View Details',
+                          AppLocalizations.of(context)!.viewDetails,
                           Icons.visibility_rounded,
                           const Color(0xFF667eea),
                           () => onViewDetails(player),
@@ -192,8 +193,8 @@ class PlayerPaymentCard extends StatelessWidget {
                       Expanded(
                         child: _buildActionButton(
                           player.status == PaymentStatus.notActive
-                              ? 'Activate'
-                              : 'Send Reminder',
+                              ? AppLocalizations.of(context)!.activate
+                              : AppLocalizations.of(context)!.sendReminder,
                           player.status == PaymentStatus.notActive
                               ? Icons.play_arrow_rounded
                               : Icons.email_rounded,
@@ -248,12 +249,15 @@ class PlayerPaymentCard extends StatelessWidget {
     );
   }
 
-  String _getProgressText() {
+  String _getProgressText(BuildContext context) {
     switch (player.status) {
       case PaymentStatus.notActive:
-        return 'Inactive (${player.inactiveMonths}/12 months)';
+        return AppLocalizations.of(context)!.inactiveMonthsProgress(player.inactiveMonths.toString());
       default:
-        return '${player.paidMonths}/${player.effectiveTotalMonths} active months';
+        return AppLocalizations.of(context)!.activeMonthsProgress(
+          player.paidMonths.toString(),
+          player.effectiveTotalMonths.toString(),
+        );
     }
   }
 
@@ -295,16 +299,16 @@ class PlayerPaymentCard extends StatelessWidget {
     }
   }
 
-  String _getStatusText(PaymentStatus status) {
+  String _getStatusText(PaymentStatus status, BuildContext context) {
     switch (status) {
       case PaymentStatus.paid:
-        return 'Fully Paid';
+        return AppLocalizations.of(context)!.fullyPaid;
       case PaymentStatus.partial:
-        return 'Partial';
+        return AppLocalizations.of(context)!.partial;
       case PaymentStatus.unpaid:
-        return 'Unpaid';
+        return AppLocalizations.of(context)!.unpaid;
       case PaymentStatus.notActive:
-        return 'Not Active'; // New status text
+        return AppLocalizations.of(context)!.notActive;
     }
   }
 }

@@ -48,6 +48,155 @@
   
   "playerInfo": "Player Info",
   "payments": "Payments",
+  
+  "paymentProgress": "Payment Progress",
+  "viewDetails": "View Details", 
+  "sendReminder": "Send Reminder",
+  "fullyPaid": "Fully Paid",
+  "partial": "Partial",
+  "unpaid": "Unpaid",
+  "notActive": "Not Active",
+  "monthlyCollectionTrend": "Monthly Collection Trend",
+  "totalCollected": "Total Collected",
+  "outstanding": "Outstanding", 
+  "paidPlayers": "Paid Players",
+  "thisMonth": "This Month",
+  
+  "noEntitiesFound": "No {entity} found",
+  "@noEntitiesFound": {
+    "placeholders": {
+      "entity": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "addSomeEntities": "Add some {entity} to get started",
+  "@addSomeEntities": {
+    "placeholders": {
+      "entity": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "noResultsFor": "No results for \"{query}\"",
+  "@noResultsFor": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "tryAdjustingSearch": "Try adjusting your search terms",
+  "confirmLogout": "Are you sure you want to logout?",
+  "teamName": "Team Name",
+  "name": "Name",
+  "roleDescription": "Role Description",
+  "coachesManagement": "Coaches Management",
+  "manageTeamCoaches": "Manage Team Coaches",
+  "assignMultipleCoaches": "Assign multiple coaches with different roles",
+  "confirmDelete": "Confirm Delete",
+  "confirmDeleteMessage": "Are you sure you want to delete this item? This action cannot be undone.",
+  "editEntity": "Edit {entity}",
+  "@editEntity": {
+    "placeholders": {
+      "entity": {
+        "type": "String"
+      }
+    }
+  },
+  "successfullyUpdated": "Successfully updated",
+  "failedToUpdate": "Failed to update: {error}",
+  "@failedToUpdate": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "coachDeletedSuccessfully": "Coach deleted from all teams and authentication successfully",
+  "deletedSuccessfully": "Deleted successfully",
+  "failedToDelete": "Failed to delete: {error}",
+  "@failedToDelete": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "monthJan": "Jan",
+  "monthFeb": "Feb", 
+  "monthMar": "Mar",
+  "monthApr": "Apr",
+  "monthMay": "May",
+  "monthJun": "Jun",
+  "monthJul": "Jul",
+  "monthAug": "Aug",
+  "monthSep": "Sep",
+  "monthOct": "Oct",
+  "monthNov": "Nov",
+  "monthDec": "Dec",
+  
+  "monthJanuary": "January",
+  "monthFebruary": "February",
+  "monthMarch": "March", 
+  "monthApril": "April",
+  "monthMayFull": "May",
+  "monthJune": "June",
+  "monthJuly": "July",
+  "monthAugust": "August",
+  "monthSeptember": "September",
+  "monthOctober": "October",
+  "monthNovember": "November",
+  "monthDecember": "December",
+  
+  "sendReminderButton": "Send Reminder",
+  "playerNotFound": "Player not found",
+  "noEmailAvailable": "No email available for this player",
+  "allMonthsPaid": "All months are paid!",
+  "paymentReminderEmail": "Payment Reminder Email",
+  "emailTo": "To: {email}",
+  "@emailTo": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "emailSubject": "Subject: Payment Reminder for {playerName}",
+  "@emailSubject": {
+    "placeholders": {
+      "playerName": {
+        "type": "String"
+      }
+    }
+  },
+  "dearParent": "Dear Parent/Guardian,",
+  "reminderUnpaidMonths": "This is a reminder that the following months are unpaid:",
+  "pleasePayConvenience": "Please make the payment at your earliest convenience.",
+  "thankYou": "Thank you,",
+  "footballClubManagement": "Football Club Management",
+  "close": "Close",
+  "sendEmail": "Send Email",
+  "emailSentTo": "Email sent to {email}",
+  "@emailSentTo": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "errorOccurred": "Error: {error}",
+  "@errorOccurred": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "paymentStatus": "Payment Status",
   "paymentManagement": "{year} Payment Management",
   "@paymentManagement": {
@@ -405,5 +554,35 @@
   "paymentMarkedPartialSuccess": "Payment marked as PARTIAL successfully!",
   "paymentMarkedUnpaidSuccess": "Payment marked as UNPAID successfully!",
   "playerMarkedInactiveSuccess": "Player marked as INACTIVE successfully!",
-  "errorMarkingPayment": "Error marking payment"
+  "errorMarkingPayment": "Error marking payment",
+
+  "viewDetails": "View Details",
+  "activate": "Activate",
+  "playerInactiveMonths": "Player inactive for {months} months",
+  "@playerInactiveMonths": {
+    "placeholders": {
+      "months": {
+        "type": "String"
+      }
+    }
+  },
+  "inactiveMonthsProgress": "Inactive ({months}/12 months)",
+  "@inactiveMonthsProgress": {
+    "placeholders": {
+      "months": {
+        "type": "String"
+      }
+    }
+  },
+  "activeMonthsProgress": "{paid}/{total} active months",
+  "@activeMonthsProgress": {
+    "placeholders": {
+      "paid": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  }
 }
