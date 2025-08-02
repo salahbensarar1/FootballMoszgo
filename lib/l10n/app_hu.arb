@@ -48,6 +48,155 @@
   
   "playerInfo": "Játékos adatok",
   "payments": "Fizetések",
+  
+  "paymentProgress": "Fizetési folyamat",
+  "viewDetails": "Részletek megtekintése",
+  "sendReminder": "Emlékeztető küldése", 
+  "fullyPaid": "Teljesen fizetve",
+  "partial": "Részben fizetve",
+  "unpaid": "Nem fizetve",
+  "notActive": "Nem aktív",
+  "monthlyCollectionTrend": "Havi beszedési trend",
+  "totalCollected": "Összesen beszedve",
+  "outstanding": "Függőben",
+  "paidPlayers": "Fizető játékosok",
+  "thisMonth": "Ez a hónap",
+  
+  "noEntitiesFound": "Nincs {entity} találat",
+  "@noEntitiesFound": {
+    "placeholders": {
+      "entity": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "addSomeEntities": "Adj hozzá néhány {entity}-t a kezdéshez",
+  "@addSomeEntities": {
+    "placeholders": {
+      "entity": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "noResultsFor": "Nincs találat erre: \"{query}\"",
+  "@noResultsFor": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "tryAdjustingSearch": "Próbálja módosítani a keresési feltételeket",
+  "confirmLogout": "Biztosan ki szeretne jelentkezni?",
+  "teamName": "Csapat neve",
+  "name": "Név",
+  "roleDescription": "Szerepkör leírása",
+  "coachesManagement": "Edzők kezelése",
+  "manageTeamCoaches": "Csapat edzőinek kezelése",
+  "assignMultipleCoaches": "Több edző hozzárendelése különböző szerepkörökkel",
+  "confirmDelete": "Törlés megerősítése",
+  "confirmDeleteMessage": "Biztosan törölni szeretné ezt az elemet? Ez a művelet nem vonható vissza.",
+  "editEntity": "{entity} szerkesztése",
+  "@editEntity": {
+    "placeholders": {
+      "entity": {
+        "type": "String"
+      }
+    }
+  },
+  "successfullyUpdated": "Sikeresen frissítve",
+  "failedToUpdate": "Frissítés sikertelen: {error}",
+  "@failedToUpdate": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "coachDeletedSuccessfully": "Edző sikeresen törölve minden csapatból és hitelesítésből",
+  "deletedSuccessfully": "Sikeresen törölve",
+  "failedToDelete": "Törlés sikertelen: {error}",
+  "@failedToDelete": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "monthJan": "Jan",
+  "monthFeb": "Feb", 
+  "monthMar": "Már",
+  "monthApr": "Ápr",
+  "monthMay": "Máj",
+  "monthJun": "Jún",
+  "monthJul": "Júl",
+  "monthAug": "Aug",
+  "monthSep": "Szep",
+  "monthOct": "Okt",
+  "monthNov": "Nov",
+  "monthDec": "Dec",
+  
+  "monthJanuary": "Január",
+  "monthFebruary": "Február",
+  "monthMarch": "Március", 
+  "monthApril": "Április",
+  "monthMayFull": "Május",
+  "monthJune": "Június",
+  "monthJuly": "Július",
+  "monthAugust": "Augusztus",
+  "monthSeptember": "Szeptember",
+  "monthOctober": "Október",
+  "monthNovember": "November",
+  "monthDecember": "December",
+  
+  "sendReminderButton": "Emlékeztető küldése",
+  "playerNotFound": "Játékos nem található",
+  "noEmailAvailable": "Nincs elérhető e-mail ehhez a játékoshoz",
+  "allMonthsPaid": "Minden hónap ki van fizetve!",
+  "paymentReminderEmail": "Fizetési emlékeztető e-mail",
+  "emailTo": "Címzett: {email}",
+  "@emailTo": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "emailSubject": "Tárgy: Fizetési emlékeztető {playerName} részére",
+  "@emailSubject": {
+    "placeholders": {
+      "playerName": {
+        "type": "String"
+      }
+    }
+  },
+  "dearParent": "Tisztelt Szülő/Gondviselő,",
+  "reminderUnpaidMonths": "Ezúton emlékeztetjük, hogy az alábbi hónapok ki nem fizetettek:",
+  "pleasePayConvenience": "Kérjük, teljesítse a fizetést a lehető leghamarabb.",
+  "thankYou": "Köszönjük,",
+  "footballClubManagement": "Futballklub vezetősége",
+  "close": "Bezárás",
+  "sendEmail": "E-mail küldése",
+  "emailSentTo": "E-mail elküldve ide: {email}",
+  "@emailSentTo": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "errorOccurred": "Hiba: {error}",
+  "@errorOccurred": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "paymentStatus": "Fizetési állapot",
   "paymentManagement": "{year} fizetés kezelés",
   "@paymentManagement": {
@@ -405,5 +554,35 @@
   "paymentMarkedPartialSuccess": "Fizetés sikeresen RÉSZBEN FIZETVE-re jelölve!",
   "paymentMarkedUnpaidSuccess": "Fizetés sikeresen FIZETETLEN-re jelölve!",
   "playerMarkedInactiveSuccess": "Játékos sikeresen INAKTÍV-ra jelölve!",
-  "errorMarkingPayment": "Hiba a fizetés jelölésekor"
+  "errorMarkingPayment": "Hiba a fizetés jelölésekor",
+
+  "viewDetails": "Részletek megtekintése",
+  "activate": "Aktiválás",
+  "playerInactiveMonths": "Játékos {months} hónapja inaktív",
+  "@playerInactiveMonths": {
+    "placeholders": {
+      "months": {
+        "type": "String"
+      }
+    }
+  },
+  "inactiveMonthsProgress": "Inaktív ({months}/12 hónap)",
+  "@inactiveMonthsProgress": {
+    "placeholders": {
+      "months": {
+        "type": "String"
+      }
+    }
+  },
+  "activeMonthsProgress": "{paid}/{total} aktív hónap",
+  "@activeMonthsProgress": {
+    "placeholders": {
+      "paid": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  }
 }

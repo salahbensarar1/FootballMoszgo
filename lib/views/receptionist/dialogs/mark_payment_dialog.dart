@@ -71,104 +71,357 @@ class _MarkPaymentDialogState extends State<MarkPaymentDialog>
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final isSmallScreen = screenWidth < 600;
     
-    return AlertDialog(
+    return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      title: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: const Color(0xFF667eea).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Icon(Icons.payment_rounded, color: Color(0xFF667eea)),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  l10n.markPayment,
-                  style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 18,
-                  ),
+      child: Container(
+        width: isSmallScreen ? screenWidth * 0.95 : 500,
+        constraints: BoxConstraints(
+          maxHeight: screenHeight * 0.85,
+          maxWidth: 500,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // RESPONSIVE HEADER
+            Container(
+              padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
                 ),
-                Text(
-                  l10n.recordPaymentFor('${widget.selectedYear}'),
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF667eea).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.payment_rounded, color: Color(0xFF667eea), size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          l10n.markPayment,
+                          style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.w600,
+                            fontSize: isSmallScreen ? 16 : 18,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          l10n.recordPaymentFor('${widget.selectedYear}'),
+                          style: GoogleFonts.poppins(
+                            fontSize: isSmallScreen ? 11 : 12,
+                            color: Colors.grey.shade600,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            // SCROLLABLE CONTENT
+            Flexible(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Player Selection
+                    _buildResponsivePlayerDropdown(isSmallScreen),
+                    SizedBox(height: isSmallScreen ? 12 : 16),
+
+                    // Month Selection
+                    _buildResponsiveMonthDropdown(isSmallScreen),
+                    SizedBox(height: isSmallScreen ? 12 : 16),
+
+                    // Payment Status Selection - ENTERPRISE RESPONSIVE
+                    _buildResponsivePaymentStatusSelection(isSmallScreen),
+                    SizedBox(height: isSmallScreen ? 12 : 16),
+
+                    // Notes Field
+                    _buildResponsiveNotesField(isSmallScreen),
+
+                    // Payment Summary
+                    if (selectedPlayer != null && selectedMonth != null) ...[
+                      SizedBox(height: isSmallScreen ? 12 : 16),
+                      _buildResponsivePaymentSummary(isSmallScreen),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            
+            // RESPONSIVE ACTIONS
+            Container(
+              padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(20),
+                  bottomRight: Radius.circular(20),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: isProcessing ? null : () => Navigator.pop(context),
+                      child: Text(
+                        AppLocalizations.of(context)!.cancel,
+                        style: GoogleFonts.poppins(
+                          color: Colors.grey.shade600,
+                          fontSize: isSmallScreen ? 14 : 16,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 2,
+                    child: ElevatedButton(
+                      onPressed: _canProcessPayment() ? _processPaymentMark : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF667eea),
+                        disabledBackgroundColor: Colors.grey.shade300,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: EdgeInsets.symmetric(
+                          vertical: isSmallScreen ? 12 : 14,
+                          horizontal: isSmallScreen ? 16 : 20,
+                        ),
+                      ),
+                      child: isProcessing
+                          ? SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          : Text(
+                              _getActionButtonText(),
+                              style: GoogleFonts.poppins(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                                fontSize: isSmallScreen ? 14 : 16,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// ENTERPRISE-GRADE: Responsive Player Dropdown
+  Widget _buildResponsivePlayerDropdown(bool isSmallScreen) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection('players').snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return Container(
+            height: isSmallScreen ? 48 : 56,
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey.shade300),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+
+        return Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+                child: Row(
+                  children: [
+                    Icon(Icons.person_rounded,
+                        color: Colors.grey.shade600, size: isSmallScreen ? 18 : 20),
+                    SizedBox(width: isSmallScreen ? 6 : 8),
+                    Expanded(
+                      child: Text(
+                        AppLocalizations.of(context)!.selectPlayer,
+                        style: GoogleFonts.poppins(
+                          fontSize: isSmallScreen ? 13 : 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey.shade700,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              Padding(
+                padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+                child: DropdownButtonFormField<String>(
+                  value: selectedPlayer,
+                  isExpanded: true,
+                  decoration: InputDecoration(
+                    hintText: AppLocalizations.of(context)!.selectPlayer,
+                    hintStyle: GoogleFonts.poppins(
+                      fontSize: isSmallScreen ? 12 : 14,
+                      color: Colors.grey.shade500,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: isSmallScreen ? 8 : 12,
+                      vertical: isSmallScreen ? 6 : 8,
+                    ),
+                  ),
+                  items: snapshot.data!.docs.map((doc) {
+                    final data = doc.data() as Map<String, dynamic>;
+                    final playerName = data['name'] ?? AppLocalizations.of(context)!.unnamedPlayer;
+                    final teamName = data['team'] ?? AppLocalizations.of(context)!.unknownTeam;
+
+                    return DropdownMenuItem<String>(
+                      value: doc.id,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            playerName,
+                            style: GoogleFonts.poppins(
+                              fontSize: isSmallScreen ? 12 : 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            teamName,
+                            style: GoogleFonts.poppins(
+                              fontSize: isSmallScreen ? 10 : 12,
+                              color: Colors.grey.shade600,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      selectedPlayer = value;
+                      _updatePlayerTeam(value, snapshot.data!.docs);
+                    });
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  /// ENTERPRISE-GRADE: Responsive Month Dropdown
+  Widget _buildResponsiveMonthDropdown(bool isSmallScreen) {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+            child: Row(
+              children: [
+                Icon(Icons.calendar_month_rounded,
+                    color: Colors.grey.shade600, size: isSmallScreen ? 18 : 20),
+                SizedBox(width: isSmallScreen ? 6 : 8),
+                Expanded(
+                  child: Text(
+                    AppLocalizations.of(context)!.selectMonth,
+                    style: GoogleFonts.poppins(
+                      fontSize: isSmallScreen ? 13 : 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey.shade700,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
             ),
           ),
+          const Divider(height: 1),
+          Padding(
+            padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+            child: DropdownButtonFormField<String>(
+              value: selectedMonth,
+              isExpanded: true,
+              decoration: InputDecoration(
+                hintText: AppLocalizations.of(context)!.selectMonth,
+                hintStyle: GoogleFonts.poppins(
+                  fontSize: isSmallScreen ? 12 : 14,
+                  color: Colors.grey.shade500,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: isSmallScreen ? 8 : 12,
+                  vertical: isSmallScreen ? 6 : 8,
+                ),
+              ),
+              items: List.generate(12, (index) {
+                final monthNumber = (index + 1).toString().padLeft(2, '0');
+                final monthName = _getLocalizedMonthName(monthNumber);
+                return DropdownMenuItem(
+                  value: monthNumber,
+                  child: Text(
+                    monthName,
+                    style: GoogleFonts.poppins(
+                      fontSize: isSmallScreen ? 12 : 14,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                );
+              }),
+              onChanged: (value) {
+                setState(() {
+                  selectedMonth = value;
+                });
+              },
+            ),
+          ),
         ],
       ),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Player Selection
-            _buildPlayerDropdown(),
-            const SizedBox(height: 16),
-
-            // Month Selection
-            _buildMonthDropdown(),
-            const SizedBox(height: 16),
-
-            // Payment Status Selection - PRODUCTION READY
-            _buildPaymentStatusSelection(),
-            const SizedBox(height: 16),
-
-            // Notes Field
-            _buildNotesField(),
-
-            // Payment Summary
-            if (selectedPlayer != null && selectedMonth != null) ...[
-              const SizedBox(height: 16),
-              _buildPaymentSummary(),
-            ],
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: isProcessing ? null : () => Navigator.pop(context),
-          child: Text(
-            'Cancel',
-            style: GoogleFonts.poppins(color: Colors.grey.shade600),
-          ),
-        ),
-        ElevatedButton(
-          onPressed: _canProcessPayment() ? _processPaymentMark : null,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF667eea),
-            disabledBackgroundColor: Colors.grey.shade300,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-          child: isProcessing
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                )
-              : Text(
-                  _getActionButtonText(),
-                  style: GoogleFonts.poppins(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-        ),
-      ],
     );
   }
 
@@ -319,9 +572,9 @@ class _MarkPaymentDialogState extends State<MarkPaymentDialog>
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFF667eea).withOpacity(0.05),
+        color: const Color(0xFF667eea).withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF667eea).withOpacity(0.2)),
+        border: Border.all(color: const Color(0xFF667eea).withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -427,18 +680,18 @@ class _MarkPaymentDialogState extends State<MarkPaymentDialog>
   String _getActionButtonText() {
     switch (selectedPaymentStatus) {
       case PaymentStatus.paid:
-        return 'Mark as Paid';
+        return AppLocalizations.of(context)!.markAsPaid;
       case PaymentStatus.partial:
-        return 'Mark as Partial';
+        return AppLocalizations.of(context)!.markAsPartial;
       case PaymentStatus.unpaid:
-        return 'Mark as Unpaid';
+        return AppLocalizations.of(context)!.markAsUnpaid;
       case PaymentStatus.notActive:
-        return 'Mark as Inactive';
+        return AppLocalizations.of(context)!.markAsInactive;
     }
   }
 
-  /// PRODUCTION-READY: Payment Status Selection Widget with proper UX
-  Widget _buildPaymentStatusSelection() {
+  /// ENTERPRISE-GRADE: Responsive Payment Status Selection Widget
+  Widget _buildResponsivePaymentStatusSelection(bool isSmallScreen) {
     return FadeTransition(
       opacity: _fadeAnimation,
       child: Container(
@@ -450,18 +703,21 @@ class _MarkPaymentDialogState extends State<MarkPaymentDialog>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
               child: Row(
                 children: [
                   Icon(Icons.account_balance_wallet_rounded,
-                      color: Colors.grey.shade600, size: 20),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Payment Status',
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey.shade700,
+                      color: Colors.grey.shade600, size: isSmallScreen ? 18 : 20),
+                  SizedBox(width: isSmallScreen ? 6 : 8),
+                  Expanded(
+                    child: Text(
+                      AppLocalizations.of(context)!.paymentStatus,
+                      style: GoogleFonts.poppins(
+                        fontSize: isSmallScreen ? 13 : 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey.shade700,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
@@ -469,11 +725,14 @@ class _MarkPaymentDialogState extends State<MarkPaymentDialog>
             ),
             const Divider(height: 1),
             Padding(
-              padding: const EdgeInsets.all(8),
+              padding: EdgeInsets.all(isSmallScreen ? 6 : 8),
               child: Column(
-                children: PaymentStatus.values.map((status) {
-                  return _buildPaymentStatusOption(status);
-                }).toList(),
+                children: [
+                  // RECEPTIONIST SCREEN: Only 3 Payment Status Options (Green, Red, Grey)
+                  _buildResponsivePaymentStatusOption(PaymentStatus.paid, isSmallScreen),       // GREEN - PAID
+                  _buildResponsivePaymentStatusOption(PaymentStatus.unpaid, isSmallScreen),     // RED - UNPAID
+                  _buildResponsivePaymentStatusOption(PaymentStatus.notActive, isSmallScreen),  // GREY - NOT ACTIVE
+                ],
               ),
             ),
           ],
@@ -482,16 +741,16 @@ class _MarkPaymentDialogState extends State<MarkPaymentDialog>
     );
   }
 
-  /// PRODUCTION-READY: Individual payment status option with proper styling
-  Widget _buildPaymentStatusOption(PaymentStatus status) {
+  /// ENTERPRISE-GRADE: Responsive Individual payment status option
+  Widget _buildResponsivePaymentStatusOption(PaymentStatus status, bool isSmallScreen) {
     final isSelected = selectedPaymentStatus == status;
     final statusColor = _getPaymentStatusColor(status);
     
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
-      margin: const EdgeInsets.symmetric(vertical: 2),
+      margin: EdgeInsets.symmetric(vertical: isSmallScreen ? 1 : 2),
       decoration: BoxDecoration(
-        color: isSelected ? statusColor.withOpacity(0.1) : Colors.transparent,
+        color: isSelected ? statusColor.withValues(alpha: 0.1) : Colors.transparent,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: isSelected ? statusColor : Colors.transparent,
@@ -508,13 +767,16 @@ class _MarkPaymentDialogState extends State<MarkPaymentDialog>
             });
           },
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: EdgeInsets.symmetric(
+              horizontal: isSmallScreen ? 8 : 12,
+              vertical: isSmallScreen ? 6 : 8,
+            ),
             child: Row(
               children: [
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
-                  width: 18,
-                  height: 18,
+                  width: isSmallScreen ? 16 : 18,
+                  height: isSmallScreen ? 16 : 18,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
@@ -524,39 +786,42 @@ class _MarkPaymentDialogState extends State<MarkPaymentDialog>
                     color: isSelected ? statusColor : Colors.transparent,
                   ),
                   child: isSelected
-                      ? const Icon(
+                      ? Icon(
                           Icons.check,
                           color: Colors.white,
-                          size: 12,
+                          size: isSmallScreen ? 10 : 12,
                         )
                       : null,
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: isSmallScreen ? 8 : 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        status.displayName,
+                        _getLocalizedStatusName(status),
                         style: GoogleFonts.poppins(
-                          fontSize: 14,
+                          fontSize: isSmallScreen ? 12 : 14,
                           fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                           color: isSelected ? statusColor : Colors.grey.shade700,
                         ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                       Text(
-                        _getPaymentStatusDescription(status),
+                        _getLocalizedStatusDescription(status),
                         style: GoogleFonts.poppins(
-                          fontSize: 11,
+                          fontSize: isSmallScreen ? 10 : 11,
                           color: Colors.grey.shade500,
                         ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 2,
                       ),
                     ],
                   ),
                 ),
                 Container(
-                  width: 8,
-                  height: 8,
+                  width: isSmallScreen ? 6 : 8,
+                  height: isSmallScreen ? 6 : 8,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: statusColor,
@@ -570,6 +835,211 @@ class _MarkPaymentDialogState extends State<MarkPaymentDialog>
     );
   }
 
+  /// ENTERPRISE-GRADE: Responsive Notes Field
+  Widget _buildResponsiveNotesField(bool isSmallScreen) {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+            child: Row(
+              children: [
+                Icon(Icons.note_rounded,
+                    color: Colors.grey.shade600, size: isSmallScreen ? 18 : 20),
+                SizedBox(width: isSmallScreen ? 6 : 8),
+                Expanded(
+                  child: Text(
+                    AppLocalizations.of(context)!.notes,
+                    style: GoogleFonts.poppins(
+                      fontSize: isSmallScreen ? 13 : 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey.shade700,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          Padding(
+            padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+            child: TextField(
+              controller: notesController,
+              maxLines: isSmallScreen ? 2 : 3,
+              style: GoogleFonts.poppins(
+                fontSize: isSmallScreen ? 12 : 14,
+              ),
+              decoration: InputDecoration(
+                hintText: AppLocalizations.of(context)!.optionalNotes,
+                hintStyle: GoogleFonts.poppins(
+                  fontSize: isSmallScreen ? 11 : 12,
+                  color: Colors.grey.shade400,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: isSmallScreen ? 8 : 12,
+                  vertical: isSmallScreen ? 6 : 8,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// ENTERPRISE-GRADE: Responsive Payment Summary
+  Widget _buildResponsivePaymentSummary(bool isSmallScreen) {
+    final paymentAmount = _getPaymentAmount;
+
+    return Container(
+      padding: EdgeInsets.all(isSmallScreen ? 10 : 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF667eea).withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF667eea).withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.info_outline_rounded,
+                color: const Color(0xFF667eea),
+                size: isSmallScreen ? 14 : 16,
+              ),
+              SizedBox(width: isSmallScreen ? 4 : 6),
+              Expanded(
+                child: Text(
+                  AppLocalizations.of(context)!.paymentSummary,
+                  style: GoogleFonts.poppins(
+                    fontSize: isSmallScreen ? 12 : 14,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF667eea),
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: isSmallScreen ? 6 : 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  AppLocalizations.of(context)!.year,
+                  style: GoogleFonts.poppins(
+                    fontSize: isSmallScreen ? 11 : 12,
+                    color: Colors.grey.shade600,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Text(
+                '${widget.selectedYear}',
+                style: GoogleFonts.poppins(
+                  fontSize: isSmallScreen ? 11 : 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: isSmallScreen ? 3 : 4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  AppLocalizations.of(context)!.month,
+                  style: GoogleFonts.poppins(
+                    fontSize: isSmallScreen ? 11 : 12,
+                    color: Colors.grey.shade600,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Text(
+                selectedMonth != null ? _getLocalizedMonthName(selectedMonth!) : '-',
+                style: GoogleFonts.poppins(
+                  fontSize: isSmallScreen ? 11 : 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          if (paymentAmount > 0) ...[
+            SizedBox(height: isSmallScreen ? 3 : 4),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    AppLocalizations.of(context)!.amount,
+                    style: GoogleFonts.poppins(
+                      fontSize: isSmallScreen ? 11 : 12,
+                      color: Colors.grey.shade600,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Text(
+                  '\$${paymentAmount.toStringAsFixed(2)}',
+                  style: GoogleFonts.poppins(
+                    fontSize: isSmallScreen ? 11 : 12,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF10B981),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// ENTERPRISE-GRADE: Localized Month Names
+  String _getLocalizedMonthName(String monthNumber) {
+    final month = int.parse(monthNumber);
+    final l10n = AppLocalizations.of(context)!;
+    
+    switch (month) {
+      case 1: return l10n.monthJanuary;
+      case 2: return l10n.monthFebruary;
+      case 3: return l10n.monthMarch;
+      case 4: return l10n.monthApril;
+      case 5: return l10n.monthMayFull;
+      case 6: return l10n.monthJune;
+      case 7: return l10n.monthJuly;
+      case 8: return l10n.monthAugust;
+      case 9: return l10n.monthSeptember;
+      case 10: return l10n.monthOctober;
+      case 11: return l10n.monthNovember;
+      case 12: return l10n.monthDecember;
+      default: return DateFormat('MMMM').format(DateTime(2024, month));
+    }
+  }
+
+  /// ENTERPRISE-GRADE: Helper to update player team
+  void _updatePlayerTeam(String? playerId, List<QueryDocumentSnapshot> players) {
+    if (playerId != null) {
+      final playerDoc = players.firstWhere((doc) => doc.id == playerId);
+      final data = playerDoc.data() as Map<String, dynamic>;
+      selectedPlayerTeam = data['team'] ?? AppLocalizations.of(context)!.unknownTeam;
+    }
+  }
+
   /// PRODUCTION-READY: Get appropriate color for each payment status
   Color _getPaymentStatusColor(PaymentStatus status) {
     switch (status) {
@@ -580,21 +1050,35 @@ class _MarkPaymentDialogState extends State<MarkPaymentDialog>
       case PaymentStatus.unpaid:
         return const Color(0xFFEF4444); // Red
       case PaymentStatus.notActive:
-        return const Color(0xFF6B7280); // Grey
+        return const Color(0xFF6B7280); // Grey - NOT ACTIVE STATUS
     }
   }
 
   /// PRODUCTION-READY: Descriptive text for each payment status
-  String _getPaymentStatusDescription(PaymentStatus status) {
+  String _getLocalizedStatusDescription(PaymentStatus status) {
     switch (status) {
       case PaymentStatus.paid:
-        return 'Payment fully completed';
+        return AppLocalizations.of(context)!.paymentFullyCompleted;
       case PaymentStatus.partial:
-        return 'Partial payment received';
+        return AppLocalizations.of(context)!.partialPaymentReceived;
       case PaymentStatus.unpaid:
-        return 'No payment received';
+        return AppLocalizations.of(context)!.noPaymentReceived;
       case PaymentStatus.notActive:
-        return 'Player inactive/suspended';
+        return AppLocalizations.of(context)!.playerInactiveSuspended;
+    }
+  }
+  
+  /// PRODUCTION-READY: Localized status name
+  String _getLocalizedStatusName(PaymentStatus status) {
+    switch (status) {
+      case PaymentStatus.paid:
+        return AppLocalizations.of(context)!.fullyPaid;
+      case PaymentStatus.partial:
+        return AppLocalizations.of(context)!.partiallyPaid;
+      case PaymentStatus.unpaid:
+        return AppLocalizations.of(context)!.unpaid;
+      case PaymentStatus.notActive:
+        return AppLocalizations.of(context)!.notActive;
     }
   }
 
@@ -617,13 +1101,13 @@ class _MarkPaymentDialogState extends State<MarkPaymentDialog>
   String _getSuccessMessage() {
     switch (selectedPaymentStatus) {
       case PaymentStatus.paid:
-        return 'Payment marked as PAID successfully!';
+        return AppLocalizations.of(context)!.paymentMarkedPaidSuccess;
       case PaymentStatus.partial:
-        return 'Payment marked as PARTIAL successfully!';
+        return AppLocalizations.of(context)!.paymentMarkedPartialSuccess;
       case PaymentStatus.unpaid:
-        return 'Payment marked as UNPAID successfully!';
+        return AppLocalizations.of(context)!.paymentMarkedUnpaidSuccess;
       case PaymentStatus.notActive:
-        return 'Player marked as INACTIVE successfully!';
+        return AppLocalizations.of(context)!.playerMarkedInactiveSuccess;
     }
   }
 

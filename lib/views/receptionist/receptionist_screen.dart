@@ -10,6 +10,7 @@ import 'package:footballtraining/views/receptionist/payment_overview_screen.dart
 import 'package:footballtraining/views/shared/widgets/payment_month_indicator.dart';
 import 'package:footballtraining/data/repositories/coach_management_service.dart';
 import 'package:footballtraining/utils/responsive_utils.dart';
+import 'package:footballtraining/data/models/payment_model.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class ReceptionistScreen extends StatefulWidget {
@@ -763,7 +764,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
             ),
             const SizedBox(height: 24),
             Text(
-              'No ${tabs[currentTab]} found',
+              l10n.noEntitiesFound(tabs[currentTab]),
               style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -773,7 +774,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
             ),
             const SizedBox(height: 8),
             Text(
-              'Add some ${tabs[currentTab].toLowerCase()} to get started',
+              l10n.addSomeEntities(tabs[currentTab].toLowerCase()),
               style: GoogleFonts.poppins(
                 fontSize: 14,
                 color: Colors.grey.shade600,
@@ -807,7 +808,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
             ),
             const SizedBox(height: 24),
             Text(
-              'No results for "$searchQuery"',
+              l10n.noResultsFor(searchQuery),
               style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -817,7 +818,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
             ),
             const SizedBox(height: 8),
             Text(
-              'Try adjusting your search terms',
+              l10n.tryAdjustingSearch,
               style: GoogleFonts.poppins(
                 fontSize: 14,
                 color: Colors.grey.shade600,
@@ -1298,7 +1299,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
             ],
           ),
           content: Text(
-            'Are you sure you want to logout?',
+            l10n.confirmLogout,
             style: GoogleFonts.poppins(),
           ),
           actions: [
@@ -1980,21 +1981,22 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
   }
 
   Widget _buildPaymentManagementTab(String playerId) {
+    final l10n = AppLocalizations.of(context)!;
     final now = DateTime.now();
     final currentYear = now.year;
     final months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec'
+      l10n.monthJan,
+      l10n.monthFeb,
+      l10n.monthMar,
+      l10n.monthApr,
+      l10n.monthMay,
+      l10n.monthJun,
+      l10n.monthJul,
+      l10n.monthAug,
+      l10n.monthSep,
+      l10n.monthOct,
+      l10n.monthNov,
+      l10n.monthDec
     ];
 
     return LayoutBuilder(
@@ -2072,11 +2074,25 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                     .where('year', isEqualTo: currentYear.toString())
                     .snapshots(),
                 builder: (context, snapshot) {
-                  Map<String, bool> payments = {};
+                  // ENTERPRISE-GRADE: Store payment status with 3 states
+                  Map<String, PaymentStatus> payments = {};
                   if (snapshot.hasData) {
                     for (var doc in snapshot.data!.docs) {
-                      final isPaid = doc.data() as Map<String, dynamic>;
-                      payments[doc['month']] = isPaid['isPaid'] ?? false;
+                      final paymentData = doc.data() as Map<String, dynamic>;
+                      final isPaid = paymentData['isPaid'] ?? false;
+                      final isActive = paymentData['isActive'] ?? true;
+
+                      // Determine 3-state payment status
+                      PaymentStatus status;
+                      if (!isActive) {
+                        status = PaymentStatus.notActive; // Grey - Not Active
+                      } else if (isPaid) {
+                        status = PaymentStatus.paid; // Green - Paid
+                      } else {
+                        status = PaymentStatus.unpaid; // Red - Unpaid
+                      }
+
+                      payments[doc['month']] = status;
                     }
                   }
                   return GridView.builder(
@@ -2092,26 +2108,24 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                     itemBuilder: (context, index) {
                       final monthNumber =
                           (index + 1).toString().padLeft(2, '0');
-                      final isPaid = payments[monthNumber] ?? false;
+                      final paymentStatus =
+                          payments[monthNumber] ?? PaymentStatus.unpaid;
+                      final statusColors = _getGridStatusColors(paymentStatus);
+                      final statusIcon = _getGridStatusIcon(paymentStatus);
+
                       return GestureDetector(
-                        onTap: () => _togglePaymentInGrid(playerId,
-                            currentYear.toString(), monthNumber, !isPaid),
+                        onTap: () => _togglePaymentStatusInGrid(playerId,
+                            currentYear.toString(), monthNumber, paymentStatus),
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 300),
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
-                              colors: isPaid
-                                  ? [
-                                      Colors.green.shade400,
-                                      Colors.green.shade600
-                                    ]
-                                  : [Colors.red.shade400, Colors.red.shade600],
+                              colors: statusColors,
                             ),
                             borderRadius: BorderRadius.circular(borderRadius),
                             boxShadow: [
                               BoxShadow(
-                                color: (isPaid ? Colors.green : Colors.red)
-                                    .withOpacity(0.18),
+                                color: statusColors[0].withValues(alpha: 0.18),
                                 blurRadius: isDesktop ? 16 : 8,
                                 offset: const Offset(0, 4),
                               ),
@@ -2131,9 +2145,11 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                               ),
                               SizedBox(height: 4),
                               Icon(
-                                isPaid
+                                paymentStatus == PaymentStatus.paid
                                     ? Icons.check_circle_rounded
-                                    : Icons.cancel_rounded,
+                                    : paymentStatus == PaymentStatus.notActive
+                                        ? Icons.remove_circle_outline_rounded
+                                        : Icons.cancel_rounded,
                                 color: Colors.white,
                                 size: iconSize,
                               ),
@@ -2223,7 +2239,25 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
     }
   }
 
+  // Add this method to handle toggling payment status in the grid
+  Future<void> _togglePaymentStatusInGrid(String playerId, String year,
+      String month, PaymentStatus currentStatus) async {
+    if (currentStatus == PaymentStatus.notActive) {
+      // Do nothing if not active
+      return;
+    }
+    if (currentStatus == PaymentStatus.paid) {
+      // Mark as unpaid
+      await _togglePaymentInGrid(playerId, year, month, false);
+    } else {
+      // Mark as paid
+      await _togglePaymentInGrid(playerId, year, month, true);
+    }
+  }
+
   Future<void> _sendPaymentReminder(String playerId) async {
+    final l10n = AppLocalizations.of(context)!;
+
     // Find the player's details first
     final playerDoc = await FirebaseFirestore.instance
         .collection('players')
@@ -2231,21 +2265,23 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
         .get();
 
     if (!playerDoc.exists) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.error_outline, color: Colors.white),
-              const SizedBox(width: 8),
-              const Text('Player not found'),
-            ],
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white),
+                const SizedBox(width: 8),
+                Text(l10n.playerNotFound),
+              ],
+            ),
+            backgroundColor: Colors.red.shade600,
+            behavior: SnackBarBehavior.floating,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
-          backgroundColor: Colors.red.shade600,
-          behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      );
+        );
+      }
       return;
     }
 
@@ -2254,21 +2290,23 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
     final email = playerData['email'] ?? '';
 
     if (email.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.warning_rounded, color: Colors.white),
-              const SizedBox(width: 8),
-              const Text('No email available for this player'),
-            ],
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.warning_rounded, color: Colors.white),
+                const SizedBox(width: 8),
+                Text(l10n.noEmailAvailable),
+              ],
+            ),
+            backgroundColor: Colors.orange.shade600,
+            behavior: SnackBarBehavior.floating,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
-          backgroundColor: Colors.orange.shade600,
-          behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      );
+        );
+      }
       return;
     }
 
@@ -2277,18 +2315,18 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
     final now = DateTime.now();
     final currentYear = now.year.toString();
     final monthNames = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December'
+      l10n.monthJanuary,
+      l10n.monthFebruary,
+      l10n.monthMarch,
+      l10n.monthApril,
+      l10n.monthMayFull,
+      l10n.monthJune,
+      l10n.monthJuly,
+      l10n.monthAugust,
+      l10n.monthSeptember,
+      l10n.monthOctober,
+      l10n.monthNovember,
+      l10n.monthDecember
     ];
 
     try {
@@ -2316,151 +2354,157 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
       }
 
       if (unpaidMonths.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.check_circle, color: Colors.white),
-                const SizedBox(width: 8),
-                const Text('All months are paid!'),
-              ],
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.check_circle, color: Colors.white),
+                  const SizedBox(width: 8),
+                  Text(l10n.allMonthsPaid),
+                ],
+              ),
+              backgroundColor: Colors.green.shade600,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
             ),
-            backgroundColor: Colors.green.shade600,
-            behavior: SnackBarBehavior.floating,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        );
+          );
+        }
         return;
       }
 
       // Show email preview dialog
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Row(
-            children: [
-              Icon(Icons.email_rounded,
-                  color: tabConfigs[currentTab].gradient[0]),
-              const SizedBox(width: 8),
-              Text(
-                'Payment Reminder Email',
-                style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Row(
+              children: [
+                Icon(Icons.email_rounded,
+                    color: tabConfigs[currentTab].gradient[0]),
+                const SizedBox(width: 8),
+                Text(
+                  l10n.paymentReminderEmail,
+                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('To: $email',
+                            style: GoogleFonts.poppins(
+                                fontWeight: FontWeight.w500)),
+                        Text('Subject: Payment Reminder for $playerName',
+                            style: GoogleFonts.poppins(
+                                fontWeight: FontWeight.w500)),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(AppLocalizations.of(context)!.dearParentGuardian,
+                      style: GoogleFonts.poppins()),
+                  const SizedBox(height: 10),
+                  Text(
+                    AppLocalizations.of(context)!.reminderUnpaidMonths,
+                    style: GoogleFonts.poppins(),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.red.shade200),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: unpaidMonths
+                          .map(
+                            (month) => Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 2),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.circle,
+                                      size: 6, color: Colors.red.shade600),
+                                  const SizedBox(width: 8),
+                                  Text('$month $currentYear',
+                                      style: GoogleFonts.poppins(fontSize: 13)),
+                                ],
+                              ),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(AppLocalizations.of(context)!.pleasePayEarliest,
+                      style: GoogleFonts.poppins()),
+                  const SizedBox(height: 10),
+                  Text(AppLocalizations.of(context)!.thankYou,
+                      style: GoogleFonts.poppins()),
+                  Text(AppLocalizations.of(context)!.footballClubManagement,
+                      style: GoogleFonts.poppins(fontWeight: FontWeight.w500)),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                child: Text(
+                  'Close',
+                  style: GoogleFonts.poppins(color: Colors.grey.shade600),
+                ),
+                onPressed: () => Navigator.pop(context),
+              ),
+              ElevatedButton.icon(
+                icon: const Icon(Icons.send_rounded, size: 18),
+                label: Text(
+                  'Send Email',
+                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: tabConfigs[currentTab].gradient[0],
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+                onPressed: () {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Row(
+                        children: [
+                          const Icon(Icons.check_circle, color: Colors.white),
+                          const SizedBox(width: 8),
+                          Text('Email sent to $email'),
+                        ],
+                      ),
+                      backgroundColor: Colors.green.shade600,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                    ),
+                  );
+                },
               ),
             ],
           ),
-          content: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('To: $email',
-                          style:
-                              GoogleFonts.poppins(fontWeight: FontWeight.w500)),
-                      Text('Subject: Payment Reminder for $playerName',
-                          style:
-                              GoogleFonts.poppins(fontWeight: FontWeight.w500)),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text('Dear Parent/Guardian,', style: GoogleFonts.poppins()),
-                const SizedBox(height: 10),
-                Text(
-                  'This is a reminder that the following months are unpaid:',
-                  style: GoogleFonts.poppins(),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.red.shade50,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.red.shade200),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: unpaidMonths
-                        .map(
-                          (month) => Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 2),
-                            child: Row(
-                              children: [
-                                Icon(Icons.circle,
-                                    size: 6, color: Colors.red.shade600),
-                                const SizedBox(width: 8),
-                                Text('$month $currentYear',
-                                    style: GoogleFonts.poppins(fontSize: 13)),
-                              ],
-                            ),
-                          ),
-                        )
-                        .toList(),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Text('Please make the payment at your earliest convenience.',
-                    style: GoogleFonts.poppins()),
-                const SizedBox(height: 10),
-                Text('Thank you,', style: GoogleFonts.poppins()),
-                Text('Football Club Management',
-                    style: GoogleFonts.poppins(fontWeight: FontWeight.w500)),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              child: Text(
-                'Close',
-                style: GoogleFonts.poppins(color: Colors.grey.shade600),
-              ),
-              onPressed: () => Navigator.pop(context),
-            ),
-            ElevatedButton.icon(
-              icon: const Icon(Icons.send_rounded, size: 18),
-              label: Text(
-                'Send Email',
-                style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: tabConfigs[currentTab].gradient[0],
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-              ),
-              onPressed: () {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Row(
-                      children: [
-                        const Icon(Icons.check_circle, color: Colors.white),
-                        const SizedBox(width: 8),
-                        Text('Email sent to $email'),
-                      ],
-                    ),
-                    backgroundColor: Colors.green.shade600,
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
-      );
+        );
+      }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -2486,6 +2530,36 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
       context,
       MaterialPageRoute(builder: (context) => const PaymentOverviewScreen()),
     );
+  }
+}
+
+// Payment status enum for grid
+enum PaymentStatus { paid, unpaid, notActive }
+
+// Helper to get color gradients for payment status grid
+List<Color> _getGridStatusColors(PaymentStatus status) {
+  switch (status) {
+    case PaymentStatus.paid:
+      return [Colors.green.shade400, Colors.green.shade700];
+    case PaymentStatus.unpaid:
+      return [Colors.red.shade400, Colors.red.shade700];
+    case PaymentStatus.notActive:
+      return [Colors.grey.shade400, Colors.grey.shade600];
+    default:
+      return [Colors.grey.shade400, Colors.grey.shade600];
+  }
+}
+
+// Helper to get icon for payment status grid
+IconData _getGridStatusIcon(PaymentStatus status) {
+  switch (status) {
+    case PaymentStatus.paid:
+      return Icons.check_circle_rounded;
+    case PaymentStatus.notActive:
+      return Icons.remove_circle_outline_rounded;
+    case PaymentStatus.unpaid:
+    default:
+      return Icons.cancel_rounded;
   }
 }
 
