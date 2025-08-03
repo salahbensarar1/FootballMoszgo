@@ -584,5 +584,46 @@
         "type": "String"
       }
     }
-  }
+  },
+
+  "selectBirthDate": "Születési dátum kiválasztása",
+  "selectTeamToAdd": "Hozzáadandó csapat kiválasztása",
+  "selectRole": "Szerepkör kiválasztása",
+  "forTeam": "{teamName} számára",
+  "@forTeam": {
+    "placeholders": {
+      "teamName": {
+        "type": "String"
+      }
+    }
+  },
+  "selectCoachToAdd": "Hozzáadandó edző kiválasztása",
+  "cancel": "Mégsem",
+  "noTeamsAvailable": "Nincsenek elérhető csapatok",
+  "allTeamsAssigned": "Minden csapat hozzárendelve",
+  "noCoachesAvailable": "Nincsenek elérhető edzők",
+  "allCoachesAssigned": "Minden edző hozzárendelve",
+  "playerInformation": "Játékos adatok",
+  "enterPlayerName": "Adja meg a játékos nevét",
+  "enterPosition": "Adja meg a pozíciót",
+  "teamInformation": "Csapat adatok",
+  "teamDescription": "Csapat leírása",
+  "teamNameRequired": "A csapat neve kötelező",
+  "teamNameMinLength": "A csapat nevének legalább 2 karakterből kell állnia",
+  "teamNameMaxLength": "A csapat neve kevesebb mint 30 karakterből kell álljon",
+  "teamDescriptionRequired": "A csapat leírása kötelező",
+  "descriptionMinLength": "A leírásnak legalább 10 karakterből kell állnia",
+  "descriptionMaxLength": "A leírás kevesebb mint 200 karakterből kell álljon",
+  "atLeastOneCoachRequired": "Legalább egy edzőt hozzá kell rendelni a csapat létrehozásához",
+  "atLeastOneCoachTeamRequired": "Legalább egy edzőt hozzá kell rendelni a csapathoz",
+  "maximumCoachesAssigned": "Maximum edzők hozzárendelve",
+  "addNewCoach": "Új edző hozzáadása a rendszerhez",
+  "registerNewPlayer": "Új játékos regisztrálása",
+  "createNewTeam": "Új csapat létrehozása",
+  "addNewEntry": "Új bejegyzés hozzáadása",
+  "profilePicture": "Profilkép",
+  "tapToSelectPicture": "Kattintson a fenti körre profilkép kiválasztásához",
+  "uploadImage": "Kép feltöltése",
+  "uploading": "Feltöltés...",
+  "assignToTeam": "Csapathoz rendelés"
 }
