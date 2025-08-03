@@ -36,9 +36,8 @@ jobs:
         with:
           flutter-version: '3.27.1'
           channel: 'stable'
-          cache: true
+          cache: true          
           
-      # 🚀 SUPER IMPORTANT: Cache dependencies to save 3-5 minutes per build
       - name: Cache Flutter Dependencies
         uses: actions/cache@v4
         with:
@@ -50,11 +49,9 @@ jobs:
           restore-keys: |
             flutter-deps-${{ runner.os }}-
             
-      # Skip flutter clean - wastes time when we have caching
       - name: Install Dependencies
         run: flutter pub get
         
-      # 🧪 Conditional testing - only run if test files exist
       - name: Check for tests
         id: check_tests
         run: |
