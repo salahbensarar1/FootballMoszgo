@@ -1598,7 +1598,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                   color: tabConfigs[currentTab].gradient[0]),
               const SizedBox(width: 8),
               Text(
-                "Edit ${data['name'] ?? data['team_name'] ?? ''}",
+                "${l10n.edit} ${data['name'] ?? data['team_name'] ?? ''}",
                 style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
               ),
             ],
@@ -1609,7 +1609,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
               children: [
                 _buildTextField(
                   controller: nameController,
-                  label: currentTab == 2 ? "Team Name" : "Name",
+                  label: currentTab == 2 ? l10n.teamName : l10n.name,
                   icon: currentTab == 2
                       ? Icons.groups_rounded
                       : Icons.person_rounded,
@@ -1618,13 +1618,13 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                   const SizedBox(height: 16),
                   _buildTextField(
                     controller: emailController,
-                    label: "Email",
+                    label: l10n.email,
                     icon: Icons.email_rounded,
                   ),
                   const SizedBox(height: 16),
                   _buildTextField(
                     controller: descriptionController,
-                    label: "Role Description",
+                    label: l10n.roleDescription,
                     icon: Icons.description_rounded,
                   ),
                 ],
@@ -1659,7 +1659,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                           items: teamItems,
                           onChanged: (val) => selectedTeam = val!,
                           decoration: InputDecoration(
-                            labelText: "Team",
+                            labelText: l10n.team,
                             prefixIcon: Icon(Icons.groups_rounded,
                                 color: Colors.grey.shade600),
                             border: InputBorder.none,
@@ -1689,7 +1689,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                                 color: Colors.blue.shade600),
                             SizedBox(width: 8),
                             Text(
-                              'Coaches Management',
+                              l10n.coachesManagement,
                               style: GoogleFonts.poppins(
                                   fontWeight: FontWeight.w500),
                             ),
@@ -1712,7 +1712,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                             );
                           },
                           icon: Icon(Icons.group_add_rounded),
-                          label: Text('Manage Team Coaches'),
+                          label: Text(l10n.manageTeamCoaches),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.blue.shade600,
                             foregroundColor: Colors.white,
@@ -1723,7 +1723,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                         ),
                         SizedBox(height: 8),
                         Text(
-                          'Assign multiple coaches with different roles',
+                          l10n.assignMultipleCoaches,
                           style: GoogleFonts.poppins(
                             fontSize: 12,
                             color: Colors.grey.shade600,
@@ -1739,7 +1739,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
           actions: [
             TextButton(
               child: Text(
-                "Cancel",
+                l10n.cancel,
                 style: GoogleFonts.poppins(color: Colors.grey.shade600),
               ),
               onPressed: () => Navigator.pop(context),
@@ -1751,7 +1751,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                     borderRadius: BorderRadius.circular(12)),
               ),
               child: Text(
-                "Save",
+                l10n.save,
                 style: GoogleFonts.poppins(
                     color: Colors.white, fontWeight: FontWeight.w600),
               ),
@@ -1785,7 +1785,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                         children: [
                           const Icon(Icons.check_circle, color: Colors.white),
                           const SizedBox(width: 8),
-                          const Text("Successfully updated."),
+                          Text(l10n.successfullyUpdated),
                         ],
                       ),
                       backgroundColor: Colors.green.shade600,
@@ -1801,7 +1801,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                         children: [
                           const Icon(Icons.error_outline, color: Colors.white),
                           const SizedBox(width: 8),
-                          Expanded(child: Text("Failed to update: $e")),
+                          Expanded(child: Text(l10n.failedToUpdate(e.toString()))),
                         ],
                       ),
                       backgroundColor: Colors.red.shade600,

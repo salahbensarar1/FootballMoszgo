@@ -1,12 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 // Import your updated payment models
 import '../../data/models/payment_model.dart';
-
-// Import components
 
 // Import dialogs
 import 'dialogs/mark_payment_dialog.dart';
@@ -23,7 +22,7 @@ class PaymentOverviewScreen extends StatefulWidget {
 
 class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
     with TickerProviderStateMixin {
-  // Animation controllers
+  // Animation controllers - optimized for performance
   late AnimationController _animationController;
   late AnimationController _refreshController;
   late Animation<double> _fadeAnimation;
@@ -37,9 +36,13 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
   // Tab controller for different views
   late TabController _tabController;
 
-  // Team payment fees cache
+  // Team payment fees cache - performance optimization
   Map<String, double> teamPaymentFees = {};
   bool isLoadingTeamFees = true;
+
+  // Hungarian Forint formatter - const for performance
+  static const String _currencySymbol = 'Ft';
+  static final NumberFormat _hungarianFormatter = NumberFormat('#,##0', 'hu_HU');
 
   @override
   void initState() {
@@ -59,12 +62,12 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
 
   void _setupAnimations() {
     _animationController = AnimationController(
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 800), // Reduced from 1200ms
       vsync: this,
     );
 
     _refreshController = AnimationController(
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 600), // Reduced from 800ms
       vsync: this,
     );
 
@@ -73,15 +76,15 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
       end: 1.0,
     ).animate(CurvedAnimation(
       parent: _animationController,
-      curve: const Interval(0.0, 0.5, curve: Curves.easeOut),
+      curve: const Interval(0.0, 0.6, curve: Curves.easeOut), // Optimized timing
     ));
 
     _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
+      begin: const Offset(0, 0.2), // Reduced offset for better UX
       end: Offset.zero,
     ).animate(CurvedAnimation(
       parent: _animationController,
-      curve: const Interval(0.3, 0.8, curve: Curves.elasticOut),
+      curve: const Interval(0.2, 0.8, curve: Curves.easeOutCubic), // Better curve
     ));
 
     _animationController.forward();
@@ -92,75 +95,79 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
       final teamsSnapshot =
           await FirebaseFirestore.instance.collection('teams').get();
 
-      Map<String, double> fees = {};
+      final Map<String, double> fees = {};
 
-      for (var doc in teamsSnapshot.docs) {
+      for (final doc in teamsSnapshot.docs) {
         final data = doc.data();
         final teamName = data['team_name'] as String? ?? '';
         final payment = data['payment'] as num? ?? 15000; // Default 15000 HUF
         fees[teamName] = payment.toDouble();
       }
 
-      setState(() {
-        teamPaymentFees = fees;
-        isLoadingTeamFees = false;
-      });
+      if (mounted) {
+        setState(() {
+          teamPaymentFees = fees;
+          isLoadingTeamFees = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        isLoadingTeamFees = false;
-      });
-      print('Error loading team payment fees: $e');
+      if (mounted) {
+        setState(() {
+          isLoadingTeamFees = false;
+        });
+      }
+      debugPrint('Error loading team payment fees: $e');
     }
   }
 
-  // Helper method to get team payment fee
+  // Helper method to get team payment fee - optimized
   double _getTeamPaymentFee(String teamName) {
     return teamPaymentFees[teamName] ?? 15000.0; // Default 15000 HUF
   }
 
-  // Helper method to format Hungarian Forint
+  // Helper method to format Hungarian Forint - optimized static method
   String _formatHUF(double amount) {
-    final formatter = NumberFormat('#,##0', 'hu_HU');
-    return '${formatter.format(amount)} Ft';
+    return '${_hungarianFormatter.format(amount)} $_currencySymbol';
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final size = MediaQuery.of(context).size;
     final isSmallScreen = size.width < 600;
     final isTablet = size.width >= 600 && size.width < 1024;
 
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
-      appBar: _buildAppBar(context),
+      appBar: _buildAppBar(l10n),
       body: isLoadingTeamFees
-          ? _buildLoadingState()
+          ? _buildLoadingState(l10n)
           : FadeTransition(
               opacity: _fadeAnimation,
               child: Column(
                 children: [
-                  _buildTabBar(isSmallScreen, isTablet),
-                  _buildFilters(isSmallScreen, isTablet),
+                  _buildTabBar(l10n, isSmallScreen, isTablet),
+                  _buildFilters(l10n, isSmallScreen, isTablet),
                   Expanded(
                     child: SlideTransition(
                       position: _slideAnimation,
-                      child: _buildTabContent(),
+                      child: _buildTabContent(l10n),
                     ),
                   ),
                 ],
               ),
             ),
       floatingActionButton:
-          isLoadingTeamFees ? null : _buildFloatingActionButton(),
+          isLoadingTeamFees ? null : _buildFloatingActionButton(l10n),
     );
   }
 
-  PreferredSizeWidget _buildAppBar(BuildContext context) {
+  PreferredSizeWidget _buildAppBar(AppLocalizations l10n) {
     return AppBar(
       elevation: 0,
       centerTitle: true,
       title: Text(
-        'Payment Overview',
+        l10n.paymentOverview,
         style: GoogleFonts.poppins(
           fontWeight: FontWeight.w600,
           fontSize: 20,
@@ -181,39 +188,39 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
         IconButton(
           icon: const Icon(Icons.refresh_rounded),
           onPressed: _refreshData,
-          tooltip: 'Refresh',
+          tooltip: l10n.refresh,
         ),
         PopupMenuButton<String>(
           icon: const Icon(Icons.more_vert_rounded),
           onSelected: _handleMenuAction,
           itemBuilder: (context) => [
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'export',
               child: Row(
                 children: [
-                  Icon(Icons.file_download_rounded, size: 20),
-                  SizedBox(width: 8),
-                  Text('Export Data'),
+                  const Icon(Icons.file_download_rounded, size: 20),
+                  const SizedBox(width: 8),
+                  Text(l10n.exportData),
                 ],
               ),
             ),
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'bulk_reminder',
               child: Row(
                 children: [
-                  Icon(Icons.email_rounded, size: 20),
-                  SizedBox(width: 8),
-                  Text('Send Bulk Reminders'),
+                  const Icon(Icons.email_rounded, size: 20),
+                  const SizedBox(width: 8),
+                  Text(l10n.sendReminders),
                 ],
               ),
             ),
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'download_center',
               child: Row(
                 children: [
-                  Icon(Icons.download_rounded, size: 20),
-                  SizedBox(width: 8),
-                  Text('Download Center'),
+                  const Icon(Icons.download_rounded, size: 20),
+                  const SizedBox(width: 8),
+                  Text(l10n.downloadCenter),
                 ],
               ),
             ),
@@ -223,12 +230,12 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
     );
   }
 
-  Widget _buildTabBar(bool isSmallScreen, bool isTablet) {
-    double height = isSmallScreen ? 60 : (isTablet ? 65 : 70);
-    double horizontalPadding = isSmallScreen ? 12 : (isTablet ? 14 : 16);
+  Widget _buildTabBar(AppLocalizations l10n, bool isSmallScreen, bool isTablet) {
+    const double height = 60; // Fixed height for better performance
+    final double horizontalPadding = isSmallScreen ? 12 : (isTablet ? 14 : 16);
 
     return Container(
-      height: height.toDouble(),
+      height: height,
       padding: EdgeInsets.symmetric(
         horizontal: horizontalPadding,
         vertical: 8,
@@ -239,7 +246,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
+              color: Colors.black.withValues(alpha: 0.08),
               blurRadius: 20,
               offset: const Offset(0, 4),
             ),
@@ -254,7 +261,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
             ),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF667eea).withOpacity(0.3),
+                color: const Color(0xFF667eea).withValues(alpha: 0.3),
                 blurRadius: 8,
                 offset: const Offset(0, 4),
               ),
@@ -264,9 +271,9 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
           dividerColor: Colors.transparent,
           labelPadding: EdgeInsets.symmetric(horizontal: isSmallScreen ? 4 : 8),
           tabs: [
-            _buildTab('Overview', Icons.dashboard_rounded, 0, isSmallScreen),
-            _buildTab('Players', Icons.people_rounded, 1, isSmallScreen),
-            _buildTab('Reports', Icons.analytics_rounded, 2, isSmallScreen),
+            _buildTab(l10n.overview, Icons.dashboard_rounded, 0, isSmallScreen),
+            _buildTab(l10n.players, Icons.people_rounded, 1, isSmallScreen),
+            _buildTab(l10n.reports, Icons.analytics_rounded, 2, isSmallScreen),
           ],
         ),
       ),
@@ -277,7 +284,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
     final isActive = _tabController.index == index;
 
     return Tab(
-      height: isSmallScreen ? 40 : 45,
+      height: 40,
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: isSmallScreen ? 6 : 12),
         child: Row(
@@ -308,8 +315,8 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
     );
   }
 
-  Widget _buildFilters(bool isSmallScreen, bool isTablet) {
-    double horizontalPadding = isSmallScreen ? 12 : (isTablet ? 14 : 16);
+  Widget _buildFilters(AppLocalizations l10n, bool isSmallScreen, bool isTablet) {
+    final double horizontalPadding = isSmallScreen ? 12 : (isTablet ? 14 : 16);
 
     return Container(
       padding: EdgeInsets.symmetric(
@@ -322,9 +329,9 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
           if (constraints.maxWidth < 400) {
             return Column(
               children: [
-                _buildYearSelector(),
+                _buildYearSelector(l10n),
                 const SizedBox(height: 8),
-                _buildFilterSelector(),
+                _buildFilterSelector(l10n),
               ],
             );
           }
@@ -332,9 +339,9 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
           // Use Row for larger screens
           return Row(
             children: [
-              Expanded(child: _buildYearSelector()),
+              Expanded(child: _buildYearSelector(l10n)),
               const SizedBox(width: 12),
-              Expanded(flex: 2, child: _buildFilterSelector()),
+              Expanded(flex: 2, child: _buildFilterSelector(l10n)),
             ],
           );
         },
@@ -342,7 +349,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
     );
   }
 
-  Widget _buildYearSelector() {
+  Widget _buildYearSelector(AppLocalizations l10n) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -352,10 +359,10 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
       child: DropdownButtonFormField<int>(
         value: selectedYear,
         decoration: InputDecoration(
-          labelText: 'Year',
+          labelText: l10n.year,
           labelStyle: GoogleFonts.poppins(fontSize: 12),
-          prefixIcon: Icon(Icons.calendar_today_rounded,
-              color: const Color(0xFF667eea), size: 18),
+          prefixIcon: const Icon(Icons.calendar_today_rounded,
+              color: Color(0xFF667eea), size: 18),
           border: InputBorder.none,
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -374,7 +381,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
     );
   }
 
-  Widget _buildFilterSelector() {
+  Widget _buildFilterSelector(AppLocalizations l10n) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -384,19 +391,19 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
       child: DropdownButtonFormField<String>(
         value: selectedFilter,
         decoration: InputDecoration(
-          labelText: 'Filter',
+          labelText: l10n.filter,
           labelStyle: GoogleFonts.poppins(fontSize: 12),
-          prefixIcon: Icon(Icons.filter_list_rounded,
-              color: const Color(0xFF667eea), size: 18),
+          prefixIcon: const Icon(Icons.filter_list_rounded,
+              color: Color(0xFF667eea), size: 18),
           border: InputBorder.none,
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         ),
-        items: const [
-          DropdownMenuItem(value: 'all', child: Text('All Players')),
-          DropdownMenuItem(value: 'paid', child: Text('Fully Paid')),
-          DropdownMenuItem(value: 'unpaid', child: Text('Unpaid')),
-          DropdownMenuItem(value: 'partial', child: Text('Partially Paid')),
+        items: [
+          DropdownMenuItem(value: 'all', child: Text(l10n.allPlayers)),
+          DropdownMenuItem(value: 'paid', child: Text(l10n.fullyPaid)),
+          DropdownMenuItem(value: 'unpaid', child: Text(l10n.unpaid)),
+          DropdownMenuItem(value: 'partial', child: Text(l10n.partial)),
         ],
         onChanged: (value) {
           setState(() => selectedFilter = value!);
@@ -405,34 +412,34 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
     );
   }
 
-  Widget _buildTabContent() {
+  Widget _buildTabContent(AppLocalizations l10n) {
     return TabBarView(
       controller: _tabController,
       children: [
-        _buildOverviewTab(),
-        _buildPlayersTab(),
-        _buildReportsTab(),
+        _buildOverviewTab(l10n),
+        _buildPlayersTab(l10n),
+        _buildReportsTab(l10n),
       ],
     );
   }
 
-  Widget _buildOverviewTab() {
+  Widget _buildOverviewTab(AppLocalizations l10n) {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance.collection('players').snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return _buildLoadingState();
+          return _buildLoadingState(l10n);
         }
 
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return _buildEmptyState('No payment data available');
+          return _buildEmptyState(l10n.noPaymentDataAvailable);
         }
 
         return FutureBuilder<PaymentStats>(
           future: _calculatePaymentStats(snapshot.data!.docs),
           builder: (context, statsSnapshot) {
             if (!statsSnapshot.hasData) {
-              return _buildLoadingState();
+              return _buildLoadingState(l10n);
             }
 
             final stats = statsSnapshot.data!;
@@ -442,11 +449,11 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
                   MediaQuery.of(context).size.width < 600 ? 12 : 16),
               child: Column(
                 children: [
-                  _buildStatsCards(stats),
+                  _buildStatsCards(l10n, stats),
                   const SizedBox(height: 20),
-                  _buildMonthlyChart(stats),
+                  _buildMonthlyChart(l10n, stats),
                   const SizedBox(height: 20),
-                  _buildQuickActions(),
+                  _buildQuickActions(l10n),
                 ],
               ),
             );
@@ -456,7 +463,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
     );
   }
 
-  Widget _buildStatsCards(PaymentStats stats) {
+  Widget _buildStatsCards(AppLocalizations l10n, PaymentStats stats) {
     final screenWidth = MediaQuery.of(context).size.width;
     final crossAxisCount = screenWidth < 600 ? 1 : 2;
     final childAspectRatio = screenWidth < 600 ? 2.5 : 1.5;
@@ -470,21 +477,21 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
       mainAxisSpacing: 12,
       children: [
         _buildStatCard(
-          'Total Collected',
+          l10n.totalCollected,
           _formatHUF(stats.totalCollected),
           Icons.account_balance_wallet_rounded,
           const LinearGradient(colors: [Color(0xFF10B981), Color(0xFF059669)]),
           stats.collectionRate,
         ),
         _buildStatCard(
-          'Outstanding',
+          l10n.outstanding,
           _formatHUF(stats.totalOutstanding),
           Icons.pending_actions_rounded,
           const LinearGradient(colors: [Color(0xFFF59E0B), Color(0xFFD97706)]),
           100 - stats.collectionRate,
         ),
         _buildStatCard(
-          'Paid Players',
+          l10n.paidPlayers,
           '${stats.fullyPaidPlayers}/${stats.totalPlayers}',
           Icons.people_rounded,
           const LinearGradient(colors: [Color(0xFF667eea), Color(0xFF764ba2)]),
@@ -493,10 +500,10 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
               : 0,
         ),
         _buildStatCard(
-          'This Month',
+          l10n.thisMonth,
           _formatHUF(stats.thisMonthCollected),
           Icons.calendar_month_rounded,
-          const LinearGradient(colors: [Color(0xFFEC4899), Color(0xBE185D)]),
+          const LinearGradient(colors: [Color(0xFFEC4899), Color(0xFFBE185D)]),
           stats.thisMonthProgress,
         ),
       ],
@@ -511,7 +518,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 20,
             offset: const Offset(0, 4),
           ),
@@ -577,7 +584,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
     );
   }
 
-  Widget _buildMonthlyChart(PaymentStats stats) {
+  Widget _buildMonthlyChart(AppLocalizations l10n, PaymentStats stats) {
     return Container(
       height: 200,
       decoration: BoxDecoration(
@@ -585,7 +592,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 20,
             offset: const Offset(0, 4),
           ),
@@ -598,12 +605,12 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
           children: [
             Row(
               children: [
-                Icon(Icons.bar_chart_rounded,
-                    color: const Color(0xFF667eea), size: 20),
+                const Icon(Icons.bar_chart_rounded,
+                    color: Color(0xFF667eea), size: 20),
                 const SizedBox(width: 8),
                 Flexible(
                   child: Text(
-                    'Monthly Collection Trend',
+                    l10n.monthlyCollectionTrend,
                     style: GoogleFonts.poppins(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -625,19 +632,9 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
   }
 
   Widget _buildSimpleChart(Map<int, double> monthlyData) {
-    final months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec'
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
     ];
 
     return LayoutBuilder(
@@ -694,14 +691,14 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
     );
   }
 
-  Widget _buildQuickActions() {
+  Widget _buildQuickActions(AppLocalizations l10n) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 20,
             offset: const Offset(0, 4),
           ),
@@ -714,12 +711,12 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
           children: [
             Row(
               children: [
-                Icon(Icons.flash_on_rounded,
-                    color: const Color(0xFF667eea), size: 20),
+                const Icon(Icons.flash_on_rounded,
+                    color: Color(0xFF667eea), size: 20),
                 const SizedBox(width: 8),
                 Flexible(
                   child: Text(
-                    'Quick Actions',
+                    l10n.quickActions,
                     style: GoogleFonts.poppins(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -738,21 +735,21 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
                   return Column(
                     children: [
                       _buildActionButton(
-                        'Mark Payment',
+                        l10n.markPayment,
                         Icons.payment_rounded,
                         const Color(0xFF667eea),
                         () => _showMarkPaymentDialog(),
                       ),
                       const SizedBox(height: 8),
                       _buildActionButton(
-                        'Send Reminders',
+                        l10n.sendReminders,
                         Icons.email_rounded,
                         const Color(0xFFF59E0B),
                         () => _showBulkReminderDialog(),
                       ),
                       const SizedBox(height: 8),
                       _buildActionButton(
-                        'Export Report',
+                        l10n.exportReport,
                         Icons.file_download_rounded,
                         const Color(0xFF10B981),
                         () => _showExportDialog(),
@@ -767,7 +764,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
                         children: [
                           Expanded(
                             child: _buildActionButton(
-                              'Mark Payment',
+                              l10n.markPayment,
                               Icons.payment_rounded,
                               const Color(0xFF667eea),
                               () => _showMarkPaymentDialog(),
@@ -776,7 +773,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
                           const SizedBox(width: 12),
                           Expanded(
                             child: _buildActionButton(
-                              'Send Reminders',
+                              l10n.sendReminders,
                               Icons.email_rounded,
                               const Color(0xFFF59E0B),
                               () => _showBulkReminderDialog(),
@@ -788,7 +785,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
                       SizedBox(
                         width: double.infinity,
                         child: _buildActionButton(
-                          'Export Report',
+                          l10n.exportReport,
                           Icons.file_download_rounded,
                           const Color(0xFF10B981),
                           () => _showExportDialog(),
@@ -813,9 +810,9 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withOpacity(0.3)),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -839,26 +836,26 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
     );
   }
 
-  Widget _buildPlayersTab() {
+  Widget _buildPlayersTab(AppLocalizations l10n) {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance.collection('players').snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return _buildLoadingState();
+          return _buildLoadingState(l10n);
         }
 
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return _buildEmptyState('No players found');
+          return _buildEmptyState(l10n.noEntityFound(l10n.players));
         }
 
         return FutureBuilder<List<PlayerPaymentStatus>>(
           future: _getPlayerPaymentStatuses(snapshot.data!.docs),
           builder: (context, statusSnapshot) {
             if (!statusSnapshot.hasData) {
-              return _buildLoadingState();
+              return _buildLoadingState(l10n);
             }
 
-            List<PlayerPaymentStatus> filteredPlayers =
+            final List<PlayerPaymentStatus> filteredPlayers =
                 _filterPlayersByStatus(statusSnapshot.data!);
 
             return ListView.separated(
@@ -867,7 +864,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
               itemCount: filteredPlayers.length,
               separatorBuilder: (context, index) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
-                return _buildPlayerCard(filteredPlayers[index]);
+                return _buildPlayerCard(l10n, filteredPlayers[index]);
               },
             );
           },
@@ -876,7 +873,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
     );
   }
 
-  Widget _buildPlayerCard(PlayerPaymentStatus player) {
+  Widget _buildPlayerCard(AppLocalizations l10n, PlayerPaymentStatus player) {
     final teamFee = _getTeamPaymentFee(player.team);
     final totalPaid = player.paidMonths * teamFee;
     final totalOutstanding = (player.totalMonths - player.paidMonths) * teamFee;
@@ -887,7 +884,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 20,
             offset: const Offset(0, 4),
           ),
@@ -936,7 +933,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
                         overflow: TextOverflow.ellipsis,
                       ),
                       Text(
-                        '${player.team} • ${_formatHUF(teamFee)}/month',
+                        '${player.team} • ${_formatHUF(teamFee)}/${l10n.month}',
                         style: GoogleFonts.poppins(
                           fontSize: 14,
                           color: Colors.grey.shade600,
@@ -950,11 +947,11 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: _getStatusColor(player.status).withOpacity(0.1),
+                    color: _getStatusColor(player.status).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    _getStatusText(player.status),
+                    _getStatusText(l10n, player.status),
                     style: GoogleFonts.poppins(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -977,7 +974,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Payment Progress',
+                        l10n.paymentProgress,
                         style: GoogleFonts.poppins(
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
@@ -985,7 +982,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
                         ),
                       ),
                       Text(
-                        '${player.paidMonths}/${player.totalMonths} months',
+                        '${player.paidMonths}/${player.totalMonths} ${l10n.months}',
                         style: GoogleFonts.poppins(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
@@ -1010,7 +1007,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Paid: ${_formatHUF(totalPaid)}',
+                        '${l10n.paid}: ${_formatHUF(totalPaid)}',
                         style: GoogleFonts.poppins(
                           fontSize: 11,
                           color: Colors.green.shade600,
@@ -1018,7 +1015,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
                         ),
                       ),
                       Text(
-                        'Outstanding: ${_formatHUF(totalOutstanding)}',
+                        '${l10n.outstanding}: ${_formatHUF(totalOutstanding)}',
                         style: GoogleFonts.poppins(
                           fontSize: 11,
                           color: Colors.red.shade600,
@@ -1032,7 +1029,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
                     children: [
                       Expanded(
                         child: _buildPlayerActionButton(
-                          'View Details',
+                          l10n.viewDetails,
                           Icons.visibility_rounded,
                           const Color(0xFF667eea),
                           () => _showPlayerDetailsDialog(player),
@@ -1041,10 +1038,10 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
                       const SizedBox(width: 8),
                       Expanded(
                         child: _buildPlayerActionButton(
-                          'Send Reminder',
+                          l10n.sendReminder,
                           Icons.email_rounded,
                           const Color(0xFFF59E0B),
-                          () => _sendReminderToPlayer(player),
+                          () => _sendReminderToPlayer(l10n, player),
                         ),
                       ),
                     ],
@@ -1066,9 +1063,9 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: color.withOpacity(0.3)),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -1092,7 +1089,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
     );
   }
 
-  Widget _buildReportsTab() {
+  Widget _buildReportsTab(AppLocalizations l10n) {
     final screenWidth = MediaQuery.of(context).size.width;
     final padding = screenWidth < 600 ? 12.0 : 16.0;
 
@@ -1101,35 +1098,35 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
       child: Column(
         children: [
           _buildReportCard(
-            'Monthly Report',
-            'Detailed breakdown by month',
+            l10n.monthlyReport,
+            l10n.detailedBreakdownByMonth,
             Icons.calendar_view_month_rounded,
             const Color(0xFF667eea),
-            () => _generateMonthlyReport(),
+            () => _generateMonthlyReport(l10n),
           ),
           const SizedBox(height: 12),
           _buildReportCard(
-            'Team Report',
-            'Payment status by team',
+            l10n.teamReport,
+            l10n.paymentStatusByTeam,
             Icons.groups_rounded,
             const Color(0xFF10B981),
-            () => _generateTeamReport(),
+            () => _generateTeamReport(l10n),
           ),
           const SizedBox(height: 12),
           _buildReportCard(
-            'Overdue Report',
-            'Players with outstanding payments',
+            l10n.overdueReport,
+            l10n.playersWithOutstandingPayments,
             Icons.warning_rounded,
             const Color(0xFFF59E0B),
-            () => _generateOverdueReport(),
+            () => _generateOverdueReport(l10n),
           ),
           const SizedBox(height: 12),
           _buildReportCard(
-            'Annual Summary',
-            'Complete year overview',
+            l10n.annualSummary,
+            l10n.completeYearOverview,
             Icons.summarize_rounded,
             const Color(0xFFEC4899),
-            () => _generateAnnualReport(),
+            () => _generateAnnualReport(l10n),
           ),
         ],
       ),
@@ -1144,7 +1141,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 20,
             offset: const Offset(0, 4),
           ),
@@ -1161,7 +1158,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(icon, color: color, size: 24),
@@ -1201,7 +1198,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
     );
   }
 
-  Widget _buildLoadingState() {
+  Widget _buildLoadingState(AppLocalizations l10n) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -1210,7 +1207,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
             width: 60,
             height: 60,
             decoration: BoxDecoration(
-              color: const Color(0xFF667eea).withOpacity(0.1),
+              color: const Color(0xFF667eea).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(30),
             ),
             child: const CircularProgressIndicator(
@@ -1220,7 +1217,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
           ),
           const SizedBox(height: 16),
           Text(
-            'Loading payment data...',
+            l10n.loadingPaymentData,
             style: GoogleFonts.poppins(
               color: Colors.grey.shade600,
               fontSize: 16,
@@ -1267,7 +1264,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
     );
   }
 
-  Widget _buildFloatingActionButton() {
+  Widget _buildFloatingActionButton(AppLocalizations l10n) {
     return Container(
       decoration: BoxDecoration(
         gradient: const LinearGradient(
@@ -1276,19 +1273,19 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF667eea).withOpacity(0.4),
+            color: const Color(0xFF667eea).withValues(alpha: 0.4),
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),
         ],
       ),
       child: FloatingActionButton.extended(
-        onPressed: _showPaymentActions,
+        onPressed: () => _showPaymentActions(l10n),
         backgroundColor: Colors.transparent,
         elevation: 0,
         icon: const Icon(Icons.add_rounded, color: Colors.white),
         label: Text(
-          'Payment Actions',
+          l10n.paymentActions,
           style: GoogleFonts.poppins(
             fontSize: 16,
             fontWeight: FontWeight.w600,
@@ -1306,11 +1303,11 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
     double totalOutstanding = 0;
     int fullyPaidPlayers = 0;
     double thisMonthCollected = 0;
-    Map<int, double> monthlyData = {};
+    final Map<int, double> monthlyData = {};
 
     final currentMonth = DateTime.now().month;
 
-    for (var player in players) {
+    for (final player in players) {
       final playerId = player.id;
       final playerData = player.data() as Map<String, dynamic>;
       final playerTeam = playerData['team'] ?? '';
@@ -1324,7 +1321,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
           .get();
 
       int paidMonths = 0;
-      for (var payment in paymentsSnapshot.docs) {
+      for (final payment in paymentsSnapshot.docs) {
         final paymentData = payment.data();
         final docId = payment.id; // Format: "2025-01", "2025-02", etc.
 
@@ -1363,7 +1360,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
 
     // Calculate this month's progress more accurately
     double totalExpectedThisMonth = 0;
-    for (var player in players) {
+    for (final player in players) {
       final playerData = player.data() as Map<String, dynamic>;
       final playerTeam = playerData['team'] ?? '';
       final monthlyFee = _getTeamPaymentFee(playerTeam);
@@ -1388,9 +1385,9 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
 
   Future<List<PlayerPaymentStatus>> _getPlayerPaymentStatuses(
       List<DocumentSnapshot> players) async {
-    List<PlayerPaymentStatus> statuses = [];
+    final List<PlayerPaymentStatus> statuses = [];
 
-    for (var player in players) {
+    for (final player in players) {
       final data = player.data() as Map<String, dynamic>;
       final playerId = player.id;
       final playerTeam = data['team'] ?? '';
@@ -1403,7 +1400,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
           .get();
 
       int paidMonths = 0;
-      for (var payment in paymentsSnapshot.docs) {
+      for (final payment in paymentsSnapshot.docs) {
         final paymentData = payment.data();
         final docId = payment.id; // Format: "2025-01", "2025-02", etc.
 
@@ -1455,16 +1452,13 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
   List<Color> _getStatusGradient(PaymentStatus status) {
     switch (status) {
       case PaymentStatus.paid:
-        return [const Color(0xFF10B981), const Color(0xFF059669)];
+        return const [Color(0xFF10B981), Color(0xFF059669)];
       case PaymentStatus.partial:
-        return [const Color(0xFFF59E0B), const Color(0xFFD97706)];
+        return const [Color(0xFFF59E0B), Color(0xFFD97706)];
       case PaymentStatus.unpaid:
-        return [const Color(0xFFEF4444), const Color(0xFFDC2626)];
+        return const [Color(0xFFEF4444), Color(0xFFDC2626)];
       case PaymentStatus.notActive:
-        return [
-          const Color(0xFF6B7280),
-          const Color(0xFF4B5563)
-        ]; // Grey gradient
+        return const [Color(0xFF6B7280), Color(0xFF4B5563)]; // Grey gradient
     }
   }
 
@@ -1481,16 +1475,16 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
     }
   }
 
-  String _getStatusText(PaymentStatus status) {
+  String _getStatusText(AppLocalizations l10n, PaymentStatus status) {
     switch (status) {
       case PaymentStatus.paid:
-        return 'Fully Paid';
+        return l10n.fullyPaid;
       case PaymentStatus.partial:
-        return 'Partial';
+        return l10n.partial;
       case PaymentStatus.unpaid:
-        return 'Unpaid';
+        return l10n.unpaid;
       case PaymentStatus.notActive:
-        return 'Not Active'; // New status text
+        return l10n.notActive; // New status text
     }
   }
 
@@ -1518,7 +1512,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
     }
   }
 
-  void _showPaymentActions() {
+  void _showPaymentActions(AppLocalizations l10n) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -1545,7 +1539,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
               ),
               const SizedBox(height: 20),
               Text(
-                'Payment Actions',
+                l10n.paymentActions,
                 style: GoogleFonts.poppins(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
@@ -1553,20 +1547,20 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
               ),
               const SizedBox(height: 20),
               _buildActionListTile(
-                'Mark Payment',
-                'Record a new payment',
+                l10n.markPayment,
+                l10n.recordNewPayment,
                 Icons.payment_rounded,
                 () => _showMarkPaymentDialog(),
               ),
               _buildActionListTile(
-                'Send Reminders',
-                'Send bulk payment reminders',
+                l10n.sendReminders,
+                l10n.sendBulkPaymentReminders,
                 Icons.email_rounded,
                 () => _showBulkReminderDialog(),
               ),
               _buildActionListTile(
-                'Export Data',
-                'Download payment report',
+                l10n.exportData,
+                l10n.downloadPaymentReport,
                 Icons.file_download_rounded,
                 () => _showExportDialog(),
               ),
@@ -1589,7 +1583,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
         width: 48,
         height: 48,
         decoration: BoxDecoration(
-          color: const Color(0xFF667eea).withOpacity(0.1),
+          color: const Color(0xFF667eea).withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Icon(icon, color: const Color(0xFF667eea)),
@@ -1645,6 +1639,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
   }
 
   void _showDownloadCenter() {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -1654,7 +1649,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFF10B981).withOpacity(0.1),
+                color: const Color(0xFF10B981).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child:
@@ -1662,7 +1657,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
             ),
             const SizedBox(width: 12),
             Text(
-              'Download Center',
+              l10n.downloadCenter,
               style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
             ),
           ],
@@ -1684,7 +1679,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Your exported reports will be available here once generated. Currently, no downloads are available.',
+                      l10n.exportedReportsAvailable,
                       style: GoogleFonts.poppins(
                         fontSize: 12,
                         color: Colors.blue.shade800,
@@ -1696,7 +1691,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
             ),
             const SizedBox(height: 16),
             Text(
-              'Recent Downloads:',
+              l10n.recentDownloads,
               style: GoogleFonts.poppins(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -1714,7 +1709,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
                   Icon(Icons.folder_open_rounded, color: Colors.grey.shade500),
                   const SizedBox(width: 12),
                   Text(
-                    'No recent downloads',
+                    l10n.noRecentDownloads,
                     style: GoogleFonts.poppins(
                       fontSize: 14,
                       color: Colors.grey.shade600,
@@ -1729,7 +1724,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
-              'Close',
+              l10n.close,
               style: GoogleFonts.poppins(color: Colors.grey.shade600),
             ),
           ),
@@ -1739,8 +1734,10 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
   }
 
   // Placeholder methods for functionality
-  void _sendReminderToPlayer(PlayerPaymentStatus player) {
+  void _sendReminderToPlayer(AppLocalizations l10n, PlayerPaymentStatus player) {
     final teamFee = _getTeamPaymentFee(player.team);
+    final amount = _formatHUF((player.totalMonths - player.paidMonths) * teamFee);
+    
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -1749,7 +1746,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                'Payment reminder sent to ${player.name}! Outstanding: ${_formatHUF((player.totalMonths - player.paidMonths) * teamFee)}',
+                l10n.paymentReminderSent(player.name, amount),
               ),
             ),
           ],
@@ -1762,20 +1759,20 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
     );
   }
 
-  void _generateMonthlyReport() {
-    _showSuccessSnackBar('Monthly report generated successfully!');
+  void _generateMonthlyReport(AppLocalizations l10n) {
+    _showSuccessSnackBar(l10n.monthlyReportGenerated);
   }
 
-  void _generateTeamReport() {
-    _showSuccessSnackBar('Team report generated successfully!');
+  void _generateTeamReport(AppLocalizations l10n) {
+    _showSuccessSnackBar(l10n.teamReportGenerated);
   }
 
-  void _generateOverdueReport() {
-    _showSuccessSnackBar('Overdue report generated successfully!');
+  void _generateOverdueReport(AppLocalizations l10n) {
+    _showSuccessSnackBar(l10n.overdueReportGenerated);
   }
 
-  void _generateAnnualReport() {
-    _showSuccessSnackBar('Annual report generated successfully!');
+  void _generateAnnualReport(AppLocalizations l10n) {
+    _showSuccessSnackBar(l10n.annualReportGenerated);
   }
 
   void _showSuccessSnackBar(String message) {

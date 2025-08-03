@@ -72,7 +72,7 @@ class _EditUserDialogState extends State<EditUserDialog> {
           SizedBox(width: 12),
           Expanded(
             child: Text(
-              'Edit User',
+              widget.l10n.editUser,
               style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
               overflow: TextOverflow.ellipsis,
             ),
@@ -99,7 +99,7 @@ class _EditUserDialogState extends State<EditUserDialog> {
                   ),
                   validator: (value) {
                     if (value?.isEmpty ?? true) {
-                      return 'Please enter a name';
+                      return widget.l10n.pleaseEnterName;
                     }
                     return null;
                   },
@@ -128,7 +128,7 @@ class _EditUserDialogState extends State<EditUserDialog> {
                 DropdownButtonFormField<String>(
                   value: selectedRole,
                   decoration: InputDecoration(
-                    labelText: 'Role',
+                    labelText: widget.l10n.role,
                     prefixIcon: Icon(Icons.work_outline_rounded),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -146,7 +146,7 @@ class _EditUserDialogState extends State<EditUserDialog> {
                           ),
                           SizedBox(width: 8),
                           Text(
-                            role.toUpperCase(),
+                            _getRoleDisplayName(role),
                             style: GoogleFonts.poppins(
                               fontWeight: FontWeight.w500,
                             ),
@@ -174,7 +174,7 @@ class _EditUserDialogState extends State<EditUserDialog> {
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    hintText: 'Enter role description...',
+                    hintText: widget.l10n.enterRoleDescription,
                   ),
                 ),
               ],
@@ -238,6 +238,19 @@ class _EditUserDialogState extends State<EditUserDialog> {
         return Icons.desk_rounded;
       default:
         return Icons.person_rounded;
+    }
+  }
+
+  String _getRoleDisplayName(String role) {
+    switch (role.toLowerCase()) {
+      case 'admin':
+        return widget.l10n.admin;
+      case 'coach':
+        return widget.l10n.coach;
+      case 'receptionist':
+        return widget.l10n.receptionist;
+      default:
+        return role.toUpperCase();
     }
   }
 

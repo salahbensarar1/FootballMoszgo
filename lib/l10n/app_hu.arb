@@ -526,7 +526,7 @@
   "paymentStatus": "Fizetési állapot",
   "paymentSummary": "Fizetési összesítő",
   "year": "Év",
-  "month": "Hónap",
+  "month": "hónap",
   "amount": "Összeg",
   "paymentMethod": "Fizetési mód",
   "manualEntry": "Kézi bevitel",
@@ -625,5 +625,58 @@
   "tapToSelectPicture": "Kattintson a fenti körre profilkép kiválasztásához",
   "uploadImage": "Kép feltöltése",
   "uploading": "Feltöltés...",
-  "assignToTeam": "Csapathoz rendelés"
+  "assignToTeam": "Csapathoz rendelés",
+  "editUser": "Felhasználó szerkesztése",
+  "pleaseEnterName": "Kérjük, adjon meg egy nevet",
+  "role": "Szerepkör",
+  "enterRoleDescription": "Adja meg a szerepkör leírását...",
+  "updating": "Frissítés...",
+  "admin": "Admin",
+  "coach": "Edző",
+  "receptionist": "Recepciós",
+  
+  "loadingPaymentData": "Fizetési adatok betöltése...",
+  "noPaymentDataAvailable": "Nincs elérhető fizetési adat",
+  "year": "Év",
+  "filter": "Szűrő",
+  "allPlayers": "Minden játékos",
+  "overview": "Áttekintés",
+  "reports": "Jelentések",
+  "months": "hónap",
+  "paid": "Fizetve",
+  "paymentActions": "Fizetési műveletek",
+  "recordNewPayment": "Új fizetés rögzítése",
+  "sendBulkPaymentReminders": "Tömeges fizetési emlékeztetők küldése",
+  "sendReminders": "Emlékeztetők küldése",
+  "exportData": "Adatok exportálása",
+  "downloadPaymentReport": "Fizetési jelentés letöltése",
+  "quickActions": "Gyors műveletek",
+  "exportReport": "Jelentés exportálása",
+  "monthlyReport": "Havi jelentés",
+  "detailedBreakdownByMonth": "Részletes havi bontás",
+  "teamReport": "Csapat jelentés",
+  "paymentStatusByTeam": "Fizetési állapot csapat szerint",
+  "overdueReport": "Lejárt fizetések jelentése",
+  "playersWithOutstandingPayments": "Játékosok függő fizetésekkel",
+  "annualSummary": "Éves összesítő",
+  "completeYearOverview": "Teljes éves áttekintés",
+  "downloadCenter": "Letöltőközpont",
+  "noRecentDownloads": "Nincsenek újabb letöltések",
+  "recentDownloads": "Legutóbbi letöltések:",
+  "exportedReportsAvailable": "Az exportált jelentések itt lesznek elérhetők a generálás után. Jelenleg nincsenek elérhető letöltések.",
+  "paymentReminderSent": "Fizetési emlékeztető elküldve {playerName} részére! Függő összeg: {amount}",
+  "@paymentReminderSent": {
+    "placeholders": {
+      "playerName": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "monthlyReportGenerated": "Havi jelentés sikeresen generálva!",
+  "teamReportGenerated": "Csapat jelentés sikeresen generálva!",
+  "overdueReportGenerated": "Lejárt fizetések jelentése sikeresen generálva!",
+  "annualReportGenerated": "Éves jelentés sikeresen generálva!"
 }
