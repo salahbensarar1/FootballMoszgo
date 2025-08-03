@@ -2111,7 +2111,6 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                       final paymentStatus =
                           payments[monthNumber] ?? PaymentStatus.unpaid;
                       final statusColors = _getGridStatusColors(paymentStatus);
-                      final statusIcon = _getGridStatusIcon(paymentStatus);
 
                       return GestureDetector(
                         onTap: () => _togglePaymentStatusInGrid(playerId,
@@ -2196,8 +2195,10 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
     );
   }
 
-  Future<void> _togglePaymentInGrid(
-      String playerId, String year, String month, bool isPaid) async {
+
+  // Enhanced method to cycle through all 3 payment states
+  Future<void> _togglePaymentStatusInGrid(String playerId, String year,
+      String month, PaymentStatus currentStatus) async {
     try {
       final docRef = FirebaseFirestore.instance
           .collection('players')
@@ -2205,53 +2206,75 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
           .collection('payments')
           .doc('$year-$month');
 
-      if (isPaid) {
-        // Create/update document when paid
-        await docRef.set({
-          'playerId': playerId,
-          'year': year,
-          'month': month,
-          'isPaid': true,
-          'updatedAt': Timestamp.now(),
-          'updatedBy': FirebaseAuth.instance.currentUser?.email ?? 'Unknown',
-        }, SetOptions(merge: true));
-      } else {
-        // Delete document when unpaid
-        await docRef.delete();
+      // Cycle through states: unpaid → paid → notActive → unpaid
+      switch (currentStatus) {
+        case PaymentStatus.unpaid:
+          // unpaid (red) → paid (green)
+          await docRef.set({
+            'playerId': playerId,
+            'year': year,
+            'month': month,
+            'isPaid': true,
+            'isActive': true,
+            'updatedAt': Timestamp.now(),
+            'updatedBy': FirebaseAuth.instance.currentUser?.email ?? 'Unknown',
+          }, SetOptions(merge: true));
+          break;
+        case PaymentStatus.paid:
+          // paid (green) → notActive (grey)
+          await docRef.set({
+            'playerId': playerId,
+            'year': year,
+            'month': month,
+            'isPaid': false,
+            'isActive': false,  // Set to inactive (grey)
+            'updatedAt': Timestamp.now(),
+            'updatedBy': FirebaseAuth.instance.currentUser?.email ?? 'Unknown',
+          }, SetOptions(merge: true));
+          break;
+        case PaymentStatus.notActive:
+          // notActive (grey) → unpaid (red)
+          await docRef.set({
+            'playerId': playerId,
+            'year': year,
+            'month': month,
+            'isPaid': false,
+            'isActive': true,   // Back to active but unpaid
+            'updatedAt': Timestamp.now(),
+            'updatedBy': FirebaseAuth.instance.currentUser?.email ?? 'Unknown',
+          }, SetOptions(merge: true));
+          break;
+        default:
+          // Default case - treat as unpaid
+          await docRef.set({
+            'playerId': playerId,
+            'year': year,
+            'month': month,
+            'isPaid': false,
+            'isActive': true,
+            'updatedAt': Timestamp.now(),
+            'updatedBy': FirebaseAuth.instance.currentUser?.email ?? 'Unknown',
+          }, SetOptions(merge: true));
+          break;
       }
     } catch (e) {
-      debugPrint('Error updating payment: $e'); // Use debugPrint for production
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.error_outline, color: Colors.white),
-              const SizedBox(width: 8),
-              Expanded(child: Text("Error updating payment: $e")),
-            ],
+      debugPrint('Error updating payment status: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white),
+                const SizedBox(width: 8),
+                Expanded(child: Text("Error updating payment: $e")),
+              ],
+            ),
+            backgroundColor: Colors.red.shade600,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
-          backgroundColor: Colors.red.shade600,
-          behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      );
-    }
-  }
-
-  // Add this method to handle toggling payment status in the grid
-  Future<void> _togglePaymentStatusInGrid(String playerId, String year,
-      String month, PaymentStatus currentStatus) async {
-    if (currentStatus == PaymentStatus.notActive) {
-      // Do nothing if not active
-      return;
-    }
-    if (currentStatus == PaymentStatus.paid) {
-      // Mark as unpaid
-      await _togglePaymentInGrid(playerId, year, month, false);
-    } else {
-      // Mark as paid
-      await _togglePaymentInGrid(playerId, year, month, true);
+        );
+      }
     }
   }
 

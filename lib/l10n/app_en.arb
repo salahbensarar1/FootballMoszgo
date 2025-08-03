@@ -584,5 +584,46 @@
         "type": "String"
       }
     }
-  }
+  },
+
+  "selectBirthDate": "Select birth date",
+  "selectTeamToAdd": "Select Team to Add",
+  "selectRole": "Select Role",
+  "forTeam": "for {teamName}",
+  "@forTeam": {
+    "placeholders": {
+      "teamName": {
+        "type": "String"
+      }
+    }
+  },
+  "selectCoachToAdd": "Select Coach to Add",
+  "cancel": "Cancel",
+  "noTeamsAvailable": "No teams available",
+  "allTeamsAssigned": "All teams assigned",
+  "noCoachesAvailable": "No coaches available",
+  "allCoachesAssigned": "All coaches assigned",
+  "playerInformation": "Player Information",
+  "enterPlayerName": "Enter player name",
+  "enterPosition": "Enter position",
+  "teamInformation": "Team Information",
+  "teamDescription": "Team Description",
+  "teamNameRequired": "Team name is required",
+  "teamNameMinLength": "Team name must be at least 2 characters",
+  "teamNameMaxLength": "Team name must be less than 30 characters",
+  "teamDescriptionRequired": "Team description is required",
+  "descriptionMinLength": "Description must be at least 10 characters",
+  "descriptionMaxLength": "Description must be less than 200 characters",
+  "atLeastOneCoachRequired": "At least one coach must be assigned to create a team",
+  "atLeastOneCoachTeamRequired": "At least one coach must be assigned to the team",
+  "maximumCoachesAssigned": "Maximum coaches assigned",
+  "addNewCoach": "Add a new coach to the system",
+  "registerNewPlayer": "Register a new player",
+  "createNewTeam": "Create a new team",
+  "addNewEntry": "Add new entry",
+  "profilePicture": "Profile Picture",
+  "tapToSelectPicture": "Tap the circle above to select a profile picture",
+  "uploadImage": "Upload Image",
+  "uploading": "Uploading...",
+  "assignToTeam": "Assign to Team"
 }

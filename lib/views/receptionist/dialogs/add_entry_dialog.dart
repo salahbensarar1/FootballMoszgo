@@ -675,7 +675,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
       height: isSmallScreen ? 44 : 48,
       child: OutlinedButton.icon(
         onPressed: isEnabled
-            ? () => _showTeamSelectionDialog(availableTeams, isSmallScreen)
+            ? () => _showTeamSelectionDialog(availableTeams, isSmallScreen, l10n)
             : null,
         icon: Icon(
           isEnabled ? Icons.add_circle_outline : Icons.info_outline,
@@ -733,7 +733,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
 
 // PRODUCTION-READY: Team selection dialog
   void _showTeamSelectionDialog(
-      List<QueryDocumentSnapshot> availableTeams, bool isSmallScreen) {
+      List<QueryDocumentSnapshot> availableTeams, bool isSmallScreen, AppLocalizations l10n) {
     final screenHeight = MediaQuery.of(context).size.height;
     final dialogHeight = (screenHeight * 0.6).clamp(300.0, 500.0);
 
@@ -770,7 +770,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
                     SizedBox(width: isSmallScreen ? 8 : 12),
                     Expanded(
                       child: Text(
-                        'Select Team to Add',
+                        l10n.selectTeamToAdd,
                         style: GoogleFonts.poppins(
                           fontWeight: FontWeight.w600,
                           fontSize: isSmallScreen ? 16 : 18,
@@ -800,7 +800,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
               // Teams List
               Expanded(
                 child: availableTeams.isEmpty
-                    ? _buildEmptyTeamsState(isSmallScreen)
+                    ? _buildEmptyTeamsState(isSmallScreen, l10n)
                     : ListView.separated(
                         padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
                         physics: BouncingScrollPhysics(),
@@ -823,7 +823,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
   }
 
 // Empty teams state
-  Widget _buildEmptyTeamsState(bool isSmallScreen) {
+  Widget _buildEmptyTeamsState(bool isSmallScreen, AppLocalizations l10n) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -835,7 +835,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
           ),
           SizedBox(height: isSmallScreen ? 12 : 16),
           Text(
-            'No teams available',
+            l10n.noTeamsAvailable,
             style: GoogleFonts.poppins(
               fontSize: isSmallScreen ? 14 : 16,
               fontWeight: FontWeight.w500,
@@ -844,7 +844,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
           ),
           SizedBox(height: isSmallScreen ? 6 : 8),
           Text(
-            'All teams are already assigned',
+            l10n.allTeamsAssigned,
             style: GoogleFonts.poppins(
               fontSize: isSmallScreen ? 12 : 14,
               color: Colors.grey.shade500,
@@ -959,14 +959,14 @@ class _AddEntryDialogState extends State<AddEntryDialog>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Select Role',
+                          l10n.selectRole,
                           style: GoogleFonts.poppins(
                             fontWeight: FontWeight.w600,
                             fontSize: isSmallScreen ? 16 : 18,
                           ),
                         ),
                         Text(
-                          'for $teamName',
+                          l10n.forTeam(teamName),
                           style: GoogleFonts.poppins(
                             fontSize: isSmallScreen ? 12 : 14,
                             color: Colors.grey.shade600,
@@ -1063,7 +1063,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
                     ),
                   ),
                   child: Text(
-                    'Cancel',
+                    l10n.cancel,
                     style: GoogleFonts.poppins(
                       fontSize: isSmallScreen ? 14 : 16,
                       fontWeight: FontWeight.w500,
@@ -1255,13 +1255,13 @@ class _AddEntryDialogState extends State<AddEntryDialog>
   List<Widget> _buildPlayerFields(AppLocalizations l10n, bool isSmallScreen) {
     return [
       // Personal Information
-      _buildSectionHeader('Player Information', Icons.sports_rounded),
+      _buildSectionHeader(l10n.playerInformation, Icons.sports_rounded),
       const SizedBox(height: 16),
 
       _buildTextField(
         label: l10n.name,
         icon: Icons.person_outline_rounded,
-        validator: (value) => value!.isEmpty ? "Enter player name" : null,
+        validator: (value) => value!.isEmpty ? l10n.enterPlayerName : null,
         onSaved: (value) => name = value!.trim(),
         focusNode: _focusNodes[0],
         nextFocusNode: _focusNodes[1],
@@ -1274,7 +1274,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
       _buildTextField(
         label: l10n.position,
         icon: Icons.sports_soccer_rounded,
-        validator: (value) => value!.isEmpty ? "Enter position" : null,
+        validator: (value) => value!.isEmpty ? l10n.enterPosition : null,
         onSaved: (value) => position = value!.trim(),
         focusNode: _focusNodes[1],
         nextFocusNode: _focusNodes[2],
@@ -1282,7 +1282,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
       const SizedBox(height: 24),
 
       // Team Assignment
-      _buildSectionHeader('Team Assignment', Icons.groups_rounded),
+      _buildSectionHeader(l10n.teamAssignment, Icons.groups_rounded),
       const SizedBox(height: 16),
       _buildTeamDropdown(l10n, isCoach: false),
     ];
@@ -1292,7 +1292,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
   List<Widget> _buildTeamFields(AppLocalizations l10n, bool isSmallScreen) {
     return [
       // Team Information Section
-      _buildSectionHeader('Team Information', Icons.groups_rounded),
+      _buildSectionHeader(l10n.teamInformation, Icons.groups_rounded),
       SizedBox(height: isSmallScreen ? 12 : 16),
 
       // Team Name Field - REQUIRED with validation
@@ -1301,13 +1301,13 @@ class _AddEntryDialogState extends State<AddEntryDialog>
         icon: Icons.group_outlined,
         validator: (value) {
           if (value == null || value.trim().isEmpty) {
-            return "Team name is required";
+            return l10n.teamNameRequired;
           }
           if (value.trim().length < 2) {
-            return "Team name must be at least 2 characters";
+            return l10n.teamNameMinLength;
           }
           if (value.trim().length > 30) {
-            return "Team name must be less than 30 characters";
+            return l10n.teamNameMaxLength;
           }
           return null;
         },
@@ -1319,18 +1319,18 @@ class _AddEntryDialogState extends State<AddEntryDialog>
 
       // Team Description Field - REQUIRED with validation
       _buildTextField(
-        label: "Team Description",
+        label: l10n.teamDescription,
         icon: Icons.description_outlined,
         maxLines: isSmallScreen ? 2 : 3,
         validator: (value) {
           if (value == null || value.trim().isEmpty) {
-            return "Team description is required";
+            return l10n.teamDescriptionRequired;
           }
           if (value.trim().length < 10) {
-            return "Description must be at least 10 characters";
+            return l10n.descriptionMinLength;
           }
           if (value.trim().length > 200) {
-            return "Description must be less than 200 characters";
+            return l10n.descriptionMaxLength;
           }
           return null;
         },
@@ -1340,7 +1340,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
       SizedBox(height: isSmallScreen ? 16 : 24),
 
       // Multi-Coach Assignment Section
-      _buildSectionHeader('Coach Assignment', Icons.sports_rounded),
+      _buildSectionHeader(l10n.coachAssignment, Icons.sports_rounded),
       SizedBox(height: isSmallScreen ? 12 : 16),
       _buildOptimizedMultiCoachSelector(l10n, isSmallScreen),
     ];
@@ -1369,7 +1369,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
               ),
               SizedBox(width: 8),
               Text(
-                'Assigned Coaches (${selectedCoaches.length})',
+                l10n.assignedCoaches('${selectedCoaches.length}'),
                 style: GoogleFonts.poppins(
                   fontWeight: FontWeight.w600,
                   fontSize: isSmallScreen ? 14 : 16,
@@ -1385,7 +1385,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    'MAX',
+                    l10n.max,
                     style: GoogleFonts.poppins(
                       fontSize: 10,
                       fontWeight: FontWeight.w600,
@@ -1423,7 +1423,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
 
           // PRODUCTION-FIX: Use cached data instead of StreamBuilder
           _coachesLoading
-              ? _buildLoadingButton(isSmallScreen)
+              ? _buildLoadingButton(isSmallScreen, l10n)
               : Builder(
                   builder: (context) {
                     final availableCoaches = _coaches
@@ -1439,12 +1439,13 @@ class _AddEntryDialogState extends State<AddEntryDialog>
                       isEnabled: canAddMore && hasAvailable,
                       availableCoaches: availableCoaches,
                       isSmallScreen: isSmallScreen,
+                      l10n: l10n,
                     );
                   },
                 ),
 
           // Validation Warning
-          if (selectedCoaches.isEmpty) _buildValidationWarning(isSmallScreen),
+          if (selectedCoaches.isEmpty) _buildValidationWarning(isSmallScreen, l10n),
         ],
       ),
     );
@@ -1543,16 +1544,17 @@ class _AddEntryDialogState extends State<AddEntryDialog>
     required bool isEnabled,
     required List<QueryDocumentSnapshot> availableCoaches,
     required bool isSmallScreen,
+    required AppLocalizations l10n,
   }) {
     String buttonText;
     if (!isEnabled && selectedCoaches.length >= 3) {
-      buttonText = 'Maximum coaches assigned';
+      buttonText = l10n.maximumCoachesAssigned;
     } else if (!isEnabled && availableCoaches.isEmpty) {
       buttonText = selectedCoaches.isEmpty
-          ? 'No coaches available'
-          : 'All coaches assigned';
+          ? l10n.noCoachesAvailable
+          : l10n.allCoachesAssigned;
     } else {
-      buttonText = 'Add Coach';
+      buttonText = l10n.addCoach;
     }
 
     return Container(
@@ -1560,7 +1562,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
       height: isSmallScreen ? 44 : 48,
       child: OutlinedButton.icon(
         onPressed: isEnabled
-            ? () => _showCoachSelectionDialog(availableCoaches, isSmallScreen)
+            ? () => _showCoachSelectionDialog(availableCoaches, isSmallScreen, l10n)
             : null,
         icon: Icon(
           isEnabled ? Icons.person_add : Icons.info_outline,
@@ -1587,7 +1589,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
   }
 
   // PRODUCTION-READY: Loading state for add button
-  Widget _buildLoadingButton(bool isSmallScreen) {
+  Widget _buildLoadingButton(bool isSmallScreen, AppLocalizations l10n) {
     return Container(
       width: double.infinity,
       height: isSmallScreen ? 44 : 48,
@@ -1605,7 +1607,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
           ),
           SizedBox(width: 8),
           Text(
-            'Loading coaches...',
+            l10n.loadingCoaches,
             style: GoogleFonts.poppins(
               fontSize: isSmallScreen ? 13 : 15,
               color: Colors.grey.shade600,
@@ -1617,7 +1619,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
   }
 
   // PRODUCTION-READY: Validation warning widget
-  Widget _buildValidationWarning(bool isSmallScreen) {
+  Widget _buildValidationWarning(bool isSmallScreen, AppLocalizations l10n) {
     return Padding(
       padding: EdgeInsets.only(top: isSmallScreen ? 8 : 12),
       child: Row(
@@ -1630,7 +1632,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
           SizedBox(width: 6),
           Expanded(
             child: Text(
-              'At least one coach must be assigned to create a team',
+              l10n.atLeastOneCoachRequired,
               style: GoogleFonts.poppins(
                 fontSize: isSmallScreen ? 11 : 12,
                 color: Colors.red.shade600,
@@ -1645,7 +1647,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
 
   // PRODUCTION-READY: Optimized coach selection dialog
   void _showCoachSelectionDialog(
-      List<QueryDocumentSnapshot> availableCoaches, bool isSmallScreen) {
+      List<QueryDocumentSnapshot> availableCoaches, bool isSmallScreen, AppLocalizations l10n) {
     final screenHeight = MediaQuery.of(context).size.height;
     final dialogHeight = (screenHeight * 0.6).clamp(300.0, 500.0);
 
@@ -1682,7 +1684,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
                     SizedBox(width: isSmallScreen ? 8 : 12),
                     Expanded(
                       child: Text(
-                        'Select Coach to Add',
+                        l10n.selectCoachToAdd,
                         style: GoogleFonts.poppins(
                           fontWeight: FontWeight.w600,
                           fontSize: isSmallScreen ? 16 : 18,
@@ -1712,7 +1714,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
               // Coaches List
               Expanded(
                 child: availableCoaches.isEmpty
-                    ? _buildEmptyCoachesState(isSmallScreen)
+                    ? _buildEmptyCoachesState(isSmallScreen, l10n)
                     : ListView.separated(
                         padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
                         physics: BouncingScrollPhysics(),
@@ -1736,7 +1738,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
   }
 
   // Empty coaches state
-  Widget _buildEmptyCoachesState(bool isSmallScreen) {
+  Widget _buildEmptyCoachesState(bool isSmallScreen, AppLocalizations l10n) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -1748,7 +1750,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
           ),
           SizedBox(height: isSmallScreen ? 12 : 16),
           Text(
-            'No coaches available',
+            l10n.noCoachesAvailable,
             style: GoogleFonts.poppins(
               fontSize: isSmallScreen ? 14 : 16,
               fontWeight: FontWeight.w500,
@@ -1757,7 +1759,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
           ),
           SizedBox(height: isSmallScreen ? 6 : 8),
           Text(
-            'All coaches are already assigned',
+            l10n.allCoachesAssigned,
             style: GoogleFonts.poppins(
               fontSize: isSmallScreen ? 12 : 14,
               color: Colors.grey.shade500,
@@ -1870,14 +1872,14 @@ class _AddEntryDialogState extends State<AddEntryDialog>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Select Role',
+                          l10n.selectRole,
                           style: GoogleFonts.poppins(
                             fontWeight: FontWeight.w600,
                             fontSize: isSmallScreen ? 16 : 18,
                           ),
                         ),
                         Text(
-                          'for $coachName',
+                          l10n.forTeam(coachName),
                           style: GoogleFonts.poppins(
                             fontSize: isSmallScreen ? 12 : 14,
                             color: Colors.grey.shade600,
@@ -1974,7 +1976,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
                     ),
                   ),
                   child: Text(
-                    'Cancel',
+                    l10n.cancel,
                     style: GoogleFonts.poppins(
                       fontSize: isSmallScreen ? 14 : 16,
                       fontWeight: FontWeight.w500,
@@ -2171,7 +2173,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
               Expanded(
                 child: Text(
                   birthDate == null
-                      ? 'Select birth date'
+                      ? l10n.selectBirthDate
                       : DateFormat('MMMM dd, yyyy').format(birthDate!),
                   style: GoogleFonts.poppins(
                     color: birthDate == null
@@ -2242,7 +2244,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
       ),
       child: DropdownButtonFormField<String>(
         decoration: InputDecoration(
-          labelText: isCoach ? 'Assign to Team' : l10n.selectTeam,
+          labelText: isCoach ? l10n.assignToTeam : l10n.selectTeam,
           labelStyle: GoogleFonts.poppins(color: Colors.grey.shade600),
           prefixIcon:
               Icon(Icons.groups_outlined, color: Colors.grey.shade500),
@@ -2267,7 +2269,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
   Widget _buildImageSection(AppLocalizations l10n) {
     return Column(
       children: [
-        _buildSectionHeader('Profile Picture', Icons.camera_alt_rounded),
+        _buildSectionHeader(l10n.profilePicture, Icons.camera_alt_rounded),
         const SizedBox(height: 16),
         GestureDetector(
           onTap: _pickImage,
@@ -2348,7 +2350,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
                   : const Icon(Icons.cloud_upload_rounded,
                       color: Colors.white, size: 18),
               label: Text(
-                _isUploading ? 'Uploading...' : 'Upload Image',
+                _isUploading ? l10n.uploading : l10n.uploadImage,
                 style: GoogleFonts.poppins(
                   color: Colors.white,
                   fontWeight: FontWeight.w600,
@@ -2358,7 +2360,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
           ),
         ] else ...[
           Text(
-            'Tap the circle above to select a profile picture',
+            l10n.tapToSelectPicture,
             style: GoogleFonts.poppins(
               color: Colors.grey.shade600,
               fontSize: 14,
@@ -2387,13 +2389,13 @@ class _AddEntryDialogState extends State<AddEntryDialog>
   String _getSubtitle(AppLocalizations l10n) {
     switch (widget.role) {
       case 'coach':
-        return 'Add a new coach to the system';
+        return l10n.addNewCoach;
       case 'player':
-        return 'Register a new player';
+        return l10n.registerNewPlayer;
       case 'team':
-        return 'Create a new team';
+        return l10n.createNewTeam;
       default:
-        return 'Add new entry';
+        return l10n.addNewEntry;
     }
   }
 
