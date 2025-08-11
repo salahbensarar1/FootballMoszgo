@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
@@ -493,6 +494,7 @@ class _PlayerReportScreenState extends State<PlayerReportScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final size = MediaQuery.of(context).size;
     final isTablet = size.width > 768;
     final isMobile = size.width < 480;
@@ -535,10 +537,10 @@ class _PlayerReportScreenState extends State<PlayerReportScreen>
                       const SizedBox(height: 24),
                       if (isTablet)
                         _buildTabletLayout(
-                            position, teamName, birthDate, attendanceData)
+                            position, teamName, birthDate, attendanceData, l10n)
                       else
                         _buildMobileLayout(
-                            position, teamName, birthDate, attendanceData),
+                            position, teamName, birthDate, attendanceData, l10n),
                       const SizedBox(height: 100),
                     ],
                   ),
@@ -745,7 +747,7 @@ class _PlayerReportScreenState extends State<PlayerReportScreen>
   }
 
   Widget _buildTabletLayout(String position, String teamName,
-      Timestamp? birthDate, Map<String, dynamic>? attendanceData) {
+      Timestamp? birthDate, Map<String, dynamic>? attendanceData, AppLocalizations l10n) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -753,37 +755,37 @@ class _PlayerReportScreenState extends State<PlayerReportScreen>
           flex: 1,
           child: Column(
             children: [
-              _buildBasicInfoCard(position, teamName, birthDate),
+              _buildBasicInfoCard(position, teamName, birthDate, l10n),
               if (attendanceData != null) ...[
                 const SizedBox(height: 24),
-                _buildAttendanceCard(attendanceData),
+                _buildAttendanceCard(attendanceData, l10n),
               ],
             ],
           ),
         ),
         const SizedBox(width: 24),
-        Expanded(flex: 1, child: _buildTrainingStatsCard()),
+        Expanded(flex: 1, child: _buildTrainingStatsCard(l10n)),
       ],
     );
   }
 
   Widget _buildMobileLayout(String position, String teamName,
-      Timestamp? birthDate, Map<String, dynamic>? attendanceData) {
+      Timestamp? birthDate, Map<String, dynamic>? attendanceData, AppLocalizations l10n) {
     return Column(
       children: [
-        _buildBasicInfoCard(position, teamName, birthDate),
+        _buildBasicInfoCard(position, teamName, birthDate, l10n),
         if (attendanceData != null) ...[
           const SizedBox(height: 24),
-          _buildAttendanceCard(attendanceData),
+          _buildAttendanceCard(attendanceData, l10n),
         ],
         const SizedBox(height: 24),
-        _buildTrainingStatsCard(),
+        _buildTrainingStatsCard(l10n),
       ],
     );
   }
 
   Widget _buildBasicInfoCard(
-      String position, String teamName, Timestamp? birthDate) {
+      String position, String teamName, Timestamp? birthDate, AppLocalizations l10n) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -814,7 +816,7 @@ class _PlayerReportScreenState extends State<PlayerReportScreen>
               ),
               const SizedBox(width: 16),
               Text(
-                'Basic Information',
+                l10n.basicInfo,
                 style: GoogleFonts.inter(
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
@@ -836,7 +838,7 @@ class _PlayerReportScreenState extends State<PlayerReportScreen>
     );
   }
 
-  Widget _buildAttendanceCard(Map<String, dynamic> attendanceData) {
+  Widget _buildAttendanceCard(Map<String, dynamic> attendanceData, AppLocalizations l10n) {
     final bool? presence = attendanceData['Presence'] as bool?;
     final Timestamp? startTraining =
         attendanceData['Start_training'] as Timestamp?;
@@ -885,7 +887,7 @@ class _PlayerReportScreenState extends State<PlayerReportScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Last Session',
+                      l10n.lastSession,
                       style: GoogleFonts.inter(
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
@@ -903,7 +905,7 @@ class _PlayerReportScreenState extends State<PlayerReportScreen>
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        presence == true ? 'Present' : 'Absent',
+                        presence == true ? l10n.present : l10n.absent,
                         style: GoogleFonts.inter(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
@@ -932,7 +934,7 @@ class _PlayerReportScreenState extends State<PlayerReportScreen>
     );
   }
 
-  Widget _buildTrainingStatsCard() {
+  Widget _buildTrainingStatsCard(AppLocalizations l10n) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -963,7 +965,7 @@ class _PlayerReportScreenState extends State<PlayerReportScreen>
               ),
               const SizedBox(width: 16),
               Text(
-                'Training Summary',
+                l10n.trainingSummary,
                 style: GoogleFonts.inter(
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
@@ -1087,7 +1089,7 @@ class _PlayerReportScreenState extends State<PlayerReportScreen>
                       size: 64, color: Colors.grey.shade400),
                   const SizedBox(height: 16),
                   Text(
-                    'No training sessions recorded for this player.',
+                    l10n.noTrainingRecorded,
                     style: GoogleFonts.inter(
                         fontSize: 16, color: Colors.grey.shade600),
                     textAlign: TextAlign.center,

@@ -99,7 +99,7 @@ class _UserManagementScreenState extends State<UserManagementScreen>
     // Filter by role if selected
     if (selectedRoleFilter != null &&
         selectedRoleFilter!.isNotEmpty &&
-        selectedRoleFilter != 'All') {
+        selectedRoleFilter != 'all') {
       query = query.where('role', isEqualTo: selectedRoleFilter);
     }
 
@@ -171,7 +171,7 @@ class _UserManagementScreenState extends State<UserManagementScreen>
         IconButton(
           icon: Icon(Icons.refresh_rounded, color: Colors.white),
           onPressed: () => setState(() {}),
-          tooltip: 'Refresh',
+          tooltip: l10n.refresh,
         ),
       ],
     );

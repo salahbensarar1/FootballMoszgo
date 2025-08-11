@@ -189,7 +189,7 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   Widget _buildProfileSection(AppLocalizations l10n) {
     return _buildSection(
-      title: 'Account',
+      title: l10n.account,
       icon: Icons.person_rounded,
       children: [
         Container(
@@ -233,7 +233,7 @@ class _SettingsScreenState extends State<SettingsScreen>
               ),
             ),
             title: Text(
-              userName ?? 'Loading...',
+              userName ?? l10n.loading,
               style: GoogleFonts.poppins(
                 fontWeight: FontWeight.w600,
                 fontSize: 18,
@@ -245,7 +245,7 @@ class _SettingsScreenState extends State<SettingsScreen>
               children: [
                 SizedBox(height: 4),
                 Text(
-                  userEmail ?? 'Loading...',
+                  userEmail ?? l10n.loading,
                   style: GoogleFonts.poppins(
                     fontSize: 14,
                     color: Colors.grey.shade600,
@@ -259,7 +259,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    'Administrator',
+                    l10n.administrator,
                     style: GoogleFonts.poppins(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
@@ -290,13 +290,13 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   Widget _buildAppearanceSection(AppLocalizations l10n) {
     return _buildSection(
-      title: 'Appearance',
+      title: l10n.appearance,
       icon: Icons.palette_rounded,
       children: [
         _buildSettingCard(
           icon: isDarkMode ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
-          title: 'Dark Mode',
-          subtitle: 'Switch between light and dark themes',
+          title: l10n.darkMode,
+          subtitle: l10n.enableDarkModeForApp,
           trailing: AnimatedContainer(
             duration: Duration(milliseconds: 200),
             width: 50,
@@ -340,12 +340,12 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   Widget _buildNotificationSection(AppLocalizations l10n) {
     return _buildSection(
-      title: 'Notifications',
+      title: l10n.notifications,
       icon: Icons.notifications_rounded,
       children: [
         _buildSettingCard(
           icon: Icons.notifications_active_rounded,
-          title: 'Push Notifications',
+          title: l10n.systemNotifications,
           subtitle: 'Receive notifications about important events',
           trailing: Switch.adaptive(
             value: notificationsEnabled,
@@ -356,7 +356,7 @@ class _SettingsScreenState extends State<SettingsScreen>
         SizedBox(height: 12),
         _buildSettingCard(
           icon: Icons.email_rounded,
-          title: 'Email Notifications',
+          title: l10n.emailNotifications,
           subtitle: 'Get email updates about your team',
           onTap: () => _manageEmailNotifications(),
         ),
@@ -366,13 +366,13 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   Widget _buildLanguageSection(AppLocalizations l10n) {
     return _buildSection(
-      title: 'Language & Region',
+      title: l10n.languageAndRegion,
       icon: Icons.language_rounded,
       children: [
         _buildSettingCard(
           icon: Icons.translate_rounded,
-          title: 'Language',
-          subtitle: selectedLanguage == 'en' ? 'English' : 'Magyar',
+          title: l10n.selectLanguage,
+          subtitle: selectedLanguage == 'en' ? l10n.english : l10n.hungarian,
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -392,20 +392,20 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   Widget _buildSecuritySection(AppLocalizations l10n) {
     return _buildSection(
-      title: 'Security',
+      title: l10n.security,
       icon: Icons.security_rounded,
       children: [
         _buildSettingCard(
           icon: Icons.lock_rounded,
-          title: 'Change Password',
-          subtitle: 'Update your account password',
+          title: l10n.changePassword,
+          subtitle: l10n.updateAccountPassword,
           onTap: () => _changePassword(),
         ),
         SizedBox(height: 12),
         _buildSettingCard(
           icon: Icons.verified_user_rounded,
-          title: 'Two-Factor Authentication',
-          subtitle: 'Add an extra layer of security',
+          title: l10n.twoFactorAuthentication,
+          subtitle: l10n.addExtraSecurityLayer,
           trailing: Container(
             padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
@@ -413,7 +413,7 @@ class _SettingsScreenState extends State<SettingsScreen>
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
-              'Coming Soon',
+              l10n.soon,
               style: GoogleFonts.poppins(
                 fontSize: 10,
                 fontWeight: FontWeight.w500,
@@ -429,7 +429,7 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   Widget _buildAboutSection(AppLocalizations l10n) {
     return _buildSection(
-      title: 'About',
+      title: l10n.aboutThisApp,
       icon: Icons.info_rounded,
       children: [
         _buildSettingCard(
