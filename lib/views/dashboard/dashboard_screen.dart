@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:footballtraining/data/repositories/team_service.dart';
 import 'package:footballtraining/views/admin/reports/session_report_screen.dart';
 import 'package:intl/intl.dart';
 import 'dart:math' as math;
@@ -15,9 +14,8 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, AutomaticKeepAliveClientMixin {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final TeamService _teamService = TeamService();
 
   // Animation Controllers
   late AnimationController _fadeController;
@@ -28,6 +26,13 @@ class _DashboardScreenState extends State<DashboardScreen>
   // Dashboard Stats
   DashboardStats stats = DashboardStats();
   bool isLoadingStats = true;
+  
+  // Performance optimizations
+  DateTime? _lastDataLoad;
+  static const Duration _cacheValidityDuration = Duration(minutes: 5);
+  
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -45,11 +50,11 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   void _initializeAnimations() {
     _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 600), // Faster fade-in
       vsync: this,
     );
     _rotationController = AnimationController(
-      duration: const Duration(seconds: 1),
+      duration: const Duration(milliseconds: 800), // Faster rotation
       vsync: this,
     );
 
@@ -64,6 +69,13 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   Future<void> _loadDashboardData() async {
+    // Check if data is still valid (cached)
+    if (_lastDataLoad != null &&
+        DateTime.now().difference(_lastDataLoad!) < _cacheValidityDuration &&
+        !isLoadingStats) {
+      return; // Use cached data
+    }
+
     setState(() => isLoadingStats = true);
     _rotationController.repeat();
 
@@ -91,6 +103,7 @@ class _DashboardScreenState extends State<DashboardScreen>
             attendanceRate: results[4] as double,
           );
           isLoadingStats = false;
+          _lastDataLoad = DateTime.now(); // Update cache timestamp
         });
         _rotationController.stop();
       }
@@ -146,45 +159,70 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  String get _greeting {
+  String _getGreeting(AppLocalizations l10n) {
     final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good Morning';
-    if (hour < 17) return 'Good Afternoon';
-    return 'Good Evening';
+    if (hour < 12) return l10n.goodMorning;
+    if (hour < 17) return l10n.goodAfternoon;
+    return l10n.goodEvening;
   }
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
     final l10n = AppLocalizations.of(context)!;
     final size = MediaQuery.of(context).size;
-    final isTablet = size.width > 600;
-    final isSmallScreen = size.height < 700;
+    final padding = MediaQuery.of(context).padding;
+    
+    // Professional responsive breakpoints
+    final isTablet = size.width > 768;
+    final isLargePhone = size.width > 414; 
+    final isSmallScreen = size.width < 375; // iPhone SE and smaller
+    final isVerySmallScreen = size.width < 350;
 
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
-      body: CustomScrollView(
-        slivers: [
-          _buildSliverAppBar(l10n, isSmallScreen),
-          SliverToBoxAdapter(
-            child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: Column(
-                children: [
-                  _buildWelcomeSection(isSmallScreen),
-                  _buildStatsSection(l10n, isTablet, size),
-                  _buildQuickActions(l10n, size),
-                  _buildRecentSessionsSection(l10n, isSmallScreen),
-                  const SizedBox(height: 32),
-                ],
+      body: RefreshIndicator(
+        onRefresh: () async {
+          _lastDataLoad = null; // Force refresh
+          HapticFeedback.lightImpact(); // Haptic feedback
+          await _loadDashboardData();
+        },
+        color: const Color(0xFFF27121),
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            _buildSliverAppBar(l10n, isSmallScreen, isVerySmallScreen),
+            SliverPadding(
+              padding: EdgeInsets.only(
+                left: isVerySmallScreen ? 12 : 16,
+                right: isVerySmallScreen ? 12 : 16,
+                bottom: padding.bottom + 32,
+              ),
+              sliver: SliverToBoxAdapter(
+                child: FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildWelcomeSection(l10n, isSmallScreen, isVerySmallScreen),
+                      SizedBox(height: isSmallScreen ? 16 : 24),
+                      _buildStatsSection(l10n, isTablet, isLargePhone, isVerySmallScreen, size),
+                      SizedBox(height: isSmallScreen ? 16 : 24),
+                      _buildQuickActions(l10n, isTablet, isLargePhone, isVerySmallScreen),
+                      SizedBox(height: isSmallScreen ? 16 : 24),
+                      _buildRecentSessionsSection(l10n, isSmallScreen, isVerySmallScreen),
+                    ],
+                  ),
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildSliverAppBar(AppLocalizations l10n, bool isSmallScreen) {
+  Widget _buildSliverAppBar(AppLocalizations l10n, bool isSmallScreen, bool isVerySmallScreen) {
     return SliverAppBar(
       expandedHeight: isSmallScreen ? 120 : 180,
       floating: true,
@@ -198,7 +236,7 @@ class _DashboardScreenState extends State<DashboardScreen>
             fontSize: isSmallScreen ? 16 : 20,
             shadows: [
               Shadow(
-                color: Colors.black.withOpacity(0.3),
+                color: Colors.black.withValues(alpha: 0.3),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -224,7 +262,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                   height: 200,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.1),
+                    color: Colors.white.withValues(alpha: 0.1),
                   ),
                 ),
               ),
@@ -236,7 +274,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                   height: 150,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.1),
+                    color: Colors.white.withValues(alpha: 0.1),
                   ),
                 ),
               ),
@@ -262,69 +300,143 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  Widget _buildWelcomeSection(bool isSmallScreen) {
+  Widget _buildWelcomeSection(AppLocalizations l10n, bool isSmallScreen, bool isVerySmallScreen) {
+    final size = MediaQuery.of(context).size;
+    final isTinyScreen = size.width < 320;
+    
     return Container(
-      padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
+      width: double.infinity,
+      constraints: const BoxConstraints(minHeight: 80),
+      padding: EdgeInsets.all(isTinyScreen ? 12 : (isSmallScreen ? 16 : 20)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            _greeting,
-            style: TextStyle(
-              fontSize: isSmallScreen ? 24 : 28,
-              fontWeight: FontWeight.w700,
-              color: Colors.grey.shade800,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              _getGreeting(l10n),
+              style: TextStyle(
+                fontSize: isTinyScreen ? 20 : (isSmallScreen ? 24 : 28),
+                fontWeight: FontWeight.w700,
+                color: Colors.grey.shade800,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Text(
-            'Here\'s your club overview for today',
+            l10n.clubOverviewToday,
             style: TextStyle(
-              fontSize: isSmallScreen ? 14 : 16,
+              fontSize: isTinyScreen ? 12 : (isSmallScreen ? 14 : 16),
               color: Colors.grey.shade600,
+              fontWeight: FontWeight.w400,
             ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildStatsSection(AppLocalizations l10n, bool isTablet, Size size) {
-    final isSmallScreen = size.height < 700;
+  Widget _buildStatsSection(AppLocalizations l10n, bool isTablet, bool isLargePhone, bool isVerySmallScreen, Size size) {
+    final isSmallScreen = size.width < 375;
+    final isTinyScreen = size.width < 320;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: EdgeInsets.symmetric(
+        horizontal: isTinyScreen ? 8 : (isSmallScreen ? 12 : 16)
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Key Metrics',
-                style: TextStyle(
-                  fontSize: isSmallScreen ? 18 : 20,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey.shade800,
-                ),
-              ),
-              TextButton.icon(
-                onPressed: () {
-                  HapticFeedback.lightImpact();
-                  // Navigate to detailed stats
-                },
-                icon: Icon(Icons.arrow_forward_rounded,
-                    size: isSmallScreen ? 14 : 16),
-                label: Text(
-                  'View All',
-                  style: TextStyle(fontSize: isSmallScreen ? 12 : 14),
-                ),
-                style: TextButton.styleFrom(
-                    foregroundColor: const Color(0xFFF27121)),
-              ),
-            ],
+          // Fixed responsive header
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isVeryNarrow = constraints.maxWidth < 350;
+              if (isVeryNarrow) {
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.keyStatistics,
+                      style: TextStyle(
+                        fontSize: isTinyScreen ? 16 : (isSmallScreen ? 18 : 20),
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey.shade800,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 8),
+                    TextButton.icon(
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        // Navigate to detailed stats
+                      },
+                      icon: Icon(Icons.arrow_forward_rounded,
+                          size: isTinyScreen ? 12 : (isSmallScreen ? 14 : 16)),
+                      label: Text(
+                        l10n.viewDetails,
+                        style: TextStyle(
+                          fontSize: isTinyScreen ? 10 : (isSmallScreen ? 12 : 14)
+                        ),
+                      ),
+                      style: TextButton.styleFrom(
+                        foregroundColor: const Color(0xFFF27121),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isTinyScreen ? 8 : 12,
+                          vertical: isTinyScreen ? 4 : 8,
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              } else {
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        l10n.keyStatistics,
+                        style: TextStyle(
+                          fontSize: isTinyScreen ? 16 : (isSmallScreen ? 18 : 20),
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey.shade800,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    TextButton.icon(
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        // Navigate to detailed stats
+                      },
+                      icon: Icon(Icons.arrow_forward_rounded,
+                          size: isTinyScreen ? 12 : (isSmallScreen ? 14 : 16)),
+                      label: Text(
+                        l10n.viewDetails,
+                        style: TextStyle(
+                          fontSize: isTinyScreen ? 10 : (isSmallScreen ? 12 : 14)
+                        ),
+                      ),
+                      style: TextButton.styleFrom(
+                        foregroundColor: const Color(0xFFF27121),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isTinyScreen ? 8 : 12,
+                          vertical: isTinyScreen ? 4 : 8,
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              }
+            },
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: isSmallScreen ? 12 : 16),
           isLoadingStats
               ? _buildLoadingStats(isTablet, size)
               : _buildStatsGrid(l10n, isTablet, size),
@@ -334,47 +446,65 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   Widget _buildLoadingStats(bool isTablet, Size size) {
-    final cardHeight = _calculateCardHeight(size);
+    final isSmallScreen = size.width < 375;
+    final isTinyScreen = size.width < 320;
+    final crossAxisCount = isTablet ? 4 : 2;
+    
+    final horizontalPadding = isTinyScreen ? 16 : (isSmallScreen ? 24 : 32);
+    final cardSpacing = isTinyScreen ? 8 : 12;
+    final cardWidth = (size.width - horizontalPadding - (crossAxisCount - 1) * cardSpacing) / crossAxisCount;
+    final optimalHeight = isTinyScreen ? 95.0 : (isSmallScreen ? 110.0 : 125.0);
+    final aspectRatio = (cardWidth / optimalHeight).clamp(0.8, 2.0);
+    
     return GridView.count(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: isTablet ? 4 : 2,
-      childAspectRatio: isTablet ? 1.2 : (size.width / 2 - 24) / cardHeight,
-      crossAxisSpacing: 12,
-      mainAxisSpacing: 12,
+      crossAxisCount: crossAxisCount,
+      childAspectRatio: aspectRatio,
+      crossAxisSpacing: cardSpacing.toDouble(),
+      mainAxisSpacing: cardSpacing.toDouble(),
       children: List.generate(5, (_) => _buildLoadingCard()),
     );
   }
 
   Widget _buildLoadingCard() {
     return Container(
+      constraints: const BoxConstraints(
+        minHeight: 80,
+        maxHeight: 140,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 20,
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 15,
             offset: const Offset(0, 4),
           ),
         ],
       ),
       child: const Center(
-        child:
-            CircularProgressIndicator(color: Color(0xFFF27121), strokeWidth: 2),
+        child: CircularProgressIndicator(
+          color: Color(0xFFF27121), 
+          strokeWidth: 2
+        ),
       ),
     );
   }
 
-  double _calculateCardHeight(Size size) {
-    if (size.height < 700) return 100;
-    if (size.height < 800) return 120;
-    return 140;
-  }
 
   Widget _buildStatsGrid(AppLocalizations l10n, bool isTablet, Size size) {
-    final cardHeight = _calculateCardHeight(size);
-    final isSmallScreen = size.height < 700;
+    final isSmallScreen = size.width < 375;
+    final isTinyScreen = size.width < 320;
+    final crossAxisCount = isTablet ? 4 : 2;
+    
+    // Professional responsive calculations with safe constraints
+    final horizontalPadding = isTinyScreen ? 16 : (isSmallScreen ? 24 : 32);
+    final cardSpacing = isTinyScreen ? 8 : 12;
+    final cardWidth = (size.width - horizontalPadding - (crossAxisCount - 1) * cardSpacing) / crossAxisCount;
+    final optimalHeight = isTinyScreen ? 95.0 : (isSmallScreen ? 110.0 : 125.0); // Increased slightly
+    final aspectRatio = (cardWidth / optimalHeight).clamp(0.8, 2.0); // Safe aspect ratio
 
     final statItems = [
       StatItem(
@@ -413,16 +543,16 @@ class _DashboardScreenState extends State<DashboardScreen>
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: isTablet ? 5 : 2,
-        childAspectRatio: isTablet ? 1.2 : (size.width / 2 - 24) / cardHeight,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
+        crossAxisCount: crossAxisCount,
+        childAspectRatio: aspectRatio,
+        crossAxisSpacing: cardSpacing.toDouble(),
+        mainAxisSpacing: cardSpacing.toDouble(),
       ),
       itemCount: statItems.length,
       itemBuilder: (context, index) {
         return TweenAnimationBuilder<double>(
           tween: Tween(begin: 0.0, end: 1.0),
-          duration: Duration(milliseconds: 400 + (index * 100)),
+          duration: Duration(milliseconds: 300 + (index * 50)),
           curve: Curves.easeOutBack,
           builder: (context, value, child) {
             return Transform.scale(
@@ -436,6 +566,8 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   Widget _buildStatCard(StatItem stat, bool isSmallScreen) {
+    final isTinyScreen = MediaQuery.of(context).size.width < 320;
+    
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -443,12 +575,12 @@ class _DashboardScreenState extends State<DashboardScreen>
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: stat.gradient[0].withOpacity(0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
+            color: stat.gradient[0].withValues(alpha: 0.25),
+            blurRadius: 15,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -459,45 +591,67 @@ class _DashboardScreenState extends State<DashboardScreen>
             HapticFeedback.lightImpact();
             // Navigate to detailed view
           },
-          borderRadius: BorderRadius.circular(20),
-          child: Padding(
-            padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: EdgeInsets.all(isTinyScreen ? 8 : (isSmallScreen ? 10 : 12)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              mainAxisSize: MainAxisSize.min,
               children: [
+                // Icon container with overflow protection
                 Container(
-                  padding: EdgeInsets.all(isSmallScreen ? 6 : 8),
+                  constraints: BoxConstraints(
+                    maxWidth: double.infinity,
+                    maxHeight: isTinyScreen ? 28 : (isSmallScreen ? 32 : 36),
+                  ),
+                  padding: EdgeInsets.all(isTinyScreen ? 4 : 6),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
                     stat.icon,
                     color: Colors.white,
-                    size: isSmallScreen ? 20 : 24,
+                    size: isTinyScreen ? 16 : (isSmallScreen ? 18 : 20),
                   ),
                 ),
+                
+                // Flexible space with constraint
                 const Spacer(),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    stat.value,
-                    style: TextStyle(
-                      fontSize: isSmallScreen ? 24 : 28,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                
+                // Value with constrained sizing
+                Container(
+                  width: double.infinity,
+                  constraints: const BoxConstraints(minHeight: 24),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      stat.value,
+                      style: TextStyle(
+                        fontSize: isTinyScreen ? 20 : (isSmallScreen ? 22 : 24),
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
+                
+                // Title with overflow protection
+                Container(
+                  width: double.infinity,
+                  constraints: const BoxConstraints(minHeight: 16),
                   child: Text(
                     stat.title,
                     style: TextStyle(
-                      fontSize: isSmallScreen ? 12 : 14,
-                      color: Colors.white.withOpacity(0.9),
+                      fontSize: isTinyScreen ? 10 : (isSmallScreen ? 11 : 12),
+                      color: Colors.white.withValues(alpha: 0.9),
+                      fontWeight: FontWeight.w500,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
@@ -508,67 +662,102 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  Widget _buildQuickActions(AppLocalizations l10n, Size size) {
-    final isSmallScreen = size.height < 700;
+  Widget _buildQuickActions(AppLocalizations l10n, bool isTablet, bool isLargePhone, bool isVerySmallScreen) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          l10n.quickActions,
+          style: TextStyle(
+            fontSize: isVerySmallScreen ? 16 : (isTablet ? 22 : 18),
+            fontWeight: FontWeight.w600,
+            color: Colors.grey.shade800,
+          ),
+        ),
+        SizedBox(height: isVerySmallScreen ? 12 : 16),
+        // Adaptive layout based on screen size
+        isVerySmallScreen
+            ? _buildQuickActionsGrid(l10n, isVerySmallScreen)
+            : _buildQuickActionsRow(l10n, isTablet, isLargePhone),
+      ],
+    );
+  }
 
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Quick Actions',
-            style: TextStyle(
-              fontSize: isSmallScreen ? 18 : 20,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey.shade800,
-            ),
+  Widget _buildQuickActionsRow(AppLocalizations l10n, bool isTablet, bool isLargePhone) {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildQuickActionCard(
+            title: l10n.teams,
+            icon: Icons.groups_rounded,
+            color: const Color(0xFF10B981),
+            onTap: () {
+              HapticFeedback.mediumImpact();
+              // Navigate to team management
+            },
+            isSmallScreen: !isLargePhone,
           ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _buildQuickActionCard(
-                  title: 'Manage Teams',
-                  icon: Icons.groups_rounded,
-                  color: const Color(0xFF10B981),
-                  onTap: () {
-                    HapticFeedback.mediumImpact();
-                    // Navigate to team management
-                  },
-                  isSmallScreen: isSmallScreen,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildQuickActionCard(
-                  title: 'View Reports',
-                  icon: Icons.analytics_outlined,
-                  color: const Color(0xFF6366F1),
-                  onTap: () {
-                    HapticFeedback.mediumImpact();
-                    // Navigate to reports
-                  },
-                  isSmallScreen: isSmallScreen,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildQuickActionCard(
-                  title: 'User Management',
-                  icon: Icons.people_outline,
-                  color: const Color(0xFFEF4444),
-                  onTap: () {
-                    HapticFeedback.mediumImpact();
-                    // Navigate to user management
-                  },
-                  isSmallScreen: isSmallScreen,
-                ),
-              ),
-            ],
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildQuickActionCard(
+            title: l10n.reports,
+            icon: Icons.analytics_outlined,
+            color: const Color(0xFF6366F1),
+            onTap: () {
+              HapticFeedback.mediumImpact();
+              // Navigate to reports
+            },
+            isSmallScreen: !isLargePhone,
           ),
-        ],
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildQuickActionCard(
+            title: l10n.manageUsers,
+            icon: Icons.people_outline,
+            color: const Color(0xFFEF4444),
+            onTap: () {
+              HapticFeedback.mediumImpact();
+              // Navigate to user management
+            },
+            isSmallScreen: !isLargePhone,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildQuickActionsGrid(AppLocalizations l10n, bool isVerySmallScreen) {
+    final actions = [
+      {'title': l10n.teams, 'icon': Icons.groups_rounded, 'color': const Color(0xFF10B981)},
+      {'title': l10n.reports, 'icon': Icons.analytics_outlined, 'color': const Color(0xFF6366F1)},
+      {'title': l10n.manageUsers, 'icon': Icons.people_outline, 'color': const Color(0xFFEF4444)},
+    ];
+
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        childAspectRatio: 1.3, // Reduced to accommodate taller cards
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
       ),
+      itemCount: actions.length,
+      itemBuilder: (context, index) {
+        final action = actions[index];
+        return _buildQuickActionCard(
+          title: action['title'] as String,
+          icon: action['icon'] as IconData,
+          color: action['color'] as Color,
+          onTap: () {
+            HapticFeedback.mediumImpact();
+            // Navigate based on index
+          },
+          isSmallScreen: isVerySmallScreen,
+        );
+      },
     );
   }
 
@@ -579,14 +768,20 @@ class _DashboardScreenState extends State<DashboardScreen>
     required VoidCallback onTap,
     required bool isSmallScreen,
   }) {
+    final size = MediaQuery.of(context).size;
+    final isTinyScreen = size.width < 320;
+    
     return Container(
-      height: isSmallScreen ? 70 : 80,
+      height: isTinyScreen ? 85 : (isSmallScreen ? 90 : 95), // Increased heights
+      constraints: BoxConstraints(
+        minHeight: isTinyScreen ? 85 : (isSmallScreen ? 90 : 95),
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -598,31 +793,38 @@ class _DashboardScreenState extends State<DashboardScreen>
           onTap: onTap,
           borderRadius: BorderRadius.circular(16),
           child: Padding(
-            padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
+            padding: EdgeInsets.all(isTinyScreen ? 6 : (isSmallScreen ? 8 : 10)),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  width: isSmallScreen ? 32 : 40,
-                  height: isSmallScreen ? 32 : 40,
+                  width: isTinyScreen ? 28 : (isSmallScreen ? 32 : 36),
+                  height: isTinyScreen ? 28 : (isSmallScreen ? 32 : 36),
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(10),
+                    color: color.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  child:
-                      Icon(icon, color: color, size: isSmallScreen ? 16 : 20),
+                  child: Icon(
+                    icon, 
+                    color: color, 
+                    size: isTinyScreen ? 14 : (isSmallScreen ? 16 : 18)
+                  ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: isSmallScreen ? 10 : 12,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.grey.shade800,
+                SizedBox(height: isTinyScreen ? 3 : 4),
+                Flexible(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: isTinyScreen ? 9 : (isSmallScreen ? 10 : 11),
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey.shade800,
+                      height: 1.2, // Better line height
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -633,40 +835,100 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   Widget _buildRecentSessionsSection(
-      AppLocalizations l10n, bool isSmallScreen) {
+      AppLocalizations l10n, bool isSmallScreen, bool isVerySmallScreen) {
+    final size = MediaQuery.of(context).size;
+    final isTinyScreen = size.width < 320;
+    
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(isTinyScreen ? 8 : (isSmallScreen ? 12 : 16)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Recent Sessions',
-                style: TextStyle(
-                  fontSize: isSmallScreen ? 18 : 20,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey.shade800,
-                ),
-              ),
-              TextButton.icon(
-                onPressed: () {
-                  HapticFeedback.lightImpact();
-                  // Navigate to all sessions
-                },
-                icon: Icon(Icons.arrow_forward_rounded,
-                    size: isSmallScreen ? 14 : 16),
-                label: Text(
-                  'See All',
-                  style: TextStyle(fontSize: isSmallScreen ? 12 : 14),
-                ),
-                style: TextButton.styleFrom(
-                    foregroundColor: const Color(0xFFF27121)),
-              ),
-            ],
+          // Fixed responsive sessions header
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isVeryNarrow = constraints.maxWidth < 350;
+              if (isVeryNarrow) {
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.recentTrainingSessions,
+                      style: TextStyle(
+                        fontSize: isTinyScreen ? 16 : (isSmallScreen ? 18 : 20),
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey.shade800,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 2,
+                    ),
+                    const SizedBox(height: 8),
+                    TextButton.icon(
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        // Navigate to all sessions
+                      },
+                      icon: Icon(Icons.arrow_forward_rounded,
+                          size: isTinyScreen ? 12 : (isSmallScreen ? 14 : 16)),
+                      label: Text(
+                        l10n.seeAll,
+                        style: TextStyle(
+                          fontSize: isTinyScreen ? 10 : (isSmallScreen ? 12 : 14)
+                        ),
+                      ),
+                      style: TextButton.styleFrom(
+                        foregroundColor: const Color(0xFFF27121),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isTinyScreen ? 8 : 12,
+                          vertical: isTinyScreen ? 4 : 8,
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              } else {
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        l10n.recentTrainingSessions,
+                        style: TextStyle(
+                          fontSize: isTinyScreen ? 16 : (isSmallScreen ? 18 : 20),
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey.shade800,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    TextButton.icon(
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        // Navigate to all sessions
+                      },
+                      icon: Icon(Icons.arrow_forward_rounded,
+                          size: isTinyScreen ? 12 : (isSmallScreen ? 14 : 16)),
+                      label: Text(
+                        l10n.seeAll,
+                        style: TextStyle(
+                          fontSize: isTinyScreen ? 10 : (isSmallScreen ? 12 : 14)
+                        ),
+                      ),
+                      style: TextButton.styleFrom(
+                        foregroundColor: const Color(0xFFF27121),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isTinyScreen ? 8 : 12,
+                          vertical: isTinyScreen ? 4 : 8,
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              }
+            },
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: isSmallScreen ? 12 : 16),
           _buildSessionsList(isSmallScreen),
         ],
       ),
@@ -701,7 +963,7 @@ class _DashboardScreenState extends State<DashboardScreen>
 
             return TweenAnimationBuilder<double>(
               tween: Tween(begin: 0.0, end: 1.0),
-              duration: Duration(milliseconds: 300 + (index * 100)),
+              duration: Duration(milliseconds: 250 + (index * 75)),
               curve: Curves.easeOutCubic,
               builder: (context, value, child) {
                 return Transform.translate(
@@ -740,7 +1002,7 @@ class _DashboardScreenState extends State<DashboardScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -849,7 +1111,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: _getAttendanceColor(attendancePercentage)
-                            .withOpacity(0.1),
+                            .withValues(alpha: 0.1),
                       ),
                       child: Center(
                         child: Text(
@@ -908,7 +1170,7 @@ class _DashboardScreenState extends State<DashboardScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),

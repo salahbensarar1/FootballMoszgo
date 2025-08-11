@@ -219,7 +219,7 @@ class _AdminScreenState extends State<AdminScreen>
         IconButton(
           icon: Icon(Icons.refresh, color: Colors.white),
           onPressed: () => setState(() {}),
-          tooltip: 'Refresh',
+          tooltip: l10n.refresh,
         ),
       ],
     );
@@ -249,13 +249,13 @@ class _AdminScreenState extends State<AdminScreen>
                   ),
                   _buildDrawerItem(
                     icon: Icons.analytics_rounded,
-                    title: "Reports",
-                    onTap: () => _showComingSoon(context),
+                    title: l10n.reports,
+                    onTap: () => _showComingSoon(context, l10n),
                   ),
                   _buildDrawerItem(
                     icon: Icons.notifications_rounded,
-                    title: "Notifications",
-                    onTap: () => _showComingSoon(context),
+                    title: l10n.notifications,
+                    onTap: () => _showComingSoon(context, l10n),
                   ),
                 ],
               ),
@@ -281,6 +281,9 @@ class _AdminScreenState extends State<AdminScreen>
   }
 
   Widget _buildDrawerHeader(AppLocalizations l10n) {
+    final size = MediaQuery.of(context).size;
+    final isTablet = size.width > 768;
+    
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -298,8 +301,8 @@ class _AdminScreenState extends State<AdminScreen>
               Hero(
                 tag: 'admin_avatar',
                 child: Container(
-                  width: 70,
-                  height: 70,
+                  width: isTablet ? 80.0 : 70.0,
+                  height: isTablet ? 80.0 : 70.0,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(color: Colors.white, width: 3),
@@ -386,8 +389,12 @@ class _AdminScreenState extends State<AdminScreen>
   }
 
   Widget _buildTabBar(AppLocalizations l10n, List<String> tabs) {
+    final size = MediaQuery.of(context).size;
+    final isTablet = size.width > 768;
+    final tabHeight = isTablet ? 88.0 : 80.0;
+    
     return Container(
-      height: 80,
+      height: tabHeight,
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Container(
         decoration: BoxDecoration(
@@ -424,8 +431,9 @@ class _AdminScreenState extends State<AdminScreen>
             final title = entry.value;
             final isActive = currentTab == index;
 
+            final tabContentHeight = isTablet ? 56.0 : 50.0;
             return Tab(
-              height: 50,
+              height: tabContentHeight,
               child: Container(
                 padding: EdgeInsets.symmetric(horizontal: 12),
                 child: Row(
@@ -521,7 +529,7 @@ class _AdminScreenState extends State<AdminScreen>
       stream: _getStreamForCurrentTab(l10n),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return _buildLoadingState();
+          return _buildLoadingState(l10n);
         }
 
         if (snapshot.hasError) {
@@ -538,14 +546,17 @@ class _AdminScreenState extends State<AdminScreen>
     );
   }
 
-  Widget _buildLoadingState() {
+  Widget _buildLoadingState(AppLocalizations l10n) {
+    final size = MediaQuery.of(context).size;
+    final isTablet = size.width > 768;
+    
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 60,
-            height: 60,
+            width: isTablet ? 72.0 : 60.0,
+            height: isTablet ? 72.0 : 60.0,
             decoration: BoxDecoration(
               color: Color(0xFFF27121).withOpacity(0.1),
               borderRadius: BorderRadius.circular(30),
@@ -557,7 +568,7 @@ class _AdminScreenState extends State<AdminScreen>
           ),
           SizedBox(height: 16),
           Text(
-            'Loading...',
+            l10n.loading,
             style: GoogleFonts.poppins(
               color: Colors.grey.shade600,
               fontSize: 16,
@@ -569,6 +580,9 @@ class _AdminScreenState extends State<AdminScreen>
   }
 
   Widget _buildErrorState(AppLocalizations l10n, String error) {
+    final size = MediaQuery.of(context).size;
+    final isTablet = size.width > 768;
+    
     return Center(
       child: Padding(
         padding: EdgeInsets.all(32),
@@ -576,8 +590,8 @@ class _AdminScreenState extends State<AdminScreen>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 80,
-              height: 80,
+              width: isTablet ? 96.0 : 80.0,
+              height: isTablet ? 96.0 : 80.0,
               decoration: BoxDecoration(
                 color: Colors.red.shade50,
                 borderRadius: BorderRadius.circular(40),
@@ -590,7 +604,7 @@ class _AdminScreenState extends State<AdminScreen>
             ),
             SizedBox(height: 24),
             Text(
-              'Something went wrong',
+              l10n.somethingWentWrong,
               style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -599,7 +613,7 @@ class _AdminScreenState extends State<AdminScreen>
             ),
             SizedBox(height: 8),
             Text(
-              'Please try again or contact support',
+              l10n.tryAgainOrContact,
               style: GoogleFonts.poppins(
                 fontSize: 14,
                 color: Colors.grey.shade600,
@@ -610,7 +624,7 @@ class _AdminScreenState extends State<AdminScreen>
             ElevatedButton.icon(
               onPressed: () => setState(() {}),
               icon: Icon(Icons.refresh_rounded),
-              label: Text('Retry'),
+              label: Text(l10n.retry),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Color(0xFFF27121),
                 foregroundColor: Colors.white,
@@ -626,6 +640,8 @@ class _AdminScreenState extends State<AdminScreen>
   }
 
   Widget _buildEmptyState(AppLocalizations l10n) {
+    final size = MediaQuery.of(context).size;
+    final isTablet = size.width > 768;
     final tabs = [l10n.attendances, l10n.players, l10n.teams];
     final icons = [
       Icons.event_note_rounded,
@@ -640,8 +656,8 @@ class _AdminScreenState extends State<AdminScreen>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 120,
-              height: 120,
+              width: isTablet ? 140.0 : 120.0,
+              height: isTablet ? 140.0 : 120.0,
               decoration: BoxDecoration(
                 color: Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(60),
@@ -655,8 +671,8 @@ class _AdminScreenState extends State<AdminScreen>
             SizedBox(height: 24),
             Text(
               searchQuery.isEmpty
-                  ? 'No ${tabs[currentTab]} found'
-                  : 'No results for "$searchQuery"',
+                  ? l10n.noEntitiesFound(tabs[currentTab])
+                  : l10n.noResultsFor(searchQuery),
               style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -667,7 +683,7 @@ class _AdminScreenState extends State<AdminScreen>
             if (searchQuery.isNotEmpty) ...[
               SizedBox(height: 8),
               Text(
-                'Try adjusting your search terms',
+                l10n.tryAdjustingSearch,
                 style: GoogleFonts.poppins(
                   fontSize: 14,
                   color: Colors.grey.shade600,
@@ -825,7 +841,7 @@ class _AdminScreenState extends State<AdminScreen>
                       ),
                     ),
                     Text(
-                      'Present',
+                      l10n.present,
                       style: GoogleFonts.poppins(
                         fontSize: 10,
                         color: Colors.grey.shade600,
@@ -1080,12 +1096,12 @@ class _AdminScreenState extends State<AdminScreen>
     );
   }
 
-  void _showComingSoon(BuildContext context) {
+  void _showComingSoon(BuildContext context, AppLocalizations l10n) {
     Navigator.pop(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'Coming Soon!',
+          l10n.comingSoon,
           style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
         ),
         backgroundColor: Color(0xFFF27121),
@@ -1113,7 +1129,7 @@ class _AdminScreenState extends State<AdminScreen>
             ],
           ),
           content: Text(
-            'Are you sure you want to logout?',
+            l10n.confirmLogout,
             style: GoogleFonts.poppins(),
           ),
           actions: [

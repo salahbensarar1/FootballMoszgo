@@ -34,7 +34,7 @@ class _DeleteUserDialogState extends State<DeleteUserDialog> {
           Icon(Icons.warning_rounded, color: Colors.red.shade600),
           SizedBox(width: 12),
           Text(
-            'Confirm Deletion',
+            l10n.confirmDelete,
             style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
           ),
         ],
@@ -44,7 +44,7 @@ class _DeleteUserDialogState extends State<DeleteUserDialog> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Are you sure you want to delete $userName ($userRole)?',
+            l10n.confirmDeleteMessage,
             style: GoogleFonts.poppins(fontSize: 16),
           ),
           SizedBox(height: 16),

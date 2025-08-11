@@ -49,7 +49,7 @@ class _TeamReportScreenState extends State<TeamReportScreen>
     _initializeAnimations();
     _loadTeamData();
     _loadTeamPlayers();
-    _calculateTeamStats();
+    // Stats will be calculated after players are loaded
   }
 
   void _initializeAnimations() {
@@ -90,17 +90,20 @@ class _TeamReportScreenState extends State<TeamReportScreen>
 
     _playersAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
-          parent: _playersAnimationController, curve: Curves.easeOutBack),
+          parent: _playersAnimationController,
+          curve: Curves.easeOutCubic), // Safe curve
     );
 
     _fabScaleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
-          parent: _fabAnimationController, curve: Curves.elasticOut),
+          parent: _fabAnimationController,
+          curve: Curves.easeOutCubic), // Safe curve
     );
 
     _statsAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
-          parent: _statsAnimationController, curve: Curves.easeOutBack),
+          parent: _statsAnimationController,
+          curve: Curves.easeOutCubic), // Safe curve
     );
 
     // Start animations
@@ -150,16 +153,22 @@ class _TeamReportScreenState extends State<TeamReportScreen>
             isLoadingPlayers = false;
           });
           _playersAnimationController.forward();
+          // Calculate stats AFTER players are loaded
+          _calculateTeamStats();
         }
       } else {
         if (mounted) {
           setState(() => isLoadingPlayers = false);
+          // Calculate stats even if no team name
+          _calculateTeamStats();
         }
       }
     } catch (e) {
       print("Error loading team players: $e");
       if (mounted) {
         setState(() => isLoadingPlayers = false);
+        // Calculate stats even on error
+        _calculateTeamStats();
       }
     }
   }
@@ -167,22 +176,19 @@ class _TeamReportScreenState extends State<TeamReportScreen>
   Future<void> _calculateTeamStats() async {
     setState(() => isLoadingStats = true);
     try {
+      // Professional position mapping based on database structure
+      final positionMapping = _mapPlayerPositions(teamPlayers);
+
       final stats = {
         'totalPlayers': teamPlayers.length,
-        'goalkeepers': teamPlayers
-            .where((p) => (p['position'] ?? '').toLowerCase().contains('gk'))
-            .length,
-        'defenders': teamPlayers
-            .where((p) => (p['position'] ?? '').toLowerCase().contains('d'))
-            .length,
-        'midfielders': teamPlayers
-            .where((p) => (p['position'] ?? '').toLowerCase().contains('m'))
-            .length,
-        'forwards': teamPlayers
-            .where((p) => (p['position'] ?? '').toLowerCase().contains('f'))
-            .length,
+        'Goalkeeper': positionMapping['Goalkeeper'] ?? 0,
+        'Defender': positionMapping['Defender'] ?? 0,
+        'Midfielder': positionMapping['Midfielder'] ?? 0,
+        'Forward': positionMapping['Forward'] ?? 0,
         'payment': teamData['payment'] ?? 0,
         'description': teamData['team_description'] ?? 'No description',
+        'positionDistribution': positionMapping,
+        'averageAge': _calculateAverageAge(),
       };
 
       if (mounted) {
@@ -192,11 +198,102 @@ class _TeamReportScreenState extends State<TeamReportScreen>
         });
       }
     } catch (e) {
-      print("Error calculating team stats: $e");
+      debugPrint("Error calculating team stats: $e");
       if (mounted) {
         setState(() => isLoadingStats = false);
       }
     }
+  }
+
+  /// Professional position mapping based on exact database structure
+  Map<String, int> _mapPlayerPositions(List<Map<String, dynamic>> players) {
+    final Map<String, int> positionCounts = {
+      'Goalkeeper': 0,
+      'Defender': 0,
+      'Midfielder': 0,
+      'Forward': 0,
+    };
+
+    debugPrint('=== POSITION MAPPING DEBUG ===');
+    debugPrint('Total players to map: ${players.length}');
+
+    for (final player in players) {
+      final positionRaw = player['position'];
+      final position = (positionRaw ?? '').toString().trim();
+      final playerName = player['name'] ?? 'Unknown';
+
+      debugPrint(
+          'Player: $playerName, Position: "$positionRaw" -> "$position"');
+
+      // Map exact database positions (case-insensitive)
+      if (position == 'Goalkeeper' ||
+          position.toLowerCase() == 'goalkeeper' ||
+          position.toLowerCase() == 'keeper' ||
+          position.toLowerCase() == 'gk') {
+        positionCounts['Goalkeeper'] = positionCounts['Goalkeeper']! + 1;
+        debugPrint('  -> Mapped to Goalkeeper');
+      } else if (position == 'Defender' ||
+          position.toLowerCase() == 'defender' ||
+          position.toLowerCase() == 'defence' ||
+          position.toLowerCase() == 'def') {
+        positionCounts['Defender'] = positionCounts['Defender']! + 1;
+        debugPrint('  -> Mapped to Defender');
+      } else if (position == 'Midfielder' ||
+          position.toLowerCase() == 'midfielder' ||
+          position.toLowerCase() == 'midfield' ||
+          position.toLowerCase() == 'mid') {
+        positionCounts['Midfielder'] = positionCounts['Midfielder']! + 1;
+        debugPrint('  -> Mapped to Midfielder');
+      } else if (position == 'Forward' ||
+          position.toLowerCase() == 'forward' ||
+          position.toLowerCase() == 'striker' ||
+          position.toLowerCase() == 'att' ||
+          position.toLowerCase() == 'attacker') {
+        positionCounts['Forward'] = positionCounts['Forward']! + 1;
+        debugPrint('  -> Mapped to Forward');
+      } else {
+        debugPrint('  -> UNMAPPED POSITION: "$position"');
+      }
+    }
+
+    debugPrint(
+        'Final counts: Goalkeeper:${positionCounts['Goalkeeper']}, Defender:${positionCounts['Defender']}, Midfielder:${positionCounts['Midfielder']}, Forward:${positionCounts['Forward']}');
+    debugPrint('=== END DEBUG ===');
+
+    return positionCounts;
+  }
+
+  /// Calculate average age of team players
+  double _calculateAverageAge() {
+    if (teamPlayers.isEmpty) return 0.0;
+
+    final now = DateTime.now();
+    double totalAge = 0.0;
+    int validBirthDates = 0;
+
+    for (final player in teamPlayers) {
+      final birthDate = player['birth_date'];
+      if (birthDate != null) {
+        try {
+          DateTime birth;
+          if (birthDate is Timestamp) {
+            birth = birthDate.toDate();
+          } else if (birthDate is String) {
+            birth = DateTime.parse(birthDate);
+          } else {
+            continue;
+          }
+
+          final age = now.difference(birth).inDays / 365.25;
+          totalAge += age;
+          validBirthDates++;
+        } catch (e) {
+          debugPrint('Error parsing birth date for player: $e');
+        }
+      }
+    }
+
+    return validBirthDates > 0 ? totalAge / validBirthDates : 0.0;
   }
 
   @override
@@ -349,13 +446,13 @@ class _TeamReportScreenState extends State<TeamReportScreen>
                     mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
                     children: [
                       _buildPdfStatBox(
-                          'Goalkeepers', '${teamStats['goalkeepers'] ?? 0}'),
+                          'Goalkeeper', '${teamStats['Goalkeeper'] ?? 0}'),
                       _buildPdfStatBox(
-                          'Defenders', '${teamStats['defenders'] ?? 0}'),
+                          'Defender', '${teamStats['Defender'] ?? 0}'),
                       _buildPdfStatBox(
-                          'Midfielders', '${teamStats['midfielders'] ?? 0}'),
+                          'Midfielder', '${teamStats['Midfielder'] ?? 0}'),
                       _buildPdfStatBox(
-                          'Forwards', '${teamStats['forwards'] ?? 0}'),
+                          'Forward', '${teamStats['Forward'] ?? 0}'),
                     ],
                   ),
                 ],
@@ -491,7 +588,7 @@ class _TeamReportScreenState extends State<TeamReportScreen>
         ),
         pw.Text(
           label,
-          style: pw.TextStyle(fontSize: 10, color: PdfColors.grey600),
+          style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey600),
         ),
       ],
     );
@@ -968,9 +1065,9 @@ class _TeamReportScreenState extends State<TeamReportScreen>
               animation: _statsAnimation,
               builder: (context, child) {
                 return Transform.scale(
-                  scale: _statsAnimation.value,
+                  scale: _statsAnimation.value.clamp(0.0, 1.0),
                   child: Opacity(
-                    opacity: _statsAnimation.value,
+                    opacity: _statsAnimation.value.clamp(0.0, 1.0),
                     child: Column(
                       children: [
                         Row(
@@ -978,14 +1075,14 @@ class _TeamReportScreenState extends State<TeamReportScreen>
                             Expanded(
                                 child: _buildStatCard(
                                     'GK',
-                                    '${teamStats['goalkeepers']}',
+                                    '${teamStats['Goalkeeper']}',
                                     Icons.sports_soccer,
                                     Colors.blue)),
                             const SizedBox(width: 12),
                             Expanded(
                                 child: _buildStatCard(
                                     'DEF',
-                                    '${teamStats['defenders']}',
+                                    '${teamStats['Defender']}',
                                     Icons.shield,
                                     Colors.green)),
                           ],
@@ -996,14 +1093,14 @@ class _TeamReportScreenState extends State<TeamReportScreen>
                             Expanded(
                                 child: _buildStatCard(
                                     'MID',
-                                    '${teamStats['midfielders']}',
+                                    '${teamStats['Midfielder']}',
                                     Icons.swap_horiz,
                                     Colors.orange)),
                             const SizedBox(width: 12),
                             Expanded(
                                 child: _buildStatCard(
                                     'FWD',
-                                    '${teamStats['forwards']}',
+                                    '${teamStats['Forward']}',
                                     Icons.trending_up,
                                     Colors.red)),
                           ],
@@ -1021,31 +1118,59 @@ class _TeamReportScreenState extends State<TeamReportScreen>
 
   Widget _buildStatCard(
       String label, String value, IconData icon, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.2)),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: 24),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: GoogleFonts.inter(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isSmall = constraints.maxWidth < 120;
+        return Container(
+          padding: EdgeInsets.all(isSmall ? 12 : 16),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: color.withValues(alpha: 0.2)),
+            boxShadow: [
+              BoxShadow(
+                color: color.withValues(alpha: 0.1),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
-          Text(
-            label,
-            style: GoogleFonts.inter(fontSize: 12, color: Colors.grey.shade600),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: EdgeInsets.all(isSmall ? 6 : 8),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, color: color, size: isSmall ? 20 : 24),
+              ),
+              const SizedBox(height: 8),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  value,
+                  style: GoogleFonts.inter(
+                    fontSize: isSmall ? 18 : 20,
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 4),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  label,
+                  style: GoogleFonts.inter(
+                      fontSize: isSmall ? 10 : 12, color: Colors.grey.shade600),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -1164,7 +1289,7 @@ class _TeamReportScreenState extends State<TeamReportScreen>
                         return Transform.translate(
                           offset: Offset((1 - value) * 50, 0),
                           child: Opacity(
-                            opacity: value,
+                            opacity: value.clamp(0.0, 1.0),
                             child: _buildPlayerCard(player),
                           ),
                         );

@@ -59,7 +59,7 @@ class _AddUserDialogState extends State<AddUserDialog> {
           ),
           SizedBox(width: 12),
           Text(
-            'Add New User',
+            widget.l10n.addNewUser,
             style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
           ),
         ],
@@ -83,7 +83,7 @@ class _AddUserDialogState extends State<AddUserDialog> {
                 ),
                 validator: (value) {
                   if (value?.isEmpty ?? true) {
-                    return 'Please enter a name';
+                    return widget.l10n.nameRequired;
                   }
                   return null;
                 },
@@ -104,11 +104,11 @@ class _AddUserDialogState extends State<AddUserDialog> {
                 ),
                 validator: (value) {
                   if (value?.isEmpty ?? true) {
-                    return 'Please enter an email';
+                    return widget.l10n.emailRequired;
                   }
                   if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
                       .hasMatch(value!)) {
-                    return 'Please enter a valid email';
+                    return widget.l10n.validEmailRequired;
                   }
                   return null;
                 },
@@ -136,10 +136,10 @@ class _AddUserDialogState extends State<AddUserDialog> {
                 ),
                 validator: (value) {
                   if (value?.isEmpty ?? true) {
-                    return 'Please enter a password';
+                    return widget.l10n.passwordRequired;
                   }
                   if (value!.length < 6) {
-                    return 'Password must be at least 6 characters';
+                    return widget.l10n.passwordMinLength;
                   }
                   return null;
                 },
@@ -151,7 +151,7 @@ class _AddUserDialogState extends State<AddUserDialog> {
               DropdownButtonFormField<String>(
                 value: selectedRole,
                 decoration: InputDecoration(
-                  labelText: 'Role',
+                  labelText: widget.l10n.role,
                   prefixIcon: Icon(Icons.work_outline_rounded),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -281,7 +281,7 @@ class _AddUserDialogState extends State<AddUserDialog> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'User created successfully!',
+            widget.l10n.userAddedSuccessfully,
             style: GoogleFonts.poppins(),
           ),
           backgroundColor: Colors.green,
@@ -291,17 +291,17 @@ class _AddUserDialogState extends State<AddUserDialog> {
         ),
       );
     } on FirebaseAuthException catch (e) {
-      String errorMessage = 'Failed to create user';
+      String errorMessage = widget.l10n.errorAddingUser;
 
       switch (e.code) {
         case 'weak-password':
-          errorMessage = 'The password provided is too weak.';
+          errorMessage = 'Password too weak';
           break;
         case 'email-already-in-use':
-          errorMessage = 'An account already exists for this email.';
+          errorMessage = 'Account already exists';
           break;
         case 'invalid-email':
-          errorMessage = 'The email address is not valid.';
+          errorMessage = 'Invalid email address';
           break;
         default:
           errorMessage = e.message ?? 'An error occurred';
@@ -321,7 +321,7 @@ class _AddUserDialogState extends State<AddUserDialog> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Error creating user: $e',
+            '${widget.l10n.errorAddingUser}: $e',
             style: GoogleFonts.poppins(),
           ),
           backgroundColor: Colors.red,

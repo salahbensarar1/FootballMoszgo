@@ -7,6 +7,7 @@ import 'package:footballtraining/views/login/login_page.dart';
 import 'package:footballtraining/views/receptionist/dialogs/add_entry_dialog.dart';
 import 'package:footballtraining/views/receptionist/dialogs/coach_assignment_dialog.dart';
 import 'package:footballtraining/views/receptionist/payment_overview_screen.dart';
+import 'package:footballtraining/views/receptionist/settings_screen.dart';
 import 'package:footballtraining/views/shared/widgets/payment_month_indicator.dart';
 import 'package:footballtraining/data/repositories/coach_management_service.dart';
 import 'package:footballtraining/utils/responsive_utils.dart';
@@ -338,7 +339,12 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
             _buildDrawerItem(
               icon: Icons.settings_rounded,
               title: l10n.settings,
-              onTap: () => _showComingSoon(context, l10n),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ReceptionistSettingsScreen(),
+                ),
+              ),
             ),
             _buildDrawerItem(
               icon: Icons.logout_rounded,
