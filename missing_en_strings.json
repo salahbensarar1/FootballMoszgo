@@ -1,0 +1,21 @@
+{
+  "theme": "Theme",
+  "lightMode": "Light Mode",
+  "darkMode": "Dark Mode",
+  "contact": "Contact",
+  "phoneSupport": "Phone Support",
+  "emailSupport": "Email Support",
+  "support": "Support",
+  "profileManagement": "Profile Management",
+  "helpAndSupport": "Help and Support",
+  "applicationInfo": "Application Information",
+
+  "trainingTypeGame": "Game",
+  "trainingTypeTraining": "Training",
+  "trainingTypeTactical": "Tactical",
+  "trainingTypeFitness": "Fitness",
+  "trainingTypeTechnical": "Technical",
+  "trainingTypeTheoretical": "Theoretical",
+  "trainingTypeSurvey": "Survey",
+  "trainingTypeMixed": "Mixed"
+}

@@ -1,0 +1,21 @@
+{
+  "theme": "Téma",
+  "lightMode": "Világos mód",
+  "darkMode": "Sötét mód",
+  "contact": "Kapcsolat",
+  "phoneSupport": "Telefonos támogatás",
+  "emailSupport": "E-mail támogatás",
+  "support": "Támogatás",
+  "profileManagement": "Profil kezelése",
+  "helpAndSupport": "Segítség és támogatás",
+  "applicationInfo": "Alkalmazás információ",
+
+  "trainingTypeGame": "Mérkőzés",
+  "trainingTypeTraining": "Edzés",
+  "trainingTypeTactical": "Taktikai",
+  "trainingTypeFitness": "Erőnléti",
+  "trainingTypeTechnical": "Technikai",
+  "trainingTypeTheoretical": "Elméleti",
+  "trainingTypeSurvey": "Felmérés",
+  "trainingTypeMixed": "Vegyes"
+}
