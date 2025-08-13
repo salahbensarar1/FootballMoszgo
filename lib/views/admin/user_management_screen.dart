@@ -178,11 +178,15 @@ class _UserManagementScreenState extends State<UserManagementScreen>
   }
 
   Widget _buildUsersList(AppLocalizations l10n) {
+    final size = MediaQuery.of(context).size;
+    final isTablet = size.width > 768;
+    final isMobile = size.width < 480;
+    
     return StreamBuilder<QuerySnapshot>(
       stream: _getUsersStream(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return LoadingStateWidget();
+          return const LoadingStateWidget();
         }
 
         if (snapshot.hasError) {
@@ -193,8 +197,8 @@ class _UserManagementScreenState extends State<UserManagementScreen>
         }
 
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return EmptyStateWidget(
-            searchQuery: searchQuery,
+          return const EmptyStateWidget(
+            searchQuery: '',
             entityName: 'users',
           );
         }
@@ -212,10 +216,33 @@ class _UserManagementScreenState extends State<UserManagementScreen>
           );
         }
 
+        if (isTablet) {
+          // Grid layout for tablets
+          return Padding(
+            padding: const EdgeInsets.all(16),
+            child: GridView.builder(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                childAspectRatio: 3.5,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+              ),
+              itemCount: users.length,
+              itemBuilder: (context, index) {
+                return UserCard(
+                  userDoc: users[index],
+                  onEdit: () => _editUser(users[index], l10n),
+                  onDelete: () => _deleteUser(users[index], l10n),
+                );
+              },
+            ),
+          );
+        }
+
         return ListView.separated(
-          padding: EdgeInsets.all(16),
+          padding: EdgeInsets.all(isMobile ? 12 : 16),
           itemCount: users.length,
-          separatorBuilder: (context, index) => SizedBox(height: 12),
+          separatorBuilder: (context, index) => SizedBox(height: isMobile ? 8 : 12),
           itemBuilder: (context, index) {
             return UserCard(
               userDoc: users[index],
@@ -229,11 +256,26 @@ class _UserManagementScreenState extends State<UserManagementScreen>
   }
 
   Widget _buildAddUserFab(AppLocalizations l10n) {
+    final size = MediaQuery.of(context).size;
+    final isMobile = size.width < 480;
+    
+    if (isMobile) {
+      return FloatingActionButton(
+        onPressed: () => _addUser(l10n),
+        backgroundColor: const Color(0xFFF27121),
+        foregroundColor: Colors.white,
+        elevation: 8,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: const Icon(Icons.person_add_rounded),
+        tooltip: l10n.add,
+      );
+    }
+    
     return FloatingActionButton.extended(
       onPressed: () => _addUser(l10n),
-      backgroundColor: Color(0xFFF27121),
+      backgroundColor: const Color(0xFFF27121),
       foregroundColor: Colors.white,
-      icon: Icon(Icons.person_add_rounded),
+      icon: const Icon(Icons.person_add_rounded),
       label: Text(
         l10n.add,
         style: GoogleFonts.poppins(fontWeight: FontWeight.w600),

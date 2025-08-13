@@ -21,6 +21,10 @@ class UserCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final size = MediaQuery.of(context).size;
+    final isMobile = size.width < 480;
+    final isTablet = size.width > 768;
+    
     final data = userDoc.data() as Map<String, dynamic>? ?? {};
 
     final name = data['name'] ?? 'N/A';
@@ -41,26 +45,23 @@ class UserCard extends StatelessWidget {
         onTap: () => _showUserDetailsDialog(context, l10n),
         borderRadius: BorderRadius.circular(16),
         child: Padding(
-          padding: EdgeInsets.all(16),
-          child: Row(
-            children: [
-              _buildUserAvatar(pictureUrl, roleColor),
-              SizedBox(width: 16),
-              _buildUserInfo(name, email, role, roleColor, roleIcon),
-              _buildPopupMenu(context, l10n),
-            ],
-          ),
+          padding: EdgeInsets.all(isMobile ? 12 : (isTablet ? 20 : 16)),
+          child: isMobile 
+              ? _buildMobileLayout(name, email, role, roleColor, roleIcon, pictureUrl, context, l10n)
+              : _buildDesktopLayout(name, email, role, roleColor, roleIcon, pictureUrl, context, l10n, isTablet),
         ),
       ),
     );
   }
 
-  Widget _buildUserAvatar(String? pictureUrl, Color roleColor) {
+  Widget _buildUserAvatar(String? pictureUrl, Color roleColor, {double? size}) {
+    final avatarSize = size ?? 60;
+    
     return Hero(
       tag: 'user_${userDoc.id}',
       child: Container(
-        width: 60,
-        height: 60,
+        width: avatarSize,
+        height: avatarSize,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           border: Border.all(color: roleColor.withOpacity(0.3), width: 2),
@@ -68,16 +69,16 @@ class UserCard extends StatelessWidget {
             BoxShadow(
               color: Colors.black.withOpacity(0.1),
               blurRadius: 8,
-              offset: Offset(0, 2),
+              offset: const Offset(0, 2),
             ),
           ],
         ),
         child: CircleAvatar(
-          radius: 30,
+          radius: avatarSize / 2,
           backgroundColor: Colors.grey.shade100,
           backgroundImage: (pictureUrl?.isNotEmpty == true)
               ? NetworkImage(pictureUrl!)
-              : AssetImage("assets/images/default_profile.jpeg")
+              : const AssetImage("assets/images/default_profile.jpeg")
                   as ImageProvider,
         ),
       ),
@@ -85,7 +86,12 @@ class UserCard extends StatelessWidget {
   }
 
   Widget _buildUserInfo(String name, String email, String role, Color roleColor,
-      IconData roleIcon) {
+      IconData roleIcon, {bool isMobile = false, bool isTablet = false}) {
+    final titleFontSize = isTablet ? 18.0 : (isMobile ? 14.0 : 16.0);
+    final emailFontSize = isTablet ? 16.0 : (isMobile ? 12.0 : 14.0);
+    final roleFontSize = isTablet ? 14.0 : (isMobile ? 10.0 : 12.0);
+    final roleIconSize = isTablet ? 16.0 : (isMobile ? 12.0 : 14.0);
+    
     return Expanded(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -94,23 +100,28 @@ class UserCard extends StatelessWidget {
             name,
             style: GoogleFonts.poppins(
               fontWeight: FontWeight.w600,
-              fontSize: 16,
+              fontSize: titleFontSize,
               color: Colors.grey.shade800,
             ),
             overflow: TextOverflow.ellipsis,
+            maxLines: 1,
           ),
-          SizedBox(height: 4),
+          SizedBox(height: isMobile ? 2 : 4),
           Text(
             email,
             style: GoogleFonts.poppins(
-              fontSize: 14,
+              fontSize: emailFontSize,
               color: Colors.grey.shade600,
             ),
             overflow: TextOverflow.ellipsis,
+            maxLines: 1,
           ),
-          SizedBox(height: 8),
+          SizedBox(height: isMobile ? 6 : 8),
           Container(
-            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            padding: EdgeInsets.symmetric(
+              horizontal: isMobile ? 6 : 8, 
+              vertical: isMobile ? 2 : 4
+            ),
             decoration: BoxDecoration(
               color: roleColor.withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
@@ -120,16 +131,20 @@ class UserCard extends StatelessWidget {
               children: [
                 Icon(
                   roleIcon,
-                  size: 14,
+                  size: roleIconSize,
                   color: roleColor,
                 ),
-                SizedBox(width: 4),
-                Text(
-                  role.toUpperCase(),
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: roleColor,
+                SizedBox(width: isMobile ? 2 : 4),
+                Flexible(
+                  child: Text(
+                    role.toUpperCase(),
+                    style: GoogleFonts.poppins(
+                      fontSize: roleFontSize,
+                      fontWeight: FontWeight.w600,
+                      color: roleColor,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
                   ),
                 ),
               ],
@@ -140,10 +155,15 @@ class UserCard extends StatelessWidget {
     );
   }
 
-  Widget _buildPopupMenu(BuildContext context, AppLocalizations l10n) {
+  Widget _buildPopupMenu(BuildContext context, AppLocalizations l10n, {bool isMobile = false}) {
+    final iconSize = isMobile ? 16.0 : 20.0;
+    final buttonSize = isMobile ? 32.0 : 40.0;
+    
     return PopupMenuButton<String>(
       icon: Container(
-        padding: EdgeInsets.all(8),
+        width: buttonSize,
+        height: buttonSize,
+        padding: EdgeInsets.all(isMobile ? 6 : 8),
         decoration: BoxDecoration(
           color: Colors.grey.shade100,
           borderRadius: BorderRadius.circular(8),
@@ -151,7 +171,7 @@ class UserCard extends StatelessWidget {
         child: Icon(
           Icons.more_vert_rounded,
           color: Colors.grey.shade600,
-          size: 20,
+          size: iconSize,
         ),
       ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -167,11 +187,14 @@ class UserCard extends StatelessWidget {
           value: 'edit',
           child: Row(
             children: [
-              Icon(Icons.edit_rounded, color: Colors.blue.shade600, size: 20),
-              SizedBox(width: 12),
+              Icon(Icons.edit_rounded, color: Colors.blue.shade600, size: iconSize),
+              SizedBox(width: isMobile ? 8 : 12),
               Text(
                 l10n.edit,
-                style: GoogleFonts.poppins(color: Colors.blue.shade600),
+                style: GoogleFonts.poppins(
+                  color: Colors.blue.shade600,
+                  fontSize: isMobile ? 13 : 14,
+                ),
               ),
             ],
           ),
@@ -180,15 +203,44 @@ class UserCard extends StatelessWidget {
           value: 'delete',
           child: Row(
             children: [
-              Icon(Icons.delete_rounded, color: Colors.red.shade600, size: 20),
-              SizedBox(width: 12),
+              Icon(Icons.delete_rounded, color: Colors.red.shade600, size: iconSize),
+              SizedBox(width: isMobile ? 8 : 12),
               Text(
                 l10n.delete,
-                style: GoogleFonts.poppins(color: Colors.red.shade600),
+                style: GoogleFonts.poppins(
+                  color: Colors.red.shade600,
+                  fontSize: isMobile ? 13 : 14,
+                ),
               ),
             ],
           ),
         ),
+      ],
+    );
+  }
+
+  Widget _buildMobileLayout(String name, String email, String role, 
+      Color roleColor, IconData roleIcon, String? pictureUrl, 
+      BuildContext context, AppLocalizations l10n) {
+    return Row(
+      children: [
+        _buildUserAvatar(pictureUrl, roleColor, size: 48),
+        const SizedBox(width: 12),
+        _buildUserInfo(name, email, role, roleColor, roleIcon, isMobile: true),
+        _buildPopupMenu(context, l10n, isMobile: true),
+      ],
+    );
+  }
+
+  Widget _buildDesktopLayout(String name, String email, String role, 
+      Color roleColor, IconData roleIcon, String? pictureUrl, 
+      BuildContext context, AppLocalizations l10n, bool isTablet) {
+    return Row(
+      children: [
+        _buildUserAvatar(pictureUrl, roleColor, size: isTablet ? 70 : 60),
+        SizedBox(width: isTablet ? 20 : 16),
+        _buildUserInfo(name, email, role, roleColor, roleIcon, isTablet: isTablet),
+        _buildPopupMenu(context, l10n),
       ],
     );
   }

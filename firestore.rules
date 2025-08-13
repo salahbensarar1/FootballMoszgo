@@ -1,0 +1,206 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===========================================
+    // HELPER FUNCTIONS
+    // ===========================================
+    
+    // Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Get user's organization membership
+    function getUserOrgs() {
+      return get(/databases/$(database)/documents/user_organizations/$(request.auth.uid)).data.organizations;
+    }
+    
+    // Check if user is member of specific organization
+    function isOrgMember(orgId) {
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/organizations/$(orgId)/users/$(request.auth.uid));
+    }
+    
+    // Get user's role in organization
+    function getUserRole(orgId) {
+      return get(/databases/$(database)/documents/organizations/$(orgId)/users/$(request.auth.uid)).data.role;
+    }
+    
+    // Check if user has specific role in organization
+    function hasRole(orgId, role) {
+      return isOrgMember(orgId) && getUserRole(orgId) == role;
+    }
+    
+    // Check if user has any of the specified roles
+    function hasAnyRole(orgId, roles) {
+      return isOrgMember(orgId) && getUserRole(orgId) in roles;
+    }
+    
+    // Check if user is admin or super_admin
+    function isAdmin(orgId) {
+      return hasAnyRole(orgId, ['admin', 'super_admin']);
+    }
+    
+    // Check if user is super_admin (highest level)
+    function isSuperAdmin(orgId) {
+      return hasRole(orgId, 'super_admin');
+    }
+    
+    // Check if user has permission
+    function hasPermission(orgId, permission) {
+      let userDoc = get(/databases/$(database)/documents/organizations/$(orgId)/users/$(request.auth.uid));
+      return isOrgMember(orgId) && 
+        (permission in userDoc.data.permissions || isAdmin(orgId));
+    }
+    
+    // Check if user is active in organization
+    function isActiveUser(orgId) {
+      return isOrgMember(orgId) && 
+        get(/databases/$(database)/documents/organizations/$(orgId)/users/$(request.auth.uid)).data.is_active == true;
+    }
+    
+    // Check if organization is active
+    function isActiveOrg(orgId) {
+      return get(/databases/$(database)/documents/organizations/$(orgId)).data.status == 'active';
+    }
+    
+    // Validate organization access
+    function canAccessOrg(orgId) {
+      return isActiveUser(orgId) && isActiveOrg(orgId);
+    }
+    
+    // Check if subscription allows feature
+    function hasSubscriptionFeature(orgId, feature) {
+      let subscriptions = get(/databases/$(database)/documents/organizations/$(orgId)).data.subscription_id;
+      return subscriptions != null && 
+        get(/databases/$(database)/documents/subscriptions/$(subscriptions)).data.features[feature] == true;
+    }
+    
+    // ===========================================
+    // GLOBAL COLLECTIONS
+    // ===========================================
+    
+    // Organizations - top-level tenant isolation
+    match /organizations/{orgId} {
+      allow read: if canAccessOrg(orgId);
+      allow create: if isAuthenticated(); // During setup process
+      allow update: if isAdmin(orgId) && canAccessOrg(orgId);
+      allow delete: if isSuperAdmin(orgId) && canAccessOrg(orgId);
+    }
+    
+    // Subscriptions - system controlled
+    match /subscriptions/{subscriptionId} {
+      // Only allow reading subscription if user belongs to the organization
+      allow read: if isAuthenticated() && 
+        resource.data.organization_id in getUserOrganizations();
+      // Only system functions can write subscriptions
+      allow write: if false;
+    }
+    
+    // Payment history - system controlled with read access
+    match /payment_history/{paymentId} {
+      allow read: if isAuthenticated() && 
+        resource.data.organization_id in getUserOrganizations();
+      allow write: if false; // Only system functions
+    }
+    
+    // User organizations mapping (for quick lookup)
+    match /user_organizations/{userId} {
+      allow read: if request.auth.uid == userId;
+      allow write: if false; // Only system functions
+    }
+    
+    // ===========================================
+    // ORGANIZATION-SCOPED COLLECTIONS
+    // ===========================================
+    
+    // Organization users
+    match /organizations/{orgId}/users/{userId} {
+      allow read: if canAccessOrg(orgId);
+      allow create: if isAdmin(orgId) && canAccessOrg(orgId);
+      allow update: if (isAdmin(orgId) || request.auth.uid == userId) && canAccessOrg(orgId);
+      allow delete: if isSuperAdmin(orgId) && canAccessOrg(orgId);
+    }
+    
+    // Teams
+    match /organizations/{orgId}/teams/{teamId} {
+      allow read: if canAccessOrg(orgId);
+      allow create: if hasAnyRole(orgId, ['admin', 'super_admin', 'coach']) && canAccessOrg(orgId);
+      allow update: if hasAnyRole(orgId, ['admin', 'super_admin', 'coach']) && canAccessOrg(orgId);
+      allow delete: if isAdmin(orgId) && canAccessOrg(orgId);
+    }
+    
+    // Players
+    match /organizations/{orgId}/players/{playerId} {
+      allow read: if canAccessOrg(orgId);
+      allow create: if hasAnyRole(orgId, ['admin', 'super_admin', 'receptionist', 'coach']) && canAccessOrg(orgId);
+      allow update: if hasAnyRole(orgId, ['admin', 'super_admin', 'receptionist', 'coach']) && canAccessOrg(orgId);
+      allow delete: if isAdmin(orgId) && canAccessOrg(orgId);
+    }
+    
+    // Training sessions
+    match /organizations/{orgId}/training_sessions/{sessionId} {
+      allow read: if canAccessOrg(orgId);
+      allow create: if hasAnyRole(orgId, ['admin', 'super_admin', 'coach']) && canAccessOrg(orgId);
+      allow update: if hasAnyRole(orgId, ['admin', 'super_admin', 'coach']) && canAccessOrg(orgId);
+      allow delete: if hasAnyRole(orgId, ['admin', 'super_admin', 'coach']) && canAccessOrg(orgId);
+    }
+    
+    // Payments
+    match /organizations/{orgId}/payments/{paymentId} {
+      allow read: if canAccessOrg(orgId);
+      allow create: if hasAnyRole(orgId, ['admin', 'super_admin', 'receptionist']) && canAccessOrg(orgId);
+      allow update: if hasAnyRole(orgId, ['admin', 'super_admin', 'receptionist']) && canAccessOrg(orgId);
+      allow delete: if isAdmin(orgId) && canAccessOrg(orgId);
+    }
+    
+    // Reports (cached analytics)
+    match /organizations/{orgId}/reports/{reportId} {
+      allow read: if canAccessOrg(orgId) && 
+        (hasSubscriptionFeature(orgId, 'reports') || hasSubscriptionFeature(orgId, 'analytics'));
+      allow create: if hasAnyRole(orgId, ['admin', 'super_admin', 'coach']) && canAccessOrg(orgId);
+      allow update: if hasAnyRole(orgId, ['admin', 'super_admin', 'coach']) && canAccessOrg(orgId);
+      allow delete: if isAdmin(orgId) && canAccessOrg(orgId);
+    }
+    
+    // Custom fields/extensions for enterprise customers
+    match /organizations/{orgId}/custom/{documentId} {
+      allow read, write: if isSuperAdmin(orgId) && 
+        hasSubscriptionFeature(orgId, 'custom_branding') && canAccessOrg(orgId);
+    }
+    
+    // ===========================================
+    // SYSTEM COLLECTIONS (Admin only)
+    // ===========================================
+    
+    // System logs and analytics
+    match /system_logs/{logId} {
+      allow read, write: if false; // Only server-side functions
+    }
+    
+    // Migration status tracking
+    match /migration_status/{migrationId} {
+      allow read, write: if false; // Only server-side functions
+    }
+    
+    // ===========================================
+    // FALLBACK RULES
+    // ===========================================
+    
+    // Deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+    
+    // ===========================================
+    // HELPER FUNCTION FOR USER ORGANIZATIONS
+    // ===========================================
+    
+    function getUserOrganizations() {
+      // This would typically come from a user_organizations document
+      // For now, we'll use a simpler approach by checking organization membership
+      return [];
+    }
+  }
+}

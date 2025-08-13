@@ -2,7 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:footballtraining/data/models/team_model.dart';
-import 'package:footballtraining/data/models/user_model.dart' as UserModel;
+import 'package:footballtraining/data/models/user_model.dart' as user_model;
+import 'package:footballtraining/services/logging_service.dart';
 
 class TeamService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -125,10 +126,10 @@ class TeamService {
 
       // 4. Delete from Firebase Auth (this should be done by admin)
       // Note: This requires admin privileges and should be handled server-side
-      print(
+      LoggingService.info(
           '✅ Coach $coachUserId successfully deleted from all teams and user collection');
     } catch (e) {
-      print('❌ Error deleting coach: $e');
+      LoggingService.error('❌ Error deleting coach', e);
       rethrow;
     }
   }
@@ -179,17 +180,17 @@ class TeamService {
   // 🔥 FIXED: Alternative query method for immediate debugging
   Future<List<Team>> getTeamsForCoachDebug(String coachUserId) async {
     try {
-      print('🔍 DEBUG: Getting teams for coach: $coachUserId');
+      LoggingService.debug('🔍 DEBUG: Getting teams for coach: $coachUserId');
 
       final snapshot = await _firestore.collection('teams').get();
-      print('📊 DEBUG: Total teams in database: ${snapshot.docs.length}');
+      LoggingService.debug('📊 DEBUG: Total teams in database: ${snapshot.docs.length}');
 
       final coachTeams = <Team>[];
 
       for (final doc in snapshot.docs) {
         final data = doc.data();
-        print('🏟️ DEBUG: Checking team: ${data['team_name']} (${doc.id})');
-        print('📋 DEBUG: Team data keys: ${data.keys.toList()}');
+        LoggingService.debug('🏟️ DEBUG: Checking team: ${data['team_name']} (${doc.id})');
+        LoggingService.debug('📋 DEBUG: Team data keys: ${data.keys.toList()}');
 
         // Check all possible coach storage methods
         bool isCoachInTeam = false;
@@ -197,7 +198,7 @@ class TeamService {
 
         // Check coach_ids array
         if (data['coach_ids'] != null) {
-          print('🔍 DEBUG: coach_ids found: ${data['coach_ids']}');
+          LoggingService.debug('🔍 DEBUG: coach_ids found: ${data['coach_ids']}');
           final coachIds = List<String>.from(data['coach_ids']);
           if (coachIds.contains(coachUserId)) {
             isCoachInTeam = true;
@@ -207,7 +208,7 @@ class TeamService {
 
         // Check coaches array
         if (data['coaches'] != null) {
-          print('🔍 DEBUG: coaches found: ${data['coaches']}');
+          LoggingService.debug('🔍 DEBUG: coaches found: ${data['coaches']}');
           final coaches = data['coaches'] as List;
           for (final coach in coaches) {
             if (coach is Map && (coach['userId'] == coachUserId || coach['coach_id'] == coachUserId)) {
@@ -220,7 +221,7 @@ class TeamService {
 
         // Check single coach
         if (data['coach'] != null) {
-          print('🔍 DEBUG: single coach found: ${data['coach']}');
+          LoggingService.debug('🔍 DEBUG: single coach found: ${data['coach']}');
           if (data['coach'] == coachUserId) {
             isCoachInTeam = true;
             foundMethod = 'single coach';
@@ -228,18 +229,18 @@ class TeamService {
         }
 
         if (isCoachInTeam) {
-          print('✅ DEBUG: Coach found in team via $foundMethod');
+          LoggingService.debug('✅ DEBUG: Coach found in team via $foundMethod');
           final team = Team.fromFirestore(doc);
           coachTeams.add(team);
         } else {
-          print('❌ DEBUG: Coach NOT found in this team');
+          LoggingService.debug('❌ DEBUG: Coach NOT found in this team');
         }
       }
 
-      print('🏆 DEBUG: Final result: ${coachTeams.length} teams found');
+      LoggingService.debug('🏆 DEBUG: Final result: ${coachTeams.length} teams found');
       return coachTeams;
     } catch (e) {
-      print('❌ DEBUG: Error getting teams: $e');
+      LoggingService.error('❌ DEBUG: Error getting teams', e);
       return [];
     }
   }
@@ -290,9 +291,9 @@ class TeamService {
         'updated_at': FieldValue.serverTimestamp(),
       });
 
-      print('✅ Coach added successfully: $coachUserId to team $teamId');
+      LoggingService.info('✅ Coach added successfully: $coachUserId to team $teamId');
     } catch (e) {
-      print('❌ Error adding coach: $e');
+      LoggingService.error('❌ Error adding coach', e);
       rethrow;
     }
   }
@@ -338,9 +339,9 @@ class TeamService {
         'updated_at': FieldValue.serverTimestamp(),
       });
 
-      print('✅ Coach removed successfully: $coachUserId from team $teamId');
+      LoggingService.info('✅ Coach removed successfully: $coachUserId from team $teamId');
     } catch (e) {
-      print('❌ Error removing coach: $e');
+      LoggingService.error('❌ Error removing coach', e);
       rethrow;
     }
   }
@@ -375,9 +376,9 @@ class TeamService {
         'updated_at': FieldValue.serverTimestamp(),
       });
 
-      print('✅ Coach role updated: $coachUserId -> $newRole');
+      LoggingService.info('✅ Coach role updated: $coachUserId -> $newRole');
     } catch (e) {
-      print('❌ Error updating coach role: $e');
+      LoggingService.error('❌ Error updating coach role', e);
       rethrow;
     }
   }
@@ -408,7 +409,7 @@ class TeamService {
       }
       return null;
     } catch (e) {
-      print('❌ Error getting team: $e');
+      LoggingService.error('❌ Error getting team', e);
       return null;
     }
   }
@@ -416,7 +417,7 @@ class TeamService {
   // COACH QUERY METHODS
 
   /// Get all available coaches for assignment
-  Future<List<UserModel.User>> getAvailableCoaches() async {
+  Future<List<user_model.User>> getAvailableCoaches() async {
     try {
       final querySnapshot = await _firestore
           .collection('users')
@@ -425,16 +426,16 @@ class TeamService {
           .get();
 
       return querySnapshot.docs
-          .map((doc) => UserModel.User.fromFirestore(doc))
+          .map((doc) => user_model.User.fromFirestore(doc))
           .toList();
     } catch (e) {
-      print('❌ Error getting available coaches: $e');
+      LoggingService.error('❌ Error getting available coaches', e);
       return [];
     }
   }
 
   /// Get coaches not assigned to a specific team
-  Future<List<UserModel.User>> getUnassignedCoaches(String teamId) async {
+  Future<List<user_model.User>> getUnassignedCoaches(String teamId) async {
     try {
       final team = await getTeamById(teamId);
       if (team == null) return [];
@@ -446,7 +447,7 @@ class TeamService {
           .where((coach) => !assignedCoachIds.contains(coach.id))
           .toList();
     } catch (e) {
-      print('❌ Error getting unassigned coaches: $e');
+      LoggingService.error('❌ Error getting unassigned coaches', e);
       return [];
     }
   }
@@ -464,7 +465,7 @@ class TeamService {
           final coachDoc =
               await _firestore.collection('users').doc(teamCoach.userId).get();
           if (coachDoc.exists) {
-            final coach = UserModel.User.fromFirestore(coachDoc);
+            final coach = user_model.User.fromFirestore(coachDoc);
             coachDetails.add({
               'teamCoach': teamCoach,
               'user': coach,
@@ -476,13 +477,13 @@ class TeamService {
             });
           }
         } catch (e) {
-          print('⚠️ Error getting coach details for ${teamCoach.userId}: $e');
+          LoggingService.warning('⚠️ Error getting coach details for ${teamCoach.userId}', e);
         }
       }
 
       return coachDetails;
     } catch (e) {
-      print('❌ Error getting team coach details: $e');
+      LoggingService.error('❌ Error getting team coach details', e);
       return [];
     }
   }
@@ -522,10 +523,10 @@ class TeamService {
       }
 
       final docRef = await _firestore.collection('teams').add(teamData);
-      print('✅ Team created successfully: ${docRef.id}');
+      LoggingService.info('✅ Team created successfully: ${docRef.id}');
       return docRef.id;
     } catch (e) {
-      print('❌ Error creating team: $e');
+      LoggingService.error('❌ Error creating team', e);
       rethrow;
     }
   }
@@ -538,9 +539,9 @@ class TeamService {
           .doc(team.id)
           .update(team.toFirestore());
 
-      print('✅ Team updated successfully: ${team.id}');
+      LoggingService.info('✅ Team updated successfully: ${team.id}');
     } catch (e) {
-      print('❌ Error updating team: $e');
+      LoggingService.error('❌ Error updating team', e);
       rethrow;
     }
   }
@@ -553,9 +554,9 @@ class TeamService {
         'updated_at': FieldValue.serverTimestamp(),
       });
 
-      print('✅ Team deleted successfully: $teamId');
+      LoggingService.info('✅ Team deleted successfully: $teamId');
     } catch (e) {
-      print('❌ Error deleting team: $e');
+      LoggingService.error('❌ Error deleting team', e);
       rethrow;
     }
   }
@@ -599,9 +600,9 @@ class TeamService {
         }
       }
 
-      print('✅ Migration completed: $migratedCount teams migrated');
+      LoggingService.info('✅ Migration completed: $migratedCount teams migrated');
     } catch (e) {
-      print('❌ Error during migration: $e');
+      LoggingService.error('❌ Error during migration', e);
       rethrow;
     }
   }
@@ -652,7 +653,7 @@ class TeamService {
         'issues': issues,
       };
     } catch (e) {
-      print('❌ Error validating teams: $e');
+      LoggingService.error('❌ Error validating teams', e);
       return {
         'error': e.toString(),
       };
@@ -697,7 +698,7 @@ class TeamService {
         'coachRoleDistribution': coachRoleDistribution,
       };
     } catch (e) {
-      print('❌ Error getting team statistics: $e');
+      LoggingService.error('❌ Error getting team statistics', e);
       return {'error': e.toString()};
     }
   }
