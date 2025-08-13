@@ -7,6 +7,7 @@
   "password": "Jelszó",
   "loginButton": "Bejelentkezés",
   "adminManagement": "Admin kezelés",
+  "createNewOrganization": "Új szervezet létrehozása",
   
   "adminScreen": "Admin felület",
   "coachScreen": "Edző felület", 
@@ -910,5 +911,163 @@
   "marketingEmails": "Marketing e-mailek",
   "securityAlerts": "Biztonsági riasztások",
   "refreshing": "Frissítés...",
-  "seeAll": "Összes megtekintése"
+  "seeAll": "Összes megtekintése",
+
+  "teamReportTitle": "Csapat jelentés",
+  "teamDetails": "Csapat részletek",
+  "positionDistribution": "Pozíció eloszlás",
+  "teamPlayersCount": "Csapat játékosok ({count})",
+  "@teamPlayersCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "goalkeeper": "Kapus",
+  "defender": "Védő", 
+  "midfielder": "Középpályás",
+  "forward": "Támadó",
+  "averageAge": "Átlagos életkor",
+  "noPlayersFound": "Nem található játékos ehhez a csapathoz.",
+  "loadingTeamDetails": "Csapat részletek betöltése...",
+  "loadingPlayers": "Játékosok betöltése...",
+  "calculatingStatistics": "Statisztikák számítása...",
+  "errorLoadingTeamData": "Hiba a csapat adatok betöltésekor",
+  "errorLoadingPlayers": "Hiba a csapat játékosok betöltésekor",
+  "pdfSuccessfullyGenerated": "PDF sikeresen generálva!",
+  "errorGeneratingPdfReport": "Hiba a PDF jelentés generálásakor: {error}",
+  "@errorGeneratingPdfReport": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "generating": "Generálás...",
+  "noDescription": "Nincs leírás",
+  "unknownPlayer": "Ismeretlen játékos",
+  "cannotLoadPlayerDetails": "Nem lehet betölteni a részleteket: Hiányzó játékos azonosító.",
+  "loadingPlayerDetails": "Játékos részletek betöltése...",
+  "playerDetailsNotFound": "Játékos részletek nem találhatók.",
+  "errorLoadingPlayerDetails": "Hiba a játékos részletek betöltésekor.",
+  
+  "profile": "Profil",
+  "help": "Súgó",
+  "about": "Névjegy",
+
+  "updateCloseSession": "Frissítés és edzés bezárása",
+  "trainingActive": "Edzés aktív",
+  "endsAt": "Vége: {time}",
+  "@endsAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "closed": "Bezárva",
+  "notesOptional": "Megjegyzések (opcionális)",
+  "manageYourProfile": "Profil kezelése",
+  "themeSettings": "Téma beállítások",
+  "contact": "Kapcsolat",
+  "callSupport": "Támogatás hívása",
+  "emailSupport": "Email támogatás",
+  "getHelpSupport": "Segítségkérés és támogatás",
+  "appInformation": "Alkalmazás információk",
+  "signOutAccount": "Kijelentkezés a fiókból",
+  "confirmSignOut": "Biztosan ki szeretne jelentkezni a fiókjából?",
+  "tapToChangePhoto": "Koppintson a fénykép megváltoztatásához",
+  "uploadPhoto": "Fénykép feltöltése",
+  "nameField": "Név",
+  "emailField": "E-mail",
+  "saveButton": "Mentés",
+
+  "trainingTypeGame": "Mérkőzés",
+  "trainingTypeTraining": "Edzés", 
+  "trainingTypeTactical": "Taktikai",
+  "trainingTypeFitness": "Erőnléti",
+  "trainingTypeTechnical": "Technikai",
+  "trainingTypeTheoretical": "Elméleti",
+  "trainingTypeSurvey": "Felmérés",
+  "trainingTypeMixed": "Vegyes",
+
+  "trainingDescGame": "Hivatalos vagy gyakorló mérkőzések más csapatok ellen",
+  "trainingDescTraining": "Általános edzés készségfejlesztéssel és kondicionálással",
+  "trainingDescTactical": "Taktikai formációk, stratégiák és csapatjáték gyakorlása",
+  "trainingDescFitness": "Kondicionáló edzés, erősítő gyakorlatok és állóképesség fejlesztés",
+  "trainingDescTechnical": "Egyéni technikai készségek: labdavezetés, lövés, passzolás",
+  "trainingDescTheoretical": "Taktikai megbeszélések, játékszabályok és stratégiai tervezés",
+  "trainingDescSurvey": "Játékos értékelések, tesztelések és készségfelmérések",
+  "trainingDescMixed": "Kombinált edzés több típus elemével",
+
+  "unknownCoachName": "Ismeretlen edző",
+  "notSpecified": "Nincs megadva",
+  "trainingSessionSaved": "Edzés elmentve! Még egyszer szerkesztheti.",
+  "errorLoadingTeams": "Hiba a csapatok betöltésekor",
+  "noTeamsAssigned": "Nincs hozzárendelt csapat",
+  "trainingActive": "Edzés aktív",
+  "trainingEndsAt": "Vége: {time}",
+  "@trainingEndsAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "errorLoadingPlayers": "Hiba a játékosok betöltésekor",
+  "noPlayersFoundInTeam": "Nem található játékos ebben a csapatban",
+  "themeTitle": "Téma",
+  "coachRole": "Edző",
+  "callPhoneNumber": "Hívás: {phoneNumber}\nKoppintson a telefonszámra másoláshoz és tárcsázáshoz",
+  "@callPhoneNumber": {
+    "placeholders": {
+      "phoneNumber": {
+        "type": "String"
+      }
+    }
+  },
+  "emailAddress": "Email: {email}\nKoppintson az emailre másoláshoz és küldéshez",
+  "@emailAddress": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "themeSettingsComingSoon": "Téma beállítások",
+  "darkModeComingSoon": "Sötét mód és téma testreszabási lehetőségek hamarosan elérhetők lesznek.",
+  "languageChanged": "Nyelv megváltoztatva: {languageName}",
+  "@languageChanged": {
+    "placeholders": {
+      "languageName": {
+        "type": "String"
+      }
+    }
+  },
+  "helpSupportComingSoon": "Súgó és támogatás hamarosan",
+  "footballTrainingApp": "Futballedzés alkalmazás",
+  "versionLabel": "Verzió: 1.0.0",
+  "appDescription": "Átfogó futballedzés kezelő rendszer.",
+  "uploadTimeout": "Feltöltési időtúllépés. Kérjük, ellenőrizze a kapcsolatot.",
+  "userNotAuthenticated": "Felhasználó nincs hitelesítve vagy szervezet nincs inicializálva",
+  "currentPasswordRequiredForChanges": "Jelenlegi jelszó szükséges az email vagy jelszó változtatásához",
+  "nameLabel": "Név",
+  "emailLabel": "Email",
+  "changePasswordLabel": "Jelszó megváltoztatása",
+  "currentPasswordLabel": "Jelenlegi jelszó",
+  "newPasswordLabel": "Új jelszó",
+  "confirmNewPasswordLabel": "Új jelszó megerősítése",
+  "saveLabel": "Mentés",
+  
+  "theme": "Téma",
+  "lightMode": "Világos mód",
+  "darkMode": "Sötét mód",
+  "contact": "Kapcsolat",
+  "phoneSupport": "Telefonos támogatás",
+  "emailSupport": "E-mail támogatás",
+  "support": "Támogatás",
+  "profileManagement": "Profil kezelése",
+  "helpAndSupport": "Segítség és támogatás",
+  "applicationInfo": "Alkalmazás információ"
 }
