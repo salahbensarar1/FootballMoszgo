@@ -7,6 +7,7 @@
   "password": "Password",
   "loginButton": "Login",
   "adminManagement": "Admin Management",
+  "createNewOrganization": "Create New Organization",
   
   "adminScreen": "Admin Screen",
   "coachScreen": "Coach Screen",
@@ -857,5 +858,313 @@
   "systemNotifications": "System Notifications",
   "securityAlerts": "Security Alerts",
   "refreshing": "Refreshing...",
-  "seeAll": "See All"
+  "seeAll": "See All",
+  
+  "organizationSetup": "Organization Setup",
+  "stepBasicInfo": "Basic Information", 
+  "stepAdminUser": "Administrator",
+  "stepTeamSetup": "Team Setup",
+  "stepPaymentConfig": "Payment Configuration",
+  "stepReview": "Review & Complete",
+  
+  "organizationName": "Organization Name",
+  "organizationAddress": "Organization Address",
+  "organizationType": "Organization Type",
+  "selectOrgType": "Select organization type",
+  "club": "Club",
+  "school": "School",
+  "academy": "Academy",
+  "other": "Other",
+  
+  "adminSetup": "Administrator Setup",
+  "adminName": "Administrator Name",
+  "adminEmail": "Administrator Email",
+  "adminPassword": "Administrator Password",
+  "createAdminAccount": "Create administrator account",
+  
+  "teamSetupTitle": "Create Initial Teams",
+  "addTeamsDescription": "Add teams and sample players to get started",
+  "enterTeamName": "Enter team name",
+  "addSamplePlayers": "Add sample players",
+  "samplesPerTeam": "players per team",
+  
+  "paymentConfiguration": "Payment Configuration",
+  "defaultMonthlyFee": "Default Monthly Fee",
+  "currency": "Currency",
+  "selectCurrency": "Select currency",
+  "paymentDueDay": "Payment Due Day",
+  "dueDayDescription": "Day of the month when payments are due",
+  
+  "reviewAndComplete": "Review & Complete",
+  "setupSummary": "Setup Summary",
+  "reviewDetails": "Review your organization details below",
+  "finishSetup": "Finish Setup",
+  "backToPrevious": "Back to Previous",
+  "nextStep": "Next Step",
+  
+  "setupInProgress": "Setup in Progress...",
+  "creatingOrganization": "Creating organization...",
+  "creatingAdminAccount": "Creating admin account...",
+  "settingUpTeams": "Setting up teams...",
+  "configuringPayments": "Configuring payments...",
+  "finalizingSetup": "Finalizing setup...",
+  
+  "setupCompleteTitle": "Setup Complete!",
+  "setupCompleteMessage": "Your organization has been successfully created",
+  "getStarted": "Get Started",
+  
+  "setupError": "Setup Error",
+  "setupErrorMessage": "An error occurred during setup. Please try again.",
+  "contactSupportIfPersists": "Contact support if this error persists.",
+  
+  "processingRequest": "Processing request...",
+  "pleaseWait": "Please wait...",
+  "almostDone": "Almost done...",
+  
+  "demoOrganization": "Demo Organization",
+  "demoMode": "Demo Mode",
+  "demoDataWarning": "This is demo data. Changes will not be saved permanently.",
+  
+  "cleanupDemoData": "Cleanup Demo Data",
+  "cleanupDescription": "Remove all demo organizations older than 24 hours",
+  "performCleanup": "Perform Cleanup",
+  "cleanupComplete": "Cleanup complete",
+  "noOldDemoData": "No old demo data found to cleanup",
+  
+  "offlineMode": "Offline Mode",
+  "connectionLost": "Connection lost",
+  "reconnecting": "Reconnecting...",
+  "retryConnection": "Retry Connection",
+  "offlineChanges": "Changes will be synced when connection is restored",
+  
+  "validationError": "Validation Error",
+  "fieldRequired": "This field is required",
+  "invalidFormat": "Invalid format",
+  "mustBeNumber": "Must be a valid number",
+  "mustBePositive": "Must be a positive number",
+  "tooShort": "Too short",
+  "tooLong": "Too long",
+  
+  "organizationExists": "Organization with this name already exists",
+  "emailTaken": "Email address is already taken",
+  "weakPassword": "Password is too weak",
+  "invalidEmailFormat": "Invalid email format",
+  "organizationNameTooShort": "Organization name is too short",
+  "addressRequired": "Address is required",
+  
+  "loadingOrganizations": "Loading organizations...",
+  "selectExistingOrg": "Select existing organization",
+  "createNewOrg": "Create new organization",
+  "joinOrganization": "Join Organization",
+  "switchOrganization": "Switch Organization",
+  "noOrganizationAccess": "You don't have access to any organizations",
+  
+  "resumeSetup": "Resume Setup",
+  "continueSetup": "Continue Setup", 
+  "startFresh": "Start Fresh",
+  "setupInterrupted": "Your setup was interrupted",
+  "resumeFromStep": "Resume from step {stepNumber}",
+  "@resumeFromStep": {
+    "placeholders": {
+      "stepNumber": {
+        "type": "String"
+      }
+    }
+  },
+  "abandonSetup": "Abandon Setup",
+  
+  "networkTimeoutError": "Network timeout. Please check your connection.",
+  "serverError": "Server error. Please try again later.",
+  "rateLimitExceeded": "Too many requests. Please wait before trying again.",
+  "operationCancelled": "Operation was cancelled",
+  
+  "batchOperationInProgress": "Batch operation in progress...",
+  "processingItems": "Processing {current} of {total} items...",
+  "@processingItems": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+
+  "teamReportTitle": "Team Report",
+  "teamDetails": "Team Details",
+  "positionDistribution": "Position Distribution",
+  "teamPlayersCount": "Team Players ({count})",
+  "@teamPlayersCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "goalkeeper": "Goalkeeper",
+  "defender": "Defender", 
+  "midfielder": "Midfielder",
+  "forward": "Forward",
+  "averageAge": "Average Age",
+  "noPlayersFound": "No players found for this team.",
+  "loadingTeamDetails": "Loading team details...",
+  "loadingPlayers": "Loading players...",
+  "calculatingStatistics": "Calculating statistics...",
+  "errorLoadingTeamData": "Error loading team data",
+  "errorLoadingPlayers": "Error loading team players",
+  "pdfSuccessfullyGenerated": "PDF successfully generated!",
+  "errorGeneratingPdfReport": "Error generating PDF report: {error}",
+  "@errorGeneratingPdfReport": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "generating": "Generating...",
+  "noDescription": "No description",
+  "unknownPlayer": "Unknown Player",
+  "cannotLoadPlayerDetails": "Cannot load details: Missing player ID.",
+  "loadingPlayerDetails": "Loading player details...",
+  "playerDetailsNotFound": "Player details not found.",
+  "errorLoadingPlayerDetails": "Error loading player details.",
+  
+  "profile": "Profile",
+  "help": "Help",
+  "about": "About",
+
+  "selectTeam": "Select Team",
+  "updateCloseSession": "Update & Close Session",
+  "trainingActive": "Training Active",
+  "endsAt": "Ends at {time}",
+  "@endsAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "closed": "Closed",
+  "notesOptional": "Notes (optional)",
+  "manageYourProfile": "Manage your profile",
+  "themeSettings": "Theme Settings",
+  "callSupport": "Call Support",
+  "emailSupport": "Email Support",
+  "getHelpSupport": "Get help & support",
+  "appInformation": "App information",
+  "signOutAccount": "Sign out of your account",
+  "confirmSignOut": "Are you sure you want to sign out of your account?",
+  "tapToChangePhoto": "Tap to change photo",
+  "uploadPhoto": "Upload Photo",
+  "nameField": "Name",
+  "emailField": "Email",
+  "saveButton": "Save",
+
+  "trainingTypeGame": "Game",
+  "trainingTypeTraining": "Training", 
+  "trainingTypeTactical": "Tactical",
+  "trainingTypeFitness": "Fitness",
+  "trainingTypeTechnical": "Technical",
+  "trainingTypeTheoretical": "Theoretical",
+  "trainingTypeSurvey": "Survey",
+  "trainingTypeMixed": "Mixed",
+
+  "trainingDescGame": "Official or practice matches against other teams",
+  "trainingDescTraining": "General training with skill development and conditioning",
+  "trainingDescTactical": "Tactical formations, strategies, and team play practice",
+  "trainingDescFitness": "Conditioning workouts, strength training, and endurance building",
+  "trainingDescTechnical": "Individual technical skills: dribbling, shooting, passing",
+  "trainingDescTheoretical": "Tactical discussions, game rules, and strategic planning",
+  "trainingDescSurvey": "Player assessments, testing, and skill evaluations",
+  "trainingDescMixed": "Combined training with elements from multiple types",
+
+  "unknownCoachName": "Unknown Coach",
+  "notSpecified": "Not specified",
+  "trainingSessionSaved": "Training session saved! You can edit it once more.",
+  "errorLoadingTeams": "Error loading teams",
+  "noTeamsAssigned": "No teams assigned",
+  "trainingActive": "Training Active",
+  "trainingEndsAt": "Ends at {time}",
+  "@trainingEndsAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "errorLoadingPlayers": "Error loading players",
+  "noPlayersFoundInTeam": "No players found in this team",
+  "themeTitle": "Theme",
+  "coachRole": "Coach",
+  "callPhoneNumber": "Call: {phoneNumber}\nTap phone number to copy and dial",
+  "@callPhoneNumber": {
+    "placeholders": {
+      "phoneNumber": {
+        "type": "String"
+      }
+    }
+  },
+  "emailAddress": "Email: {email}\nTap email to copy and send",
+  "@emailAddress": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "themeSettingsComingSoon": "Theme Settings",
+  "darkModeComingSoon": "Dark mode and theme customization options will be available soon.",
+  "languageChanged": "Language changed to {languageName}",
+  "@languageChanged": {
+    "placeholders": {
+      "languageName": {
+        "type": "String"
+      }
+    }
+  },
+  "helpSupportComingSoon": "Help & Support coming soon",
+  "footballTrainingApp": "FootballTraining App",
+  "versionLabel": "Version: 1.0.0",
+  "appDescription": "A comprehensive football training management system.",
+  "uploadTimeout": "Upload timeout. Please check your connection.",
+  "userNotAuthenticated": "User not authenticated or organization not initialized",
+  "currentPasswordRequiredForChanges": "Current password is required for email or password changes",
+  "nameLabel": "Name",
+  "emailLabel": "Email",
+  "changePasswordLabel": "Change Password",
+  "currentPasswordLabel": "Current Password",
+  "newPasswordLabel": "New Password",
+  "confirmNewPasswordLabel": "Confirm New Password",
+    "saveLabel": "Save",
+  
+  "theme": "Theme",
+  "lightMode": "Light Mode",
+  "darkMode": "Dark Mode",
+  "contact": "Contact",
+  "phoneSupport": "Phone Support",
+  "emailSupport": "Email Support",
+  "support": "Support",
+  "profileManagement": "Profile Management",
+  "helpAndSupport": "Help and Support",
+  "applicationInfo": "Application Information",
+    "helpAndSupport": "Help and Support",
+  "applicationInfo": "Application Information",
+  "account": "Account",
+  "profile": "Profile",
+  "language": "Language",
+  "help": "Help",
+  "about": "About",
+  "signOutAccount": "Sign Out",
+  "confirmSignOut": "Are you sure you want to sign out of your account?",
+  
+  "trainingTypeGame": "Game",
+  "trainingTypeTraining": "Training",
+  "trainingTypeTactical": "Tactical",
+  "trainingTypeFitness": "Fitness",
+  "trainingTypeTechnical": "Technical",
+  "trainingTypeTheoretical": "Theoretical",
+  "trainingTypeSurvey": "Survey",
+  "trainingTypeMixed": "Mixed"
 }
+
