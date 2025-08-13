@@ -391,11 +391,15 @@ class _AdminScreenState extends State<AdminScreen>
   Widget _buildTabBar(AppLocalizations l10n, List<String> tabs) {
     final size = MediaQuery.of(context).size;
     final isTablet = size.width > 768;
-    final tabHeight = isTablet ? 88.0 : 80.0;
+    final isMobile = size.width < 480;
+    final tabHeight = isTablet ? 88.0 : (isMobile ? 70.0 : 80.0);
     
     return Container(
       height: tabHeight,
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: EdgeInsets.symmetric(
+        horizontal: isMobile ? 12 : 16, 
+        vertical: isMobile ? 8 : 12
+      ),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
@@ -425,41 +429,66 @@ class _AdminScreenState extends State<AdminScreen>
           ),
           indicatorSize: TabBarIndicatorSize.tab,
           dividerColor: Colors.transparent,
-          labelPadding: EdgeInsets.symmetric(horizontal: 8),
+          labelPadding: EdgeInsets.symmetric(horizontal: isMobile ? 4 : 8),
           tabs: tabs.asMap().entries.map((entry) {
             final index = entry.key;
             final title = entry.value;
             final isActive = currentTab == index;
 
-            final tabContentHeight = isTablet ? 56.0 : 50.0;
+            final tabContentHeight = isTablet ? 56.0 : (isMobile ? 44.0 : 50.0);
+            final fontSize = isTablet ? 14.0 : (isMobile ? 11.0 : 13.0);
+            final iconSize = isTablet ? 22.0 : (isMobile ? 18.0 : 20.0);
+            
             return Tab(
               height: tabContentHeight,
               child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 12),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      isActive
-                          ? tabConfigs[index].activeIcon
-                          : tabConfigs[index].icon,
-                      size: 20,
-                      color: isActive ? Colors.white : Colors.grey.shade600,
-                    ),
-                    SizedBox(width: 8),
-                    Flexible(
-                      child: Text(
-                        title,
-                        style: GoogleFonts.poppins(
-                          fontSize: 13,
-                          fontWeight:
-                              isActive ? FontWeight.w600 : FontWeight.w500,
+                padding: EdgeInsets.symmetric(
+                  horizontal: isMobile ? 6 : 12
+                ),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final availableWidth = constraints.maxWidth;
+                    final showText = availableWidth > 60;
+                    
+                    if (!showText) {
+                      return Icon(
+                        isActive
+                            ? tabConfigs[index].activeIcon
+                            : tabConfigs[index].icon,
+                        size: iconSize,
+                        color: isActive ? Colors.white : Colors.grey.shade600,
+                      );
+                    }
+                    
+                    return Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          isActive
+                              ? tabConfigs[index].activeIcon
+                              : tabConfigs[index].icon,
+                          size: iconSize,
                           color: isActive ? Colors.white : Colors.grey.shade600,
                         ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
+                        if (!isMobile) ...[
+                          SizedBox(width: 6),
+                          Flexible(
+                            child: Text(
+                              title,
+                              style: GoogleFonts.poppins(
+                                fontSize: fontSize,
+                                fontWeight:
+                                    isActive ? FontWeight.w600 : FontWeight.w500,
+                                color: isActive ? Colors.white : Colors.grey.shade600,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
+                          ),
+                        ],
+                      ],
+                    );
+                  },
                 ),
               ),
             );
@@ -470,9 +499,18 @@ class _AdminScreenState extends State<AdminScreen>
   }
 
   Widget _buildSearchBar(AppLocalizations l10n, List<String> tabs) {
+    final size = MediaQuery.of(context).size;
+    final isMobile = size.width < 480;
+    
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: EdgeInsets.symmetric(
+        horizontal: isMobile ? 12 : 16, 
+        vertical: 8
+      ),
       child: Container(
+        constraints: BoxConstraints(
+          maxWidth: size.width - (isMobile ? 24 : 32)
+        ),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
@@ -487,15 +525,18 @@ class _AdminScreenState extends State<AdminScreen>
         child: TextField(
           controller: _searchController,
           onChanged: (value) => setState(() => searchQuery = value),
+          style: GoogleFonts.poppins(
+            fontSize: isMobile ? 13 : 14,
+          ),
           decoration: InputDecoration(
             hintText: l10n.searchHint(tabs[currentTab]),
             hintStyle: GoogleFonts.poppins(
               color: Colors.grey.shade500,
-              fontSize: 14,
+              fontSize: isMobile ? 13 : 14,
             ),
             prefixIcon: Container(
-              margin: EdgeInsets.all(12),
-              padding: EdgeInsets.all(8),
+              margin: EdgeInsets.all(isMobile ? 10 : 12),
+              padding: EdgeInsets.all(6),
               decoration: BoxDecoration(
                 color: Color(0xFFF27121).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
@@ -503,21 +544,31 @@ class _AdminScreenState extends State<AdminScreen>
               child: Icon(
                 Icons.search_rounded,
                 color: Color(0xFFF27121),
-                size: 20,
+                size: isMobile ? 18 : 20,
               ),
             ),
             suffixIcon: searchQuery.isNotEmpty
                 ? IconButton(
-                    icon:
-                        Icon(Icons.clear_rounded, color: Colors.grey.shade400),
+                    icon: Icon(
+                      Icons.clear_rounded, 
+                      color: Colors.grey.shade400,
+                      size: isMobile ? 18 : 20,
+                    ),
                     onPressed: () {
                       _searchController.clear();
                       setState(() => searchQuery = "");
                     },
+                    constraints: BoxConstraints(
+                      minWidth: isMobile ? 36 : 44,
+                      minHeight: isMobile ? 36 : 44,
+                    ),
                   )
                 : null,
             border: InputBorder.none,
-            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: 16, 
+              vertical: isMobile ? 12 : 16
+            ),
           ),
         ),
       ),
@@ -720,6 +771,9 @@ class _AdminScreenState extends State<AdminScreen>
   Widget _buildTrainingSessionCard(
       DocumentSnapshot sessionDoc, AppLocalizations l10n) {
     final data = sessionDoc.data() as Map<String, dynamic>? ?? {};
+    final size = MediaQuery.of(context).size;
+    final isMobile = size.width < 480;
+    final isTablet = size.width > 768;
 
     final teamName = data['team'] ?? 'N/A';
     final trainingType = data['training_type'] ?? 'N/A';
@@ -743,6 +797,143 @@ class _AdminScreenState extends State<AdminScreen>
           .length;
     }
 
+    if (isMobile) {
+      return Card(
+        elevation: 0,
+        margin: EdgeInsets.symmetric(vertical: 4),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: Colors.grey.shade200),
+        ),
+        child: InkWell(
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => SessionReportScreen(sessionDoc: sessionDoc),
+            ),
+          ),
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                        ),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.event_available_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            teamName,
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                              color: Colors.grey.shade800,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
+                          Text(
+                            trainingType,
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color: Colors.grey.shade600,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: attendeeCount > 0
+                            ? Colors.green.shade50
+                            : Colors.red.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '$attendeeCount/$totalPlayers',
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12,
+                          color: attendeeCount > 0
+                              ? Colors.green.shade700
+                              : Colors.red.shade700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 8),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.person_outline,
+                      size: 14,
+                      color: Colors.grey.shade500,
+                    ),
+                    SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        coachName,
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: Colors.grey.shade600,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.access_time_rounded,
+                      size: 14,
+                      color: Colors.grey.shade500,
+                    ),
+                    SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                        '$dateStr at $timeStr',
+                        style: GoogleFonts.poppins(
+                          fontSize: 11,
+                          color: Colors.grey.shade500,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
@@ -758,12 +949,12 @@ class _AdminScreenState extends State<AdminScreen>
         ),
         borderRadius: BorderRadius.circular(16),
         child: Padding(
-          padding: EdgeInsets.all(16),
+          padding: EdgeInsets.all(isTablet ? 20 : 16),
           child: Row(
             children: [
               Container(
-                width: 60,
-                height: 60,
+                width: isTablet ? 70 : 60,
+                height: isTablet ? 70 : 60,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
@@ -773,10 +964,10 @@ class _AdminScreenState extends State<AdminScreen>
                 child: Icon(
                   Icons.event_available_rounded,
                   color: Colors.white,
-                  size: 28,
+                  size: isTablet ? 32 : 28,
                 ),
               ),
-              SizedBox(width: 16),
+              SizedBox(width: isTablet ? 20 : 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -785,34 +976,40 @@ class _AdminScreenState extends State<AdminScreen>
                       '$teamName - $trainingType',
                       style: GoogleFonts.poppins(
                         fontWeight: FontWeight.w600,
-                        fontSize: 16,
+                        fontSize: isTablet ? 18 : 16,
                         color: Colors.grey.shade800,
                       ),
                       overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
                     ),
                     SizedBox(height: 4),
                     Text(
                       coachName,
                       style: GoogleFonts.poppins(
-                        fontSize: 14,
+                        fontSize: isTablet ? 16 : 14,
                         color: Colors.grey.shade600,
                       ),
                       overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
                     ),
                     SizedBox(height: 8),
                     Row(
                       children: [
                         Icon(
                           Icons.access_time_rounded,
-                          size: 16,
+                          size: isTablet ? 18 : 16,
                           color: Colors.grey.shade500,
                         ),
                         SizedBox(width: 4),
-                        Text(
-                          '$dateStr at $timeStr',
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            color: Colors.grey.shade500,
+                        Flexible(
+                          child: Text(
+                            '$dateStr at $timeStr',
+                            style: GoogleFonts.poppins(
+                              fontSize: isTablet ? 14 : 12,
+                              color: Colors.grey.shade500,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
                           ),
                         ),
                       ],
@@ -821,7 +1018,10 @@ class _AdminScreenState extends State<AdminScreen>
                 ),
               ),
               Container(
-                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: EdgeInsets.symmetric(
+                  horizontal: isTablet ? 16 : 12, 
+                  vertical: isTablet ? 12 : 8
+                ),
                 decoration: BoxDecoration(
                   color: attendeeCount > 0
                       ? Colors.green.shade50
@@ -834,7 +1034,7 @@ class _AdminScreenState extends State<AdminScreen>
                       '$attendeeCount/$totalPlayers',
                       style: GoogleFonts.poppins(
                         fontWeight: FontWeight.w700,
-                        fontSize: 16,
+                        fontSize: isTablet ? 18 : 16,
                         color: attendeeCount > 0
                             ? Colors.green.shade700
                             : Colors.red.shade700,
@@ -843,7 +1043,7 @@ class _AdminScreenState extends State<AdminScreen>
                     Text(
                       l10n.present,
                       style: GoogleFonts.poppins(
-                        fontSize: 10,
+                        fontSize: isTablet ? 12 : 10,
                         color: Colors.grey.shade600,
                       ),
                     ),
@@ -859,11 +1059,123 @@ class _AdminScreenState extends State<AdminScreen>
 
   Widget _buildPlayerCard(DocumentSnapshot playerDoc, AppLocalizations l10n) {
     final data = playerDoc.data() as Map<String, dynamic>? ?? {};
+    final size = MediaQuery.of(context).size;
+    final isMobile = size.width < 480;
+    final isTablet = size.width > 768;
 
     final name = data['name'] ?? 'No Name';
     final position = data['position'] ?? 'N/A';
     final teamName = data['team'] ?? 'No Team';
     final pictureUrl = data['picture'] as String?;
+
+    if (isMobile) {
+      return Card(
+        elevation: 0,
+        margin: EdgeInsets.symmetric(vertical: 4),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: Colors.grey.shade200),
+        ),
+        child: InkWell(
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => PlayerReportScreen(playerDoc: playerDoc),
+            ),
+          ),
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: EdgeInsets.all(12),
+            child: Row(
+              children: [
+                Hero(
+                  tag: 'player_${playerDoc.id}',
+                  child: Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.grey.shade200, width: 2),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 4,
+                          offset: Offset(0, 1),
+                        ),
+                      ],
+                    ),
+                    child: CircleAvatar(
+                      radius: 22,
+                      backgroundColor: Colors.grey.shade100,
+                      backgroundImage: (pictureUrl?.isNotEmpty == true)
+                          ? NetworkImage(pictureUrl!)
+                          : AssetImage("assets/images/default_profile.jpeg")
+                              as ImageProvider,
+                    ),
+                  ),
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        name,
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                          color: Colors.grey.shade800,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                      SizedBox(height: 2),
+                      Row(
+                        children: [
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Color(0xFF10B981).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              position,
+                              style: GoogleFonts.poppins(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFF10B981),
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              teamName,
+                              style: GoogleFonts.poppins(
+                                fontSize: 12,
+                                color: Colors.grey.shade600,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: Colors.grey.shade400,
+                  size: 20,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     return Card(
       elevation: 0,
@@ -880,14 +1192,14 @@ class _AdminScreenState extends State<AdminScreen>
         ),
         borderRadius: BorderRadius.circular(16),
         child: Padding(
-          padding: EdgeInsets.all(16),
+          padding: EdgeInsets.all(isTablet ? 20 : 16),
           child: Row(
             children: [
               Hero(
                 tag: 'player_${playerDoc.id}',
                 child: Container(
-                  width: 60,
-                  height: 60,
+                  width: isTablet ? 70 : 60,
+                  height: isTablet ? 70 : 60,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(color: Colors.grey.shade200, width: 2),
@@ -900,7 +1212,7 @@ class _AdminScreenState extends State<AdminScreen>
                     ],
                   ),
                   child: CircleAvatar(
-                    radius: 30,
+                    radius: isTablet ? 35 : 30,
                     backgroundColor: Colors.grey.shade100,
                     backgroundImage: (pictureUrl?.isNotEmpty == true)
                         ? NetworkImage(pictureUrl!)
@@ -909,7 +1221,7 @@ class _AdminScreenState extends State<AdminScreen>
                   ),
                 ),
               ),
-              SizedBox(width: 16),
+              SizedBox(width: isTablet ? 20 : 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -918,17 +1230,20 @@ class _AdminScreenState extends State<AdminScreen>
                       name,
                       style: GoogleFonts.poppins(
                         fontWeight: FontWeight.w600,
-                        fontSize: 16,
+                        fontSize: isTablet ? 18 : 16,
                         color: Colors.grey.shade800,
                       ),
                       overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
                     ),
                     SizedBox(height: 4),
                     Row(
                       children: [
                         Container(
-                          padding:
-                              EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: isTablet ? 10 : 8, 
+                            vertical: isTablet ? 6 : 4
+                          ),
                           decoration: BoxDecoration(
                             color: Color(0xFF10B981).withOpacity(0.1),
                             borderRadius: BorderRadius.circular(8),
@@ -936,7 +1251,7 @@ class _AdminScreenState extends State<AdminScreen>
                           child: Text(
                             position,
                             style: GoogleFonts.poppins(
-                              fontSize: 12,
+                              fontSize: isTablet ? 14 : 12,
                               fontWeight: FontWeight.w500,
                               color: Color(0xFF10B981),
                             ),
@@ -945,7 +1260,7 @@ class _AdminScreenState extends State<AdminScreen>
                         SizedBox(width: 8),
                         Icon(
                           Icons.group_outlined,
-                          size: 16,
+                          size: isTablet ? 18 : 16,
                           color: Colors.grey.shade500,
                         ),
                         SizedBox(width: 4),
@@ -953,10 +1268,11 @@ class _AdminScreenState extends State<AdminScreen>
                           child: Text(
                             teamName,
                             style: GoogleFonts.poppins(
-                              fontSize: 14,
+                              fontSize: isTablet ? 16 : 14,
                               color: Colors.grey.shade600,
                             ),
                             overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
                           ),
                         ),
                       ],
@@ -967,7 +1283,7 @@ class _AdminScreenState extends State<AdminScreen>
               Icon(
                 Icons.chevron_right_rounded,
                 color: Colors.grey.shade400,
-                size: 24,
+                size: isTablet ? 28 : 24,
               ),
             ],
           ),
@@ -978,10 +1294,121 @@ class _AdminScreenState extends State<AdminScreen>
 
   Widget _buildTeamCard(DocumentSnapshot teamDoc, AppLocalizations l10n) {
     final data = teamDoc.data() as Map<String, dynamic>? ?? {};
+    final size = MediaQuery.of(context).size;
+    final isMobile = size.width < 480;
+    final isTablet = size.width > 768;
 
     final teamName = data['team_name'] ?? 'No Team Name';
     final playerCount = data['number_of_players'] ?? 0;
     final teamDescription = data['team_description'] ?? '';
+
+    if (isMobile) {
+      return Card(
+        elevation: 0,
+        margin: EdgeInsets.symmetric(vertical: 4),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: Colors.grey.shade200),
+        ),
+        child: InkWell(
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) => TeamReportScreen(teamDoc: teamDoc)),
+          ),
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
+                        ),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.groups_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        teamName,
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                          color: Colors.grey.shade800,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                    ),
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: playerCount > 0
+                            ? Colors.blue.shade50
+                            : Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '$playerCount',
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                          color: playerCount > 0
+                              ? Colors.blue.shade700
+                              : Colors.grey.shade600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                if (teamDescription.isNotEmpty) ...[
+                  SizedBox(height: 8),
+                  Text(
+                    teamDescription,
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: Colors.grey.shade600,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 2,
+                  ),
+                ],
+                SizedBox(height: 8),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.people_rounded,
+                      size: 14,
+                      color: Colors.grey.shade500,
+                    ),
+                    SizedBox(width: 4),
+                    Text(
+                      '$playerCount ${l10n.players}',
+                      style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        color: Colors.grey.shade500,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     return Card(
       elevation: 0,
@@ -997,12 +1424,12 @@ class _AdminScreenState extends State<AdminScreen>
         ),
         borderRadius: BorderRadius.circular(16),
         child: Padding(
-          padding: EdgeInsets.all(16),
+          padding: EdgeInsets.all(isTablet ? 20 : 16),
           child: Row(
             children: [
               Container(
-                width: 60,
-                height: 60,
+                width: isTablet ? 70 : 60,
+                height: isTablet ? 70 : 60,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
@@ -1012,10 +1439,10 @@ class _AdminScreenState extends State<AdminScreen>
                 child: Icon(
                   Icons.groups_rounded,
                   color: Colors.white,
-                  size: 28,
+                  size: isTablet ? 32 : 28,
                 ),
               ),
-              SizedBox(width: 16),
+              SizedBox(width: isTablet ? 20 : 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1024,20 +1451,22 @@ class _AdminScreenState extends State<AdminScreen>
                       teamName,
                       style: GoogleFonts.poppins(
                         fontWeight: FontWeight.w600,
-                        fontSize: 16,
+                        fontSize: isTablet ? 18 : 16,
                         color: Colors.grey.shade800,
                       ),
                       overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
                     ),
                     SizedBox(height: 4),
                     if (teamDescription.isNotEmpty) ...[
                       Text(
                         teamDescription,
                         style: GoogleFonts.poppins(
-                          fontSize: 14,
+                          fontSize: isTablet ? 16 : 14,
                           color: Colors.grey.shade600,
                         ),
                         overflow: TextOverflow.ellipsis,
+                        maxLines: isTablet ? 2 : 1,
                       ),
                       SizedBox(height: 8),
                     ],
@@ -1045,14 +1474,14 @@ class _AdminScreenState extends State<AdminScreen>
                       children: [
                         Icon(
                           Icons.people_rounded,
-                          size: 16,
+                          size: isTablet ? 18 : 16,
                           color: Colors.grey.shade500,
                         ),
                         SizedBox(width: 4),
                         Text(
                           '$playerCount ${l10n.players}',
                           style: GoogleFonts.poppins(
-                            fontSize: 12,
+                            fontSize: isTablet ? 14 : 12,
                             color: Colors.grey.shade500,
                           ),
                         ),
@@ -1062,7 +1491,10 @@ class _AdminScreenState extends State<AdminScreen>
                 ),
               ),
               Container(
-                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: EdgeInsets.symmetric(
+                  horizontal: isTablet ? 16 : 12, 
+                  vertical: isTablet ? 12 : 8
+                ),
                 decoration: BoxDecoration(
                   color: playerCount > 0
                       ? Colors.blue.shade50
@@ -1073,7 +1505,7 @@ class _AdminScreenState extends State<AdminScreen>
                   '$playerCount',
                   style: GoogleFonts.poppins(
                     fontWeight: FontWeight.w700,
-                    fontSize: 18,
+                    fontSize: isTablet ? 20 : 18,
                     color: playerCount > 0
                         ? Colors.blue.shade700
                         : Colors.grey.shade600,

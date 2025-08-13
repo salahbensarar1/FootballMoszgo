@@ -41,183 +41,33 @@ class _AddUserDialogState extends State<AddUserDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
+    final size = MediaQuery.of(context).size;
+    final isMobile = size.width < 600;
+    final maxWidth = isMobile ? size.width * 0.95 : 500.0;
+    
+    return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      title: Row(
-        children: [
-          Container(
-            padding: EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Color(0xFFF27121).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
+      child: Container(
+        constraints: BoxConstraints(
+          maxWidth: maxWidth,
+          maxHeight: size.height * 0.85,
+        ),
+        padding: EdgeInsets.all(isMobile ? 16 : 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildDialogTitle(isMobile),
+            SizedBox(height: isMobile ? 16 : 20),
+            Flexible(
+              child: SingleChildScrollView(
+                child: _buildFormContent(isMobile),
+              ),
             ),
-            child: Icon(
-              Icons.person_add_rounded,
-              color: Color(0xFFF27121),
-              size: 24,
-            ),
-          ),
-          SizedBox(width: 12),
-          Text(
-            widget.l10n.addNewUser,
-            style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-          ),
-        ],
-      ),
-      content: Container(
-        width: double.maxFinite,
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Name Field
-              TextFormField(
-                controller: _nameController,
-                decoration: InputDecoration(
-                  labelText: widget.l10n.name,
-                  prefixIcon: Icon(Icons.person_outline_rounded),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                validator: (value) {
-                  if (value?.isEmpty ?? true) {
-                    return widget.l10n.nameRequired;
-                  }
-                  return null;
-                },
-              ),
-
-              SizedBox(height: 16),
-
-              // Email Field
-              TextFormField(
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                decoration: InputDecoration(
-                  labelText: widget.l10n.email,
-                  prefixIcon: Icon(Icons.email_outlined),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                validator: (value) {
-                  if (value?.isEmpty ?? true) {
-                    return widget.l10n.emailRequired;
-                  }
-                  if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                      .hasMatch(value!)) {
-                    return widget.l10n.validEmailRequired;
-                  }
-                  return null;
-                },
-              ),
-
-              SizedBox(height: 16),
-
-              // Password Field
-              TextFormField(
-                controller: _passwordController,
-                obscureText: !showPassword,
-                decoration: InputDecoration(
-                  labelText: widget.l10n.password,
-                  prefixIcon: Icon(Icons.lock_outline_rounded),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      showPassword ? Icons.visibility_off : Icons.visibility,
-                    ),
-                    onPressed: () =>
-                        setState(() => showPassword = !showPassword),
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                validator: (value) {
-                  if (value?.isEmpty ?? true) {
-                    return widget.l10n.passwordRequired;
-                  }
-                  if (value!.length < 6) {
-                    return widget.l10n.passwordMinLength;
-                  }
-                  return null;
-                },
-              ),
-
-              SizedBox(height: 16),
-
-              // Role Selection
-              DropdownButtonFormField<String>(
-                value: selectedRole,
-                decoration: InputDecoration(
-                  labelText: widget.l10n.role,
-                  prefixIcon: Icon(Icons.work_outline_rounded),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                items: roleOptions.map((role) {
-                  return DropdownMenuItem(
-                    value: role,
-                    child: Row(
-                      children: [
-                        Icon(
-                          _getRoleIcon(role),
-                          color: _getRoleColor(role),
-                          size: 20,
-                        ),
-                        SizedBox(width: 8),
-                        Text(
-                          role.toUpperCase(),
-                          style: GoogleFonts.poppins(
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() => selectedRole = value);
-                  }
-                },
-              ),
-            ],
-          ),
+            SizedBox(height: isMobile ? 16 : 20),
+            _buildActionButtons(isMobile),
+          ],
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: isLoading ? null : () => Navigator.pop(context),
-          child: Text(
-            widget.l10n.cancel,
-            style: GoogleFonts.poppins(color: Colors.grey.shade600),
-          ),
-        ),
-        ElevatedButton(
-          onPressed: isLoading ? null : _createUser,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Color(0xFFF27121),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          ),
-          child: isLoading
-              ? SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                    strokeWidth: 2,
-                  ),
-                )
-              : Text(
-                  widget.l10n.add,
-                  style: GoogleFonts.poppins(color: Colors.white),
-                ),
-        ),
-      ],
     );
   }
 
@@ -333,6 +183,257 @@ class _AddUserDialogState extends State<AddUserDialog> {
         setState(() => isLoading = false);
       }
     }
+  }
+
+  Widget _buildDialogTitle(bool isMobile) {
+    return Row(
+      children: [
+        Container(
+          padding: EdgeInsets.all(isMobile ? 6 : 8),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF27121).withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(
+            Icons.person_add_rounded,
+            color: const Color(0xFFF27121),
+            size: isMobile ? 20 : 24,
+          ),
+        ),
+        SizedBox(width: isMobile ? 8 : 12),
+        Expanded(
+          child: Text(
+            widget.l10n.addNewUser,
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.w600,
+              fontSize: isMobile ? 16 : 18,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFormContent(bool isMobile) {
+    return Form(
+      key: _formKey,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildNameField(isMobile),
+          SizedBox(height: isMobile ? 12 : 16),
+          _buildEmailField(isMobile),
+          SizedBox(height: isMobile ? 12 : 16),
+          _buildPasswordField(isMobile),
+          SizedBox(height: isMobile ? 12 : 16),
+          _buildRoleDropdown(isMobile),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNameField(bool isMobile) {
+    return TextFormField(
+      controller: _nameController,
+      style: GoogleFonts.poppins(fontSize: isMobile ? 14 : 16),
+      decoration: InputDecoration(
+        labelText: widget.l10n.name,
+        labelStyle: GoogleFonts.poppins(fontSize: isMobile ? 13 : 14),
+        prefixIcon: Icon(
+          Icons.person_outline_rounded,
+          size: isMobile ? 20 : 24,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: isMobile ? 12 : 16,
+        ),
+      ),
+      validator: (value) {
+        if (value?.isEmpty ?? true) {
+          return widget.l10n.nameRequired;
+        }
+        return null;
+      },
+    );
+  }
+
+  Widget _buildEmailField(bool isMobile) {
+    return TextFormField(
+      controller: _emailController,
+      keyboardType: TextInputType.emailAddress,
+      style: GoogleFonts.poppins(fontSize: isMobile ? 14 : 16),
+      decoration: InputDecoration(
+        labelText: widget.l10n.email,
+        labelStyle: GoogleFonts.poppins(fontSize: isMobile ? 13 : 14),
+        prefixIcon: Icon(
+          Icons.email_outlined,
+          size: isMobile ? 20 : 24,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: isMobile ? 12 : 16,
+        ),
+      ),
+      validator: (value) {
+        if (value?.isEmpty ?? true) {
+          return widget.l10n.emailRequired;
+        }
+        if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value!)) {
+          return widget.l10n.validEmailRequired;
+        }
+        return null;
+      },
+    );
+  }
+
+  Widget _buildPasswordField(bool isMobile) {
+    return TextFormField(
+      controller: _passwordController,
+      obscureText: !showPassword,
+      style: GoogleFonts.poppins(fontSize: isMobile ? 14 : 16),
+      decoration: InputDecoration(
+        labelText: widget.l10n.password,
+        labelStyle: GoogleFonts.poppins(fontSize: isMobile ? 13 : 14),
+        prefixIcon: Icon(
+          Icons.lock_outline_rounded,
+          size: isMobile ? 20 : 24,
+        ),
+        suffixIcon: IconButton(
+          icon: Icon(
+            showPassword ? Icons.visibility_off : Icons.visibility,
+            size: isMobile ? 20 : 24,
+          ),
+          onPressed: () => setState(() => showPassword = !showPassword),
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: isMobile ? 12 : 16,
+        ),
+      ),
+      validator: (value) {
+        if (value?.isEmpty ?? true) {
+          return widget.l10n.passwordRequired;
+        }
+        if (value!.length < 6) {
+          return widget.l10n.passwordMinLength;
+        }
+        return null;
+      },
+    );
+  }
+
+  Widget _buildRoleDropdown(bool isMobile) {
+    return DropdownButtonFormField<String>(
+      value: selectedRole,
+      style: GoogleFonts.poppins(fontSize: isMobile ? 14 : 16),
+      decoration: InputDecoration(
+        labelText: widget.l10n.role,
+        labelStyle: GoogleFonts.poppins(fontSize: isMobile ? 13 : 14),
+        prefixIcon: Icon(
+          Icons.work_outline_rounded,
+          size: isMobile ? 20 : 24,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: isMobile ? 12 : 16,
+        ),
+      ),
+      items: roleOptions.map((role) {
+        return DropdownMenuItem(
+          value: role,
+          child: Row(
+            children: [
+              Icon(
+                _getRoleIcon(role),
+                color: _getRoleColor(role),
+                size: isMobile ? 16 : 20,
+              ),
+              SizedBox(width: isMobile ? 6 : 8),
+              Flexible(
+                child: Text(
+                  role.toUpperCase(),
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.w500,
+                    fontSize: isMobile ? 13 : 14,
+                    color: Colors.black87,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
+      onChanged: (value) {
+        if (value != null) {
+          setState(() => selectedRole = value);
+        }
+      },
+    );
+  }
+
+  Widget _buildActionButtons(bool isMobile) {
+    return Row(
+      children: [
+        Expanded(
+          child: TextButton(
+            onPressed: isLoading ? null : () => Navigator.pop(context),
+            child: Text(
+              widget.l10n.cancel,
+              style: GoogleFonts.poppins(
+                color: Colors.grey.shade600,
+                fontSize: isMobile ? 14 : 16,
+              ),
+            ),
+          ),
+        ),
+        SizedBox(width: isMobile ? 8 : 12),
+        Expanded(
+          child: ElevatedButton(
+            onPressed: isLoading ? null : _createUser,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFF27121),
+              padding: EdgeInsets.symmetric(
+                vertical: isMobile ? 12 : 16,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: isLoading
+                ? SizedBox(
+                    width: isMobile ? 16 : 20,
+                    height: isMobile ? 16 : 20,
+                    child: const CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : Text(
+                    widget.l10n.add,
+                    style: GoogleFonts.poppins(
+                      color: Colors.white,
+                      fontSize: isMobile ? 14 : 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+          ),
+        ),
+      ],
+    );
   }
 
   String _getRoleDescription(String role) {

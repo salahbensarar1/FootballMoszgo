@@ -43,3 +43,22 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Environment variables and secrets
+.env
+.env.local
+.env.production
+.env.staging
+*.env
+
+# Firebase and sensitive configs
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+firebase_options.dart
+
+# Keystores and signing
+android/key.properties
+android/app/upload-keystore.jks
+android/app/release-keystore.jks
+*.keystore
+*.jks

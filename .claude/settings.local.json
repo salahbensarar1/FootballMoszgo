@@ -8,7 +8,10 @@
       "Bash(flutter gen-l10n:*)",
       "Bash(flutter packages:*)",
       "mcp__ide__getDiagnostics",
-      "Bash(flutter build:*)"
+      "Bash(flutter build:*)",
+      "Bash(timeout 30 flutter run:*)",
+      "Bash(/dev/null)",
+      "Bash(mv:*)"
     ],
     "deny": []
   }

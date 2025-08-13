@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:footballtraining/data/models/enhanced_models.dart';
-import 'package:footballtraining/data/models/user_model.dart' as UserModel;
+import 'package:footballtraining/data/models/user_model.dart' as user_model;
 
 /// Production-Ready Coach Dashboard Service
 class CoachDashboardService {
@@ -119,10 +119,10 @@ class CoachDashboardService {
   }
 
   /// Get coach profile with team assignments
-  Future<UserModel.User?> getCoachProfile(String coachId) async {
+  Future<user_model.User?> getCoachProfile(String coachId) async {
     try {
       final doc = await _firestore.collection('users').doc(coachId).get();
-      return doc.exists ? UserModel.User.fromFirestore(doc) : null;
+      return doc.exists ? user_model.User.fromFirestore(doc) : null;
     } catch (e) {
       throw Exception('Failed to get coach profile: $e');
     }

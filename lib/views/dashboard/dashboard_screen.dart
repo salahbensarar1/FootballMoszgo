@@ -1,8 +1,18 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:footballtraining/views/admin/admin_screen.dart';
 import 'package:footballtraining/views/admin/reports/session_report_screen.dart';
+import 'package:footballtraining/views/admin/settings_screen.dart'
+    as admin_settings;
+import 'package:footballtraining/views/admin/user_management_screen.dart';
+import 'package:footballtraining/views/coach/coach_screen.dart';
+import 'package:footballtraining/views/login/login_page.dart';
+import 'package:footballtraining/views/receptionist/receptionist_screen.dart';
+
+import 'package:footballtraining/utils/responsive_design.dart';
 import 'package:intl/intl.dart';
 import 'dart:math' as math;
 
@@ -16,6 +26,7 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen>
     with TickerProviderStateMixin, AutomaticKeepAliveClientMixin {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   // Animation Controllers
   late AnimationController _fadeController;
@@ -26,11 +37,17 @@ class _DashboardScreenState extends State<DashboardScreen>
   // Dashboard Stats
   DashboardStats stats = DashboardStats();
   bool isLoadingStats = true;
-  
+
+  // User data
+  String? userRole;
+  String? userName;
+  String? userEmail;
+  bool isLoadingUser = true;
+
   // Performance optimizations
   DateTime? _lastDataLoad;
   static const Duration _cacheValidityDuration = Duration(minutes: 5);
-  
+
   @override
   bool get wantKeepAlive => true;
 
@@ -38,6 +55,7 @@ class _DashboardScreenState extends State<DashboardScreen>
   void initState() {
     super.initState();
     _initializeAnimations();
+    _loadUserData();
     _loadDashboardData();
   }
 
@@ -66,6 +84,29 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
 
     _fadeController.forward();
+  }
+
+  Future<void> _loadUserData() async {
+    final user = _auth.currentUser;
+    if (user != null) {
+      try {
+        final userDoc =
+            await _firestore.collection('users').doc(user.uid).get();
+        if (userDoc.exists && mounted) {
+          setState(() {
+            final data = userDoc.data()!;
+            userRole = data['role'] as String?;
+            userName = data['name'] as String?;
+            userEmail = user.email;
+            isLoadingUser = false;
+          });
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() => isLoadingUser = false);
+        }
+      }
+    }
   }
 
   Future<void> _loadDashboardData() async {
@@ -172,15 +213,16 @@ class _DashboardScreenState extends State<DashboardScreen>
     final l10n = AppLocalizations.of(context)!;
     final size = MediaQuery.of(context).size;
     final padding = MediaQuery.of(context).padding;
-    
+
     // Professional responsive breakpoints
     final isTablet = size.width > 768;
-    final isLargePhone = size.width > 414; 
+    final isLargePhone = size.width > 414;
     final isSmallScreen = size.width < 375; // iPhone SE and smaller
     final isVerySmallScreen = size.width < 350;
 
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
+      drawer: _buildNavigationDrawer(l10n),
       body: RefreshIndicator(
         onRefresh: () async {
           _lastDataLoad = null; // Force refresh
@@ -204,13 +246,17 @@ class _DashboardScreenState extends State<DashboardScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildWelcomeSection(l10n, isSmallScreen, isVerySmallScreen),
+                      _buildWelcomeSection(
+                          l10n, isSmallScreen, isVerySmallScreen),
                       SizedBox(height: isSmallScreen ? 16 : 24),
-                      _buildStatsSection(l10n, isTablet, isLargePhone, isVerySmallScreen, size),
+                      _buildStatsSection(l10n, isTablet, isLargePhone,
+                          isVerySmallScreen, size),
                       SizedBox(height: isSmallScreen ? 16 : 24),
-                      _buildQuickActions(l10n, isTablet, isLargePhone, isVerySmallScreen),
+                      _buildQuickActions(
+                          l10n, isTablet, isLargePhone, isVerySmallScreen),
                       SizedBox(height: isSmallScreen ? 16 : 24),
-                      _buildRecentSessionsSection(l10n, isSmallScreen, isVerySmallScreen),
+                      _buildRecentSessionsSection(
+                          l10n, isSmallScreen, isVerySmallScreen),
                     ],
                   ),
                 ),
@@ -222,7 +268,8 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  Widget _buildSliverAppBar(AppLocalizations l10n, bool isSmallScreen, bool isVerySmallScreen) {
+  Widget _buildSliverAppBar(
+      AppLocalizations l10n, bool isSmallScreen, bool isVerySmallScreen) {
     return SliverAppBar(
       expandedHeight: isSmallScreen ? 120 : 180,
       floating: true,
@@ -300,10 +347,11 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  Widget _buildWelcomeSection(AppLocalizations l10n, bool isSmallScreen, bool isVerySmallScreen) {
+  Widget _buildWelcomeSection(
+      AppLocalizations l10n, bool isSmallScreen, bool isVerySmallScreen) {
     final size = MediaQuery.of(context).size;
     final isTinyScreen = size.width < 320;
-    
+
     return Container(
       width: double.infinity,
       constraints: const BoxConstraints(minHeight: 80),
@@ -342,14 +390,14 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  Widget _buildStatsSection(AppLocalizations l10n, bool isTablet, bool isLargePhone, bool isVerySmallScreen, Size size) {
+  Widget _buildStatsSection(AppLocalizations l10n, bool isTablet,
+      bool isLargePhone, bool isVerySmallScreen, Size size) {
     final isSmallScreen = size.width < 375;
     final isTinyScreen = size.width < 320;
 
     return Padding(
       padding: EdgeInsets.symmetric(
-        horizontal: isTinyScreen ? 8 : (isSmallScreen ? 12 : 16)
-      ),
+          horizontal: isTinyScreen ? 8 : (isSmallScreen ? 12 : 16)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -382,8 +430,8 @@ class _DashboardScreenState extends State<DashboardScreen>
                       label: Text(
                         l10n.viewDetails,
                         style: TextStyle(
-                          fontSize: isTinyScreen ? 10 : (isSmallScreen ? 12 : 14)
-                        ),
+                            fontSize:
+                                isTinyScreen ? 10 : (isSmallScreen ? 12 : 14)),
                       ),
                       style: TextButton.styleFrom(
                         foregroundColor: const Color(0xFFF27121),
@@ -403,7 +451,8 @@ class _DashboardScreenState extends State<DashboardScreen>
                       child: Text(
                         l10n.keyStatistics,
                         style: TextStyle(
-                          fontSize: isTinyScreen ? 16 : (isSmallScreen ? 18 : 20),
+                          fontSize:
+                              isTinyScreen ? 16 : (isSmallScreen ? 18 : 20),
                           fontWeight: FontWeight.w600,
                           color: Colors.grey.shade800,
                         ),
@@ -420,8 +469,8 @@ class _DashboardScreenState extends State<DashboardScreen>
                       label: Text(
                         l10n.viewDetails,
                         style: TextStyle(
-                          fontSize: isTinyScreen ? 10 : (isSmallScreen ? 12 : 14)
-                        ),
+                            fontSize:
+                                isTinyScreen ? 10 : (isSmallScreen ? 12 : 14)),
                       ),
                       style: TextButton.styleFrom(
                         foregroundColor: const Color(0xFFF27121),
@@ -449,13 +498,15 @@ class _DashboardScreenState extends State<DashboardScreen>
     final isSmallScreen = size.width < 375;
     final isTinyScreen = size.width < 320;
     final crossAxisCount = isTablet ? 4 : 2;
-    
+
     final horizontalPadding = isTinyScreen ? 16 : (isSmallScreen ? 24 : 32);
     final cardSpacing = isTinyScreen ? 8 : 12;
-    final cardWidth = (size.width - horizontalPadding - (crossAxisCount - 1) * cardSpacing) / crossAxisCount;
+    final cardWidth =
+        (size.width - horizontalPadding - (crossAxisCount - 1) * cardSpacing) /
+            crossAxisCount;
     final optimalHeight = isTinyScreen ? 95.0 : (isSmallScreen ? 110.0 : 125.0);
     final aspectRatio = (cardWidth / optimalHeight).clamp(0.8, 2.0);
-    
+
     return GridView.count(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -485,26 +536,28 @@ class _DashboardScreenState extends State<DashboardScreen>
         ],
       ),
       child: const Center(
-        child: CircularProgressIndicator(
-          color: Color(0xFFF27121), 
-          strokeWidth: 2
-        ),
+        child:
+            CircularProgressIndicator(color: Color(0xFFF27121), strokeWidth: 2),
       ),
     );
   }
-
 
   Widget _buildStatsGrid(AppLocalizations l10n, bool isTablet, Size size) {
     final isSmallScreen = size.width < 375;
     final isTinyScreen = size.width < 320;
     final crossAxisCount = isTablet ? 4 : 2;
-    
+
     // Professional responsive calculations with safe constraints
     final horizontalPadding = isTinyScreen ? 16 : (isSmallScreen ? 24 : 32);
     final cardSpacing = isTinyScreen ? 8 : 12;
-    final cardWidth = (size.width - horizontalPadding - (crossAxisCount - 1) * cardSpacing) / crossAxisCount;
-    final optimalHeight = isTinyScreen ? 95.0 : (isSmallScreen ? 110.0 : 125.0); // Increased slightly
-    final aspectRatio = (cardWidth / optimalHeight).clamp(0.8, 2.0); // Safe aspect ratio
+    final cardWidth =
+        (size.width - horizontalPadding - (crossAxisCount - 1) * cardSpacing) /
+            crossAxisCount;
+    final optimalHeight = isTinyScreen
+        ? 95.0
+        : (isSmallScreen ? 110.0 : 125.0); // Increased slightly
+    final aspectRatio =
+        (cardWidth / optimalHeight).clamp(0.8, 2.0); // Safe aspect ratio
 
     final statItems = [
       StatItem(
@@ -567,7 +620,7 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   Widget _buildStatCard(StatItem stat, bool isSmallScreen) {
     final isTinyScreen = MediaQuery.of(context).size.width < 320;
-    
+
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -593,7 +646,8 @@ class _DashboardScreenState extends State<DashboardScreen>
           },
           borderRadius: BorderRadius.circular(16),
           child: Container(
-            padding: EdgeInsets.all(isTinyScreen ? 8 : (isSmallScreen ? 10 : 12)),
+            padding:
+                EdgeInsets.all(isTinyScreen ? 8 : (isSmallScreen ? 10 : 12)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
@@ -615,10 +669,10 @@ class _DashboardScreenState extends State<DashboardScreen>
                     size: isTinyScreen ? 16 : (isSmallScreen ? 18 : 20),
                   ),
                 ),
-                
+
                 // Flexible space with constraint
                 const Spacer(),
-                
+
                 // Value with constrained sizing
                 Container(
                   width: double.infinity,
@@ -638,7 +692,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                     ),
                   ),
                 ),
-                
+
                 // Title with overflow protection
                 Container(
                   width: double.infinity,
@@ -662,7 +716,8 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  Widget _buildQuickActions(AppLocalizations l10n, bool isTablet, bool isLargePhone, bool isVerySmallScreen) {
+  Widget _buildQuickActions(AppLocalizations l10n, bool isTablet,
+      bool isLargePhone, bool isVerySmallScreen) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -683,7 +738,8 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  Widget _buildQuickActionsRow(AppLocalizations l10n, bool isTablet, bool isLargePhone) {
+  Widget _buildQuickActionsRow(
+      AppLocalizations l10n, bool isTablet, bool isLargePhone) {
     return Row(
       children: [
         Expanded(
@@ -730,9 +786,21 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   Widget _buildQuickActionsGrid(AppLocalizations l10n, bool isVerySmallScreen) {
     final actions = [
-      {'title': l10n.teams, 'icon': Icons.groups_rounded, 'color': const Color(0xFF10B981)},
-      {'title': l10n.reports, 'icon': Icons.analytics_outlined, 'color': const Color(0xFF6366F1)},
-      {'title': l10n.manageUsers, 'icon': Icons.people_outline, 'color': const Color(0xFFEF4444)},
+      {
+        'title': l10n.teams,
+        'icon': Icons.groups_rounded,
+        'color': const Color(0xFF10B981)
+      },
+      {
+        'title': l10n.reports,
+        'icon': Icons.analytics_outlined,
+        'color': const Color(0xFF6366F1)
+      },
+      {
+        'title': l10n.manageUsers,
+        'icon': Icons.people_outline,
+        'color': const Color(0xFFEF4444)
+      },
     ];
 
     return GridView.builder(
@@ -770,9 +838,10 @@ class _DashboardScreenState extends State<DashboardScreen>
   }) {
     final size = MediaQuery.of(context).size;
     final isTinyScreen = size.width < 320;
-    
+
     return Container(
-      height: isTinyScreen ? 85 : (isSmallScreen ? 90 : 95), // Increased heights
+      height:
+          isTinyScreen ? 85 : (isSmallScreen ? 90 : 95), // Increased heights
       constraints: BoxConstraints(
         minHeight: isTinyScreen ? 85 : (isSmallScreen ? 90 : 95),
       ),
@@ -793,7 +862,8 @@ class _DashboardScreenState extends State<DashboardScreen>
           onTap: onTap,
           borderRadius: BorderRadius.circular(16),
           child: Padding(
-            padding: EdgeInsets.all(isTinyScreen ? 6 : (isSmallScreen ? 8 : 10)),
+            padding:
+                EdgeInsets.all(isTinyScreen ? 6 : (isSmallScreen ? 8 : 10)),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               mainAxisSize: MainAxisSize.min,
@@ -805,11 +875,9 @@ class _DashboardScreenState extends State<DashboardScreen>
                     color: color.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(
-                    icon, 
-                    color: color, 
-                    size: isTinyScreen ? 14 : (isSmallScreen ? 16 : 18)
-                  ),
+                  child: Icon(icon,
+                      color: color,
+                      size: isTinyScreen ? 14 : (isSmallScreen ? 16 : 18)),
                 ),
                 SizedBox(height: isTinyScreen ? 3 : 4),
                 Flexible(
@@ -838,7 +906,7 @@ class _DashboardScreenState extends State<DashboardScreen>
       AppLocalizations l10n, bool isSmallScreen, bool isVerySmallScreen) {
     final size = MediaQuery.of(context).size;
     final isTinyScreen = size.width < 320;
-    
+
     return Padding(
       padding: EdgeInsets.all(isTinyScreen ? 8 : (isSmallScreen ? 12 : 16)),
       child: Column(
@@ -874,8 +942,8 @@ class _DashboardScreenState extends State<DashboardScreen>
                       label: Text(
                         l10n.seeAll,
                         style: TextStyle(
-                          fontSize: isTinyScreen ? 10 : (isSmallScreen ? 12 : 14)
-                        ),
+                            fontSize:
+                                isTinyScreen ? 10 : (isSmallScreen ? 12 : 14)),
                       ),
                       style: TextButton.styleFrom(
                         foregroundColor: const Color(0xFFF27121),
@@ -895,7 +963,8 @@ class _DashboardScreenState extends State<DashboardScreen>
                       child: Text(
                         l10n.recentTrainingSessions,
                         style: TextStyle(
-                          fontSize: isTinyScreen ? 16 : (isSmallScreen ? 18 : 20),
+                          fontSize:
+                              isTinyScreen ? 16 : (isSmallScreen ? 18 : 20),
                           fontWeight: FontWeight.w600,
                           color: Colors.grey.shade800,
                         ),
@@ -912,8 +981,8 @@ class _DashboardScreenState extends State<DashboardScreen>
                       label: Text(
                         l10n.seeAll,
                         style: TextStyle(
-                          fontSize: isTinyScreen ? 10 : (isSmallScreen ? 12 : 14)
-                        ),
+                            fontSize:
+                                isTinyScreen ? 10 : (isSmallScreen ? 12 : 14)),
                       ),
                       style: TextButton.styleFrom(
                         foregroundColor: const Color(0xFFF27121),
@@ -1232,6 +1301,211 @@ class _DashboardScreenState extends State<DashboardScreen>
       return DateFormat('dd MMM, HH:mm').format(timestamp.toDate());
     } catch (e) {
       return 'Invalid Date';
+    }
+  }
+
+  Widget _buildNavigationDrawer(AppLocalizations l10n) {
+    return Drawer(
+      backgroundColor: Colors.white,
+      child: SafeArea(
+        child: Column(
+          children: [
+            _buildDrawerHeader(l10n),
+            Expanded(
+              child: ListView(
+                padding: EdgeInsets.zero,
+                children: [
+                  _buildDrawerItem(
+                    icon: Icons.dashboard_rounded,
+                    title: l10n.dashboardOverview,
+                    isSelected: true,
+                    onTap: () => Navigator.pop(context),
+                  ),
+                  if (userRole == 'admin') ...[
+                    _buildDrawerSection('Administration'),
+                    _buildDrawerItem(
+                      icon: Icons.admin_panel_settings_rounded,
+                      title: 'Admin Panel',
+                      onTap: () => _navigateToScreen(const AdminScreen()),
+                    ),
+                    _buildDrawerItem(
+                      icon: Icons.people_rounded,
+                      title: l10n.manageUsers,
+                      onTap: () =>
+                          _navigateToScreen(const UserManagementScreen()),
+                    ),
+                    _buildDrawerItem(
+                      icon: Icons.settings_rounded,
+                      title: l10n.settings,
+                      onTap: () => _navigateToScreen(
+                          const admin_settings.SettingsScreen()),
+                    ),
+                  ],
+                  if (userRole == 'receptionist') ...[
+                    _buildDrawerSection('Reception'),
+                    _buildDrawerItem(
+                      icon: Icons.receipt_long_rounded,
+                      title: 'Reception Panel',
+                      onTap: () =>
+                          _navigateToScreen(const ReceptionistScreen()),
+                    ),
+                  ],
+                  if (userRole == 'coach') ...[
+                    _buildDrawerSection('Coaching'),
+                    _buildDrawerItem(
+                      icon: Icons.sports_rounded,
+                      title: 'Coach Panel',
+                      onTap: () => _navigateToScreen(const CoachScreen()),
+                    ),
+                  ],
+                  const Divider(),
+                  _buildDrawerItem(
+                    icon: Icons.logout_rounded,
+                    title: l10n.logout,
+                    isDestructive: true,
+                    onTap: _handleLogout,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDrawerHeader(AppLocalizations l10n) {
+    return Container(
+      padding: EdgeInsets.all(context.spacing()),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFFF27121), Color(0xFFE94057), Color(0xFF8A2387)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CircleAvatar(
+            radius: context.isMobile ? 30 : 35,
+            backgroundColor: Colors.white.withValues(alpha: 0.2),
+            child: Text(
+              (userName?.isNotEmpty == true)
+                  ? userName!.substring(0, 1).toUpperCase()
+                  : 'U',
+              style: TextStyle(
+                fontSize: context.isMobile ? 24 : 28,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          SizedBox(height: context.spacing(factor: 0.5)),
+          Text(
+            userName ?? 'User',
+            style: TextStyle(
+              fontSize: context.bodyFontSize,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          Text(
+            userRole?.toUpperCase() ?? 'USER',
+            style: TextStyle(
+              fontSize: context.captionFontSize,
+              color: Colors.white.withValues(alpha: 0.8),
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDrawerSection(String title) {
+    return Container(
+      padding: EdgeInsets.fromLTRB(
+          context.spacing(),
+          context.spacing(factor: 0.75),
+          context.spacing(),
+          context.spacing(factor: 0.25)),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: context.captionFontSize,
+          fontWeight: FontWeight.w600,
+          color: Colors.grey.shade600,
+          letterSpacing: 0.5,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDrawerItem({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+    bool isSelected = false,
+    bool isDestructive = false,
+  }) {
+    final color = isDestructive
+        ? Colors.red.shade600
+        : isSelected
+            ? const Color(0xFFF27121)
+            : Colors.grey.shade700;
+
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: context.spacing(factor: 0.5)),
+      child: ListTile(
+        leading: Icon(icon, color: color, size: context.iconSize * 0.8),
+        title: Text(
+          title,
+          style: TextStyle(
+            fontSize: context.bodyFontSize * 0.9,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+            color: color,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        selected: isSelected,
+        selectedTileColor: const Color(0xFFF27121).withValues(alpha: 0.1),
+        onTap: onTap,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(context.borderRadius),
+        ),
+        contentPadding: EdgeInsets.symmetric(horizontal: context.spacing()),
+      ),
+    );
+  }
+
+  void _navigateToScreen(Widget screen) {
+    Navigator.pop(context); // Close drawer
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => screen),
+    );
+  }
+
+  Future<void> _handleLogout() async {
+    try {
+      await _auth.signOut();
+      if (mounted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => Loginpage()),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        _showErrorMessage('Logout failed: $e');
+      }
     }
   }
 }
