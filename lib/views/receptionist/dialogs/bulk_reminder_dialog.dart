@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 // Import your payment models
 import '../../../data/models/payment_model.dart';
+import '../../../services/organization_context.dart';
 
 class BulkReminderDialog extends StatefulWidget {
   final int selectedYear;
@@ -405,8 +406,11 @@ class _BulkReminderDialogState extends State<BulkReminderDialog> {
 
   Future<void> _loadReminderQueue() async {
     try {
-      final playersSnapshot =
-          await FirebaseFirestore.instance.collection('players').get();
+      final playersSnapshot = await FirebaseFirestore.instance
+          .collection('organizations')
+          .doc(OrganizationContext.currentOrgId)
+          .collection('players')
+          .get();
 
       List<PaymentReminder> reminders = [];
 
@@ -429,6 +433,8 @@ class _BulkReminderDialogState extends State<BulkReminderDialog> {
 
         // Get payment data for this player
         final paymentsSnapshot = await FirebaseFirestore.instance
+            .collection('organizations')
+            .doc(OrganizationContext.currentOrgId)
             .collection('players')
             .doc(playerDoc.id)
             .collection('payments')
