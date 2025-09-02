@@ -308,89 +308,251 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   Widget _buildHeader(bool isSmallScreen, AppLocalizations l10n) {
     return Column(
       children: [
-        // MozGo Club Logo - Professional Design
+        // MozGo Club Logo - STUNNING Championship Design
         Container(
-          width: isSmallScreen ? 280 : 300,
+          width: isSmallScreen ? 320 : 380,
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.white,
+                Colors.grey.shade50,
+              ],
+            ),
+            borderRadius: BorderRadius.circular(32),
+            border: Border.all(
+              color: const Color(0xFFE31E24).withValues(alpha: 0.1),
+              width: 2,
+            ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 40,
-                offset: const Offset(0, 10),
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 50,
+                spreadRadius: 8,
+                offset: const Offset(0, 15),
+              ),
+              BoxShadow(
+                color: const Color(0xFFE31E24).withValues(alpha: 0.15),
+                blurRadius: 30,
+                spreadRadius: -5,
+                offset: const Offset(0, 8),
               ),
             ],
           ),
-          padding: EdgeInsets.symmetric(
-            horizontal: isSmallScreen ? 25 : 30,
-            vertical: isSmallScreen ? 35 : 40,
-          ),
+          padding: EdgeInsets.all(isSmallScreen ? 35 : 45),
           child: Column(
             children: [
-              // Main Logo Row
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // "moz" text
-                  Text(
-                    'moz',
-                    style: TextStyle(
-                      fontSize: isSmallScreen ? 36 : 40,
-                      fontWeight: FontWeight.w800,
-                      color: const Color(0xFF1a1a1a),
-                      letterSpacing: -2,
-                      height: 1.0,
-                    ),
+              // Championship Badge Background
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: isSmallScreen ? 25 : 35,
+                  vertical: isSmallScreen ? 20 : 25,
+                ),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.white,
+                      Colors.grey.shade50,
+                      Colors.grey.shade100,
+                    ],
                   ),
-                  SizedBox(width: isSmallScreen ? 8 : 10),
-                  // "GO" in red gradient circle
-                  Container(
-                    width: isSmallScreen ? 55 : 60,
-                    height: isSmallScreen ? 55 : 60,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Color(0xFFE31E24), // #E31E24
-                          Color(0xFFC41E3A), // #C41E3A
+                  borderRadius: BorderRadius.circular(25),
+                  border: Border.all(
+                    color: Colors.grey.shade200,
+                    width: 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 15,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Enhanced "moz" with shadow
+                    Container(
+                      child: Text(
+                        'moz',
+                        style: TextStyle(
+                          fontSize: isSmallScreen ? 42 : 52,
+                          fontWeight: FontWeight.w900,
+                          color: const Color(0xFF1a1a1a),
+                          letterSpacing: -3,
+                          height: 0.95,
+                          shadows: [
+                            Shadow(
+                              color: Colors.black.withValues(alpha: 0.1),
+                              offset: const Offset(0, 2),
+                              blurRadius: 4,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: isSmallScreen ? 12 : 16),
+                    // STUNNING "GO" circle with multiple effects
+                    Container(
+                      width: isSmallScreen ? 75 : 85,
+                      height: isSmallScreen ? 75 : 85,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            const Color(0xFFFF4757), // Bright red
+                            const Color(0xFFE31E24), // Main red
+                            const Color(0xFFC41E3A), // Deep red
+                            const Color(0xFF8B1538), // Darker red
+                          ],
+                          stops: const [0.0, 0.3, 0.7, 1.0],
+                        ),
+                        borderRadius: BorderRadius.circular(50),
+                        border: Border.all(
+                          color: Colors.white,
+                          width: 3,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFFE31E24).withValues(alpha: 0.4),
+                            blurRadius: 25,
+                            spreadRadius: 2,
+                            offset: const Offset(0, 8),
+                          ),
+                          BoxShadow(
+                            color: const Color(0xFFE31E24).withValues(alpha: 0.2),
+                            blurRadius: 40,
+                            spreadRadius: 5,
+                            offset: const Offset(0, 15),
+                          ),
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 15,
+                            offset: const Offset(0, 5),
+                          ),
                         ],
                       ),
-                      borderRadius: BorderRadius.circular(30),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFFE31E24).withValues(alpha: 0.3),
-                          blurRadius: 15,
-                          offset: const Offset(0, 4),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(47),
+                          gradient: RadialGradient(
+                            colors: [
+                              Colors.white.withValues(alpha: 0.2),
+                              Colors.transparent,
+                            ],
+                            center: const Alignment(-0.3, -0.3),
+                            radius: 0.8,
+                          ),
                         ),
-                      ],
-                    ),
-                    child: Center(
-                      child: Text(
-                        'GO',
-                        style: TextStyle(
-                          fontSize: isSmallScreen ? 20 : 22,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white,
-                          letterSpacing: -1,
-                          height: 1.0,
+                        child: Center(
+                          child: Text(
+                            'GO',
+                            style: TextStyle(
+                              fontSize: isSmallScreen ? 26 : 30,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                              letterSpacing: -1.5,
+                              height: 0.9,
+                              shadows: [
+                                Shadow(
+                                  color: Colors.black.withValues(alpha: 0.3),
+                                  offset: const Offset(0, 2),
+                                  blurRadius: 4,
+                                ),
+                                Shadow(
+                                  color: const Color(0xFF8B1538).withValues(alpha: 0.5),
+                                  offset: const Offset(0, 1),
+                                  blurRadius: 2,
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-              SizedBox(height: isSmallScreen ? 25 : 30),
-              // Club subtitle
-              Text(
-                'Nagykörös Football Club',
-                style: TextStyle(
-                  fontSize: isSmallScreen ? 13 : 14,
-                  fontWeight: FontWeight.w500,
-                  color: const Color(0xFF666666),
-                  letterSpacing: 1,
-                  height: 1.2,
+              
+              SizedBox(height: isSmallScreen ? 25 : 35),
+              
+              // Enhanced Club Info Section
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: isSmallScreen ? 20 : 25,
+                  vertical: isSmallScreen ? 12 : 15,
+                ),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      const Color(0xFFE31E24).withValues(alpha: 0.05),
+                      Colors.transparent,
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(
+                    color: const Color(0xFFE31E24).withValues(alpha: 0.1),
+                    width: 1,
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    // Main club name
+                    Text(
+                      'NAGYKŐRÖS',
+                      style: TextStyle(
+                        fontSize: isSmallScreen ? 18 : 22,
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF1a1a1a),
+                        letterSpacing: 2.5,
+                        height: 1.1,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    // Football Club subtitle
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE31E24).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        'LABDARÚGÓ KLUB',
+                        style: TextStyle(
+                          fontSize: isSmallScreen ? 11 : 13,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFFE31E24),
+                          letterSpacing: 1.5,
+                          height: 1.2,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              // Subtle decorative line
+              Container(
+                margin: EdgeInsets.only(top: isSmallScreen ? 20 : 25),
+                width: isSmallScreen ? 60 : 80,
+                height: 3,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.transparent,
+                      const Color(0xFFE31E24).withValues(alpha: 0.3),
+                      const Color(0xFFE31E24),
+                      const Color(0xFFE31E24).withValues(alpha: 0.3),
+                      Colors.transparent,
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
             ],
