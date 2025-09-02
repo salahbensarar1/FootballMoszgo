@@ -1,9 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:footballtraining/views/admin/reports/player_report_screen.dart';
+import 'package:footballtraining/services/organization_context.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
@@ -123,7 +125,8 @@ class _TeamReportScreenState extends State<TeamReportScreen>
       teamData = {};
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          _showSnackBar('Error loading team data', isError: true);
+          _showSnackBar(AppLocalizations.of(context)!.errorLoadingTeamData,
+              isError: true);
           Navigator.of(context).pop();
         }
       });
@@ -133,9 +136,19 @@ class _TeamReportScreenState extends State<TeamReportScreen>
   Future<void> _loadTeamPlayers() async {
     setState(() => isLoadingPlayers = true);
     try {
+      // 🔥 FIXED: Use organization-scoped collection path
+      if (!OrganizationContext.isInitialized) {
+        throw Exception('Organization context not initialized');
+      }
+
       final teamName = teamData['team_name'] ?? '';
+      debugPrint(
+          '🔍 Loading players for team: "$teamName" in org: ${OrganizationContext.currentOrgId}');
+
       if (teamName.isNotEmpty) {
         final playersQuery = await _firestore
+            .collection('organizations')
+            .doc(OrganizationContext.currentOrgId)
             .collection('players')
             .where('team', isEqualTo: teamName)
             .get();
@@ -186,7 +199,8 @@ class _TeamReportScreenState extends State<TeamReportScreen>
         'Midfielder': positionMapping['Midfielder'] ?? 0,
         'Forward': positionMapping['Forward'] ?? 0,
         'payment': teamData['payment'] ?? 0,
-        'description': teamData['team_description'] ?? 'No description',
+        'description': teamData['team_description'] ??
+            AppLocalizations.of(context)!.noDescription,
         'positionDistribution': positionMapping,
         'averageAge': _calculateAverageAge(),
       };
@@ -339,17 +353,33 @@ class _TeamReportScreenState extends State<TeamReportScreen>
     HapticFeedback.lightImpact();
 
     try {
+      final l10n = AppLocalizations.of(context)!;
+
+      // Debug: Log team data structure
+      print('=== DEBUG: Team Data ===');
+      print('teamData keys: ${teamData.keys.toList()}');
+      print('teamData: $teamData');
+      print('teamPlayers length: ${teamPlayers.length}');
+      print('teamStats: $teamStats');
+      print('=== END DEBUG ===');
+
       final pdf = pw.Document();
-      final teamName = teamData['team_name'] ?? 'N/A';
-      final teamDescription = teamData['team_description'] ?? 'No description';
-      final payment = teamData['payment'] ?? 0;
+      final teamName = teamData['team_name'] ?? teamData['name'] ?? 'N/A';
+      final teamDescription = teamData['team_description'] ??
+          teamData['description'] ??
+          l10n.noDescription;
+      final payment = teamData['payment'] ?? teamData['payment_fee'] ?? 0;
+
+      print('=== PDF GENERATION START ===');
+      print('Using pw.Wrap solution for ${teamPlayers.length} players');
+      print('=== PDF GENERATION START ===');
 
       pdf.addPage(
         pw.MultiPage(
           pageFormat: PdfPageFormat.a4,
           margin: const pw.EdgeInsets.all(32),
           build: (pw.Context context) => [
-            // Modern Header
+            // Modern Header - matching player report style
             pw.Container(
               width: double.infinity,
               padding: const pw.EdgeInsets.all(24),
@@ -359,10 +389,9 @@ class _TeamReportScreenState extends State<TeamReportScreen>
                 border: pw.Border.all(color: PdfColors.green200),
               ),
               child: pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
                   pw.Text(
-                    'Team Report',
+                    l10n.teamReportTitle,
                     style: pw.TextStyle(
                       fontSize: 32,
                       fontWeight: pw.FontWeight.bold,
@@ -381,41 +410,44 @@ class _TeamReportScreenState extends State<TeamReportScreen>
                   pw.SizedBox(height: 4),
                   pw.Text(
                     DateFormat('yyyy. MMMM dd.').format(DateTime.now()),
-                    style: pw.TextStyle(fontSize: 14, color: PdfColors.grey600),
+                    style: pw.TextStyle(fontSize: 16, color: PdfColors.grey600),
                   ),
                 ],
               ),
             ),
             pw.SizedBox(height: 32),
 
-            // Team Details
+            // Team Details - matching player report style
             pw.Container(
               width: double.infinity,
-              padding: const pw.EdgeInsets.all(20),
+              padding: const pw.EdgeInsets.all(24),
               decoration: pw.BoxDecoration(
                 border: pw.Border.all(color: PdfColors.grey300),
-                borderRadius: pw.BorderRadius.circular(12),
+                borderRadius: pw.BorderRadius.circular(16),
               ),
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
                   pw.Text(
-                    'Team Details',
+                    l10n.teamDetails,
                     style: pw.TextStyle(
-                      fontSize: 20,
+                      fontSize: 16,
                       fontWeight: pw.FontWeight.bold,
                       color: PdfColors.grey800,
                     ),
                   ),
                   pw.SizedBox(height: 16),
-                  _buildPdfInfoRow('Team Name:', teamName),
+                  _buildPdfInfoRow(l10n.teamName, teamName),
                   pw.SizedBox(height: 8),
-                  _buildPdfInfoRow('Description:', teamDescription),
+                  _buildPdfInfoRow(l10n.teamDescription, teamDescription),
                   pw.SizedBox(height: 8),
-                  _buildPdfInfoRow('Payment:', '$payment'),
+                  _buildPdfInfoRow(l10n.paymentStatus, '$payment'),
                   pw.SizedBox(height: 8),
                   _buildPdfInfoRow(
-                      'Total Players:', '${teamStats['totalPlayers'] ?? 0}'),
+                      l10n.totalPlayers, '${teamStats['totalPlayers'] ?? 0}'),
+                  pw.SizedBox(height: 8),
+                  _buildPdfInfoRow(l10n.averageAge,
+                      '${teamStats['averageAge']?.toStringAsFixed(1) ?? '0.0'} years'),
                 ],
               ),
             ),
@@ -434,7 +466,7 @@ class _TeamReportScreenState extends State<TeamReportScreen>
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
                   pw.Text(
-                    'Position Distribution',
+                    l10n.positionDistribution,
                     style: pw.TextStyle(
                       fontSize: 18,
                       fontWeight: pw.FontWeight.bold,
@@ -446,13 +478,13 @@ class _TeamReportScreenState extends State<TeamReportScreen>
                     mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
                     children: [
                       _buildPdfStatBox(
-                          'Goalkeeper', '${teamStats['Goalkeeper'] ?? 0}'),
+                          l10n.goalkeeper, '${teamStats['Goalkeeper'] ?? 0}'),
                       _buildPdfStatBox(
-                          'Defender', '${teamStats['Defender'] ?? 0}'),
+                          l10n.defender, '${teamStats['Defender'] ?? 0}'),
                       _buildPdfStatBox(
-                          'Midfielder', '${teamStats['Midfielder'] ?? 0}'),
+                          l10n.midfielder, '${teamStats['Midfielder'] ?? 0}'),
                       _buildPdfStatBox(
-                          'Forward', '${teamStats['Forward'] ?? 0}'),
+                          l10n.forward, '${teamStats['Forward'] ?? 0}'),
                     ],
                   ),
                 ],
@@ -460,7 +492,7 @@ class _TeamReportScreenState extends State<TeamReportScreen>
             ),
             pw.SizedBox(height: 24),
 
-            // Players List
+            // Players List Header
             pw.Container(
               width: double.infinity,
               padding: const pw.EdgeInsets.all(20),
@@ -469,90 +501,40 @@ class _TeamReportScreenState extends State<TeamReportScreen>
                 borderRadius: pw.BorderRadius.circular(12),
                 border: pw.Border.all(color: PdfColors.orange200),
               ),
-              child: pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: [
-                  pw.Text(
-                    'Team Players (${teamPlayers.length})',
-                    style: pw.TextStyle(
-                      fontSize: 18,
-                      fontWeight: pw.FontWeight.bold,
-                      color: PdfColors.orange800,
-                    ),
-                  ),
-                  pw.SizedBox(height: 16),
-                  if (teamPlayers.isEmpty)
-                    pw.Text(
-                      'No players found for this team.',
-                      style:
-                          pw.TextStyle(fontSize: 14, color: PdfColors.grey600),
-                    )
-                  else
-                    pw.Table(
-                      border: pw.TableBorder.all(color: PdfColors.orange300),
-                      columnWidths: {
-                        0: const pw.FlexColumnWidth(3),
-                        1: const pw.FlexColumnWidth(2),
-                        2: const pw.FlexColumnWidth(2),
-                      },
-                      children: [
-                        // Header
-                        pw.TableRow(
-                          decoration:
-                              pw.BoxDecoration(color: PdfColors.orange100),
-                          children: [
-                            pw.Padding(
-                              padding: const pw.EdgeInsets.all(8),
-                              child: pw.Text('Player Name',
-                                  style: pw.TextStyle(
-                                      fontWeight: pw.FontWeight.bold)),
-                            ),
-                            pw.Padding(
-                              padding: const pw.EdgeInsets.all(8),
-                              child: pw.Text('Position',
-                                  style: pw.TextStyle(
-                                      fontWeight: pw.FontWeight.bold),
-                                  textAlign: pw.TextAlign.center),
-                            ),
-                            pw.Padding(
-                              padding: const pw.EdgeInsets.all(8),
-                              child: pw.Text('Email',
-                                  style: pw.TextStyle(
-                                      fontWeight: pw.FontWeight.bold),
-                                  textAlign: pw.TextAlign.center),
-                            ),
-                          ],
-                        ),
-                        // Player rows
-                        ...teamPlayers.map((player) {
-                          final String playerName = player['name'] ?? 'Unknown';
-                          final String position = player['position'] ?? 'N/A';
-                          final String email = player['email'] ?? 'N/A';
-
-                          return pw.TableRow(
-                            children: [
-                              pw.Padding(
-                                padding: const pw.EdgeInsets.all(8),
-                                child: pw.Text(playerName),
-                              ),
-                              pw.Padding(
-                                padding: const pw.EdgeInsets.all(8),
-                                child: pw.Text(position,
-                                    textAlign: pw.TextAlign.center),
-                              ),
-                              pw.Padding(
-                                padding: const pw.EdgeInsets.all(8),
-                                child: pw.Text(email,
-                                    textAlign: pw.TextAlign.center),
-                              ),
-                            ],
-                          );
-                        }).toList(),
-                      ],
-                    ),
-                ],
+              child: pw.Text(
+                l10n.teamPlayersCount(teamPlayers.length.toString()),
+                style: pw.TextStyle(
+                  fontSize: 16,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColors.orange800,
+                ),
               ),
             ),
+            pw.SizedBox(height: 16),
+
+            // Players List using Wrap for proper pagination
+            if (teamPlayers.isEmpty)
+              pw.Container(
+                width: double.infinity,
+                padding: const pw.EdgeInsets.all(20),
+                decoration: pw.BoxDecoration(
+                  color: PdfColors.grey50,
+                  borderRadius: pw.BorderRadius.circular(12),
+                  border: pw.Border.all(color: PdfColors.grey200),
+                ),
+                child: pw.Text(
+                  l10n.noPlayersFound,
+                  style: pw.TextStyle(fontSize: 14, color: PdfColors.grey600),
+                  textAlign: pw.TextAlign.center,
+                ),
+              )
+            else
+              // Use Wrap directly in MultiPage for automatic page breaks
+              pw.Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: _buildPlayerWidgets(),
+              ),
           ],
         ),
       );
@@ -560,13 +542,20 @@ class _TeamReportScreenState extends State<TeamReportScreen>
       await Printing.layoutPdf(
         onLayout: (PdfPageFormat format) async => pdf.save(),
         name:
-            'Team_Report_${teamData['team_name']?.replaceAll(' ', '_') ?? 'Unknown'}.pdf',
+            'Team_Report_${teamData['team_name']?.replaceAll(' ', '_') ?? teamData['name']?.replaceAll(' ', '_') ?? 'Unknown'}.pdf',
       );
 
       _showSnackBar('PDF successfully generated!');
       HapticFeedback.selectionClick();
-    } catch (e) {
-      _showSnackBar('Error generating PDF report', isError: true);
+    } catch (e, stackTrace) {
+      // Enhanced error logging
+      print('=== PDF GENERATION ERROR ===');
+      print('Error: $e');
+      print('StackTrace: $stackTrace');
+      print('=== END ERROR ===');
+
+      _showSnackBar('Error generating PDF report: ${e.toString()}',
+          isError: true);
       HapticFeedback.heavyImpact();
     } finally {
       if (mounted) {
@@ -616,9 +605,116 @@ class _TeamReportScreenState extends State<TeamReportScreen>
     );
   }
 
+  /// Build individual player widgets for Wrap - following GitHub solution
+  List<pw.Widget> _buildPlayerWidgets() {
+    final List<pw.Widget> children = <pw.Widget>[];
+
+    for (final player in teamPlayers) {
+      final Map<String, dynamic> playerData = Map<String, dynamic>.from(player);
+      final String playerName = playerData['name']?.toString() ??
+          playerData['player_name']?.toString() ??
+          'Unknown';
+      final String position = playerData['position']?.toString() ?? 'N/A';
+      final String email = playerData['email']?.toString() ??
+          playerData['parent_email']?.toString() ??
+          'N/A';
+
+      // Each player as a full-width widget (following GitHub solution)
+      children.add(
+        pw.SizedBox(
+          width: double.infinity,
+          child: pw.Container(
+            margin: const pw.EdgeInsets.only(bottom: 8),
+            padding: const pw.EdgeInsets.all(12),
+            decoration: pw.BoxDecoration(
+              color: PdfColors.white,
+              borderRadius: pw.BorderRadius.circular(8),
+              border: pw.Border.all(color: PdfColors.orange200),
+            ),
+            child: pw.Row(
+              children: [
+                // Player icon
+                pw.Container(
+                  width: 40,
+                  height: 40,
+                  decoration: pw.BoxDecoration(
+                    color: PdfColors.orange100,
+                    borderRadius: pw.BorderRadius.circular(20),
+                  ),
+                  child: pw.Center(
+                    child: pw.Text(
+                      playerName.isNotEmpty ? playerName[0].toUpperCase() : '?',
+                      style: pw.TextStyle(
+                        fontSize: 16,
+                        fontWeight: pw.FontWeight.bold,
+                        color: PdfColors.orange800,
+                      ),
+                    ),
+                  ),
+                ),
+                pw.SizedBox(width: 12),
+                // Player info
+                pw.Expanded(
+                  child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text(
+                        playerName,
+                        style: pw.TextStyle(
+                          fontSize: 14,
+                          fontWeight: pw.FontWeight.bold,
+                          color: PdfColors.grey800,
+                        ),
+                      ),
+                      pw.SizedBox(height: 2),
+                      pw.Row(
+                        children: [
+                          pw.Container(
+                            padding: const pw.EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 2),
+                            decoration: pw.BoxDecoration(
+                              color: PdfColors.blue100,
+                              borderRadius: pw.BorderRadius.circular(4),
+                            ),
+                            child: pw.Text(
+                              position,
+                              style: pw.TextStyle(
+                                fontSize: 10,
+                                fontWeight: pw.FontWeight.bold,
+                                color: PdfColors.blue800,
+                              ),
+                            ),
+                          ),
+                          pw.SizedBox(width: 8),
+                          pw.Expanded(
+                            child: pw.Text(
+                              email,
+                              style: pw.TextStyle(
+                                fontSize: 10,
+                                color: PdfColors.grey600,
+                              ),
+                              overflow: pw.TextOverflow.clip,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return children;
+  }
+
   Future<void> _navigateToPlayerDetails(String playerId) async {
+    final l10n = AppLocalizations.of(context)!;
     if (playerId.isEmpty) {
-      _showSnackBar('Cannot load details: Missing player ID.', isError: true);
+      _showSnackBar(l10n.cannotLoadPlayerDetails, isError: true);
       return;
     }
 
@@ -640,7 +736,7 @@ class _TeamReportScreenState extends State<TeamReportScreen>
               children: [
                 const CircularProgressIndicator(),
                 const SizedBox(height: 16),
-                Text('Loading player details...',
+                Text(l10n.loadingPlayerDetails,
                     style: GoogleFonts.inter(fontSize: 14)),
               ],
             ),
@@ -648,8 +744,12 @@ class _TeamReportScreenState extends State<TeamReportScreen>
         ),
       );
 
-      DocumentSnapshot playerDoc =
-          await _firestore.collection('players').doc(playerId).get();
+      DocumentSnapshot playerDoc = await _firestore
+          .collection('organizations')
+          .doc(OrganizationContext.currentOrgId)
+          .collection('players')
+          .doc(playerId)
+          .get();
 
       if (mounted) Navigator.pop(context);
 
@@ -666,19 +766,20 @@ class _TeamReportScreenState extends State<TeamReportScreen>
       print("Error fetching player doc $playerId: $e");
       if (mounted) {
         Navigator.pop(context);
-        _showSnackBar('Error loading player details.', isError: true);
+        _showSnackBar(l10n.errorLoadingPlayerDetails, isError: true);
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final size = MediaQuery.of(context).size;
     final isTablet = size.width > 768;
     final isMobile = size.width < 480;
 
     final teamName = teamData['team_name'] ?? 'N/A';
-    final teamDescription = teamData['team_description'] ?? 'No description';
+    final teamDescription = teamData['team_description'] ?? l10n.noDescription;
 
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
@@ -731,6 +832,7 @@ class _TeamReportScreenState extends State<TeamReportScreen>
   }
 
   Widget _buildLoadingState() {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -745,7 +847,7 @@ class _TeamReportScreenState extends State<TeamReportScreen>
           ),
           const SizedBox(height: 20),
           Text(
-            'Loading team details...',
+            l10n.loadingTeamDetails,
             style: GoogleFonts.inter(fontSize: 16, color: Colors.grey.shade600),
           ),
         ],
@@ -776,7 +878,7 @@ class _TeamReportScreenState extends State<TeamReportScreen>
         ),
       ),
       title: Text(
-        'Team Report',
+        AppLocalizations.of(context)!.teamReport,
         style: GoogleFonts.inter(
           fontSize: 20,
           fontWeight: FontWeight.w600,
@@ -885,7 +987,7 @@ class _TeamReportScreenState extends State<TeamReportScreen>
                   color: Colors.white.withOpacity(0.8), size: 16),
               const SizedBox(width: 8),
               Text(
-                '${teamStats['totalPlayers'] ?? 0} Players',
+                '${teamStats['totalPlayers'] ?? 0} ${AppLocalizations.of(context)!.players}',
                 style: GoogleFonts.inter(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
@@ -944,6 +1046,7 @@ class _TeamReportScreenState extends State<TeamReportScreen>
   }
 
   Widget _buildTeamDetailsCard() {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -974,7 +1077,7 @@ class _TeamReportScreenState extends State<TeamReportScreen>
               ),
               const SizedBox(width: 16),
               Text(
-                'Team Details',
+                AppLocalizations.of(context)!.teamDetails,
                 style: GoogleFonts.inter(
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
@@ -984,13 +1087,16 @@ class _TeamReportScreenState extends State<TeamReportScreen>
             ],
           ),
           const SizedBox(height: 24),
-          _buildInfoRow(Icons.groups, 'Team Name',
+          _buildInfoRow(Icons.groups, l10n.teamName,
               teamData['team_name'] ?? 'N/A', Colors.green),
           const SizedBox(height: 16),
-          _buildInfoRow(Icons.description, 'Description',
-              teamData['team_description'] ?? 'No description', Colors.orange),
+          _buildInfoRow(
+              Icons.description,
+              l10n.teamDescription,
+              teamData['team_description'] ?? l10n.noDescription,
+              Colors.orange),
           const SizedBox(height: 16),
-          _buildInfoRow(Icons.attach_money, 'Payment',
+          _buildInfoRow(Icons.attach_money, l10n.paymentStatus,
               '${teamData['payment'] ?? 0}', Colors.purple),
         ],
       ),
@@ -1026,11 +1132,11 @@ class _TeamReportScreenState extends State<TeamReportScreen>
                 child: Icon(Icons.analytics,
                     color: Colors.indigo.shade600, size: 24),
               ),
-              const SizedBox(width: 16),
+              SizedBox(width: 6),
               Text(
-                'Position Distribution',
+                AppLocalizations.of(context)!.positionDistribution,
                 style: GoogleFonts.inter(
-                  fontSize: 20,
+                  fontSize: 16,
                   fontWeight: FontWeight.w700,
                   color: Colors.black87,
                 ),
@@ -1053,7 +1159,7 @@ class _TeamReportScreenState extends State<TeamReportScreen>
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Calculating statistics...',
+                    AppLocalizations.of(context)!.calculatingStatistics,
                     style: GoogleFonts.inter(
                         fontSize: 14, color: Colors.grey.shade600),
                   ),
@@ -1175,6 +1281,7 @@ class _TeamReportScreenState extends State<TeamReportScreen>
   }
 
   Widget _buildPlayersCard() {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -1204,15 +1311,18 @@ class _TeamReportScreenState extends State<TeamReportScreen>
                     Icon(Icons.people, color: Colors.green.shade600, size: 24),
               ),
               const SizedBox(width: 16),
-              Text(
-                'Team Players',
-                style: GoogleFonts.inter(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.black87,
+              Expanded(
+                child: Text(
+                  AppLocalizations.of(context)!.teamPlayers,
+                  style: GoogleFonts.inter(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.black87,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              const Spacer(),
+              const SizedBox(width: 8),
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -1247,7 +1357,7 @@ class _TeamReportScreenState extends State<TeamReportScreen>
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Loading players...',
+                    l10n.loadingPlayers,
                     style: GoogleFonts.inter(
                         fontSize: 14, color: Colors.grey.shade600),
                   ),
@@ -1261,7 +1371,7 @@ class _TeamReportScreenState extends State<TeamReportScreen>
                   Icon(Icons.group_off, size: 64, color: Colors.grey.shade400),
                   const SizedBox(height: 16),
                   Text(
-                    'No players found for this team.',
+                    AppLocalizations.of(context)!.noPlayersFound,
                     style: GoogleFonts.inter(
                         fontSize: 16, color: Colors.grey.shade600),
                     textAlign: TextAlign.center,
@@ -1450,6 +1560,7 @@ class _TeamReportScreenState extends State<TeamReportScreen>
   }
 
   Widget _buildFloatingActionButton() {
+    final l10n = AppLocalizations.of(context)!;
     return ScaleTransition(
       scale: _fabScaleAnimation,
       child: Container(
@@ -1467,7 +1578,7 @@ class _TeamReportScreenState extends State<TeamReportScreen>
             mainAxisSize: MainAxisSize.min,
             children: [
               if (isGeneratingPdf) ...[
-                SizedBox(
+                const SizedBox(
                   width: 20,
                   height: 20,
                   child: CircularProgressIndicator(
@@ -1477,7 +1588,7 @@ class _TeamReportScreenState extends State<TeamReportScreen>
                 ),
                 const SizedBox(width: 12),
                 Text(
-                  'Generating...',
+                  l10n.generating,
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -1488,7 +1599,7 @@ class _TeamReportScreenState extends State<TeamReportScreen>
                 Icon(Icons.picture_as_pdf, color: Colors.white, size: 24),
                 const SizedBox(width: 12),
                 Text(
-                  'Export PDF',
+                  l10n.generateReport,
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,

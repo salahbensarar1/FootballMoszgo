@@ -208,56 +208,17 @@
     }
   },
   
-  "sendReminder": "Emlékeztető küldése",
   "paymentReminder": "Fizetési emlékeztető",
-  "paymentReminderEmail": "Fizetési emlékeztető e-mail",
-  "sendEmail": "E-mail küldése",
-  "close": "Bezárás",
-  
-  "name": "Név",
   "position": "Pozíció",
   "team": "Csapat",
-  "teamName": "Csapat neve",
   "selectTeam": "Csapat kiválasztása",
   "assignCoach": "Edző hozzárendelése",
-  "roleDescription": "Szerepkör leírása",
   
   "trainingType": "Edzés típusa",
   "pitchLocation": "Pálya helye",
   "startTraining": "Edzés indítása (2 órás időszak)",
   "saveSession": "Edzés mentése",
   
-  "successfullyUpdated": "Sikeresen frissítve.",
-  "failedToUpdate": "Frissítés sikertelen: {error}",
-  "@failedToUpdate": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
-  
-  "deletedSuccessfully": "Sikeresen törölve.",
-  "failedToDelete": "Törlés sikertelen: {error}",
-  "@failedToDelete": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
-  
-  "noEmailAvailable": "Nincs elérhető e-mail cím ehhez a játékoshoz",
-  "emailSentSuccessfully": "E-mail sikeresen elküldve: {email}",
-  "@emailSentSuccessfully": {
-    "placeholders": {
-      "email": {
-        "type": "String"
-      }
-    }
-  },
-  
-  "allMonthsPaid": "Minden hónap ki van fizetve!",
   "failedToSendEmail": "E-mail küldése sikertelen. Kérjük, próbálja újra.",
   
   "totalPlayers": "Összes játékos",
@@ -296,7 +257,6 @@
   "noTeamAssigned": "Nincs csapat hozzárendelve",
   "editFunctionality": "Szerkesztés funkció hamarosan elérhető",
   
-  "appTitle": "Futballedzés",
   "userNotFound": "Nem található felhasználó ezzel az e-mail címmel",
   "wrongPassword": "Helytelen jelszó",
   "invalidEmail": "Érvénytelen e-mail cím",
@@ -312,49 +272,13 @@
   "loading": "Töltés...",
   "refresh": "Frissítés",
   "comingSoon": "Hamarosan elérhető!",
-  "confirmLogout": "Biztos, hogy ki szeretne jelentkezni?",
   "logoutFailed": "Kijelentkezés sikertelen",
-  "confirmDelete": "Törlés megerősítése",
-  "confirmDeleteMessage": "Biztos, hogy törölni szeretné ezt az elemet? Ez a művelet nem vonható vissza.",
   "deleteSuccess": "Sikeresen törölve.",
   "coachDeleteSuccess": "Edző sikeresen törölve az összes csapatból és a hitelesítésből.",
-  "failedToDelete": "Törlés sikertelen",
   "somethingWentWrong": "Valami hiba történt",
   "tryAgainOrContact": "Kérjük, próbálja újra vagy vegye fel a kapcsolatot a támogatással",
   "retry": "Újra",
-  "noEntityFound": "Nem található {entity}",
-  "@noEntityFound": {
-    "placeholders": {
-      "entity": {
-        "type": "String"
-      }
-    }
-  },
-  "addSomeEntity": "Adjon hozzá néhány {entity} a kezdéshez",
-  "@addSomeEntity": {
-    "placeholders": {
-      "entity": {
-        "type": "String"
-      }
-    }
-  },
-  "noResultsFor": "Nincs találat a következőre: \"{query}\"",
-  "@noResultsFor": {
-    "placeholders": {
-      "query": {
-        "type": "String"
-      }
-    }
-  },
-  "tryAdjustingSearch": "Próbálja módosítani a keresési feltételeket",
   "paymentOverview": "Fizetési áttekintés",
-  "manageTeamCoaches": "Csapat edzők kezelése",
-  "coachesManagement": "Edzők kezelése",
-  "assignMultipleCoaches": "Több edző hozzárendelése különböző szerepkörökkel",
-  "teamName": "Csapat neve",
-  "email": "E-mail",
-  "roleDescription": "Szerepkör leírása",
-  "team": "Csapat",
   "unnamedPlayer": "Névtelen játékos",
   "unnamedCoach": "Névtelen edző",
   "unnamedTeam": "Névtelen csapat",
@@ -362,12 +286,7 @@
   "unknown": "Ismeretlen",
   "unknownTeam": "Ismeretlen csapat",
   "receptionist": "Recepciós",
-  "paymentReminder": "Fizetési emlékeztető",
-  "sendReminder": "Emlékeztető küldése",
-  "playerNotFound": "Játékos nem található",
   "noEmailForPlayer": "Nincs elérhető e-mail cím ehhez a játékoshoz",
-  "allMonthsPaid": "Minden hónap ki van fizetve!",
-  "paymentReminderEmail": "Fizetési emlékeztető e-mail",
   "to": "Címzett",
   "subject": "Tárgy",
   "paymentReminderFor": "Fizetési emlékeztető {playerName} számára",
@@ -379,19 +298,7 @@
     }
   },
   "dearParentGuardian": "Kedves Szülő/Gondviselő!",
-  "reminderUnpaidMonths": "Ez egy emlékeztető, hogy a következő hónapok fizetetlen:",
   "pleasePayEarliest": "Kérjük, fizesse ki a lehőtet legkorábban.",
-  "thankYou": "Köszönjük,",
-  "footballClubManagement": "Futballklub vezetőség",
-  "sendEmail": "E-mail küldése",
-  "emailSentTo": "E-mail elküldve ide: {email}",
-  "@emailSentTo": {
-    "placeholders": {
-      "email": {
-        "type": "String"
-      }
-    }
-  },
   "errorUpdatingPayment": "Hiba a fizetés frissítésekor",
   "paymentManagementFor": "{year} fizetés kezelés",
   "@paymentManagementFor": {
@@ -402,7 +309,6 @@
     }
   },
 
-  "close": "Bezárás",
   "adding": "Hozzáadás...",
   "personalInformation": "Személyes adatok",
   "coachNameRequired": "Az edző neve kötelező",
@@ -524,7 +430,6 @@
   },
   "selectPlayer": "Játékos kiválasztása",
   "selectMonth": "Hónap kiválasztása",
-  "paymentStatus": "Fizetési állapot",
   "paymentSummary": "Fizetési összesítő",
   "year": "Év",
   "month": "hónap",
@@ -535,10 +440,7 @@
   "notes": "Megjegyzések",
   "optionalNotes": "Opcionális megjegyzések vagy kommentek...",
   
-  "fullyPaid": "Teljesen Fizetve",
   "partiallyPaid": "Részben Fizetve",
-  "unpaid": "Nem Fizetve",
-  "notActive": "Nem Aktív",
   "inactive": "Inaktív",
   
   "paymentFullyCompleted": "Fizetés teljesen teljesítve",
@@ -557,7 +459,6 @@
   "playerMarkedInactiveSuccess": "Játékos sikeresen INAKTÍV-ra jelölve!",
   "errorMarkingPayment": "Hiba a fizetés jelölésekor",
 
-  "viewDetails": "Részletek megtekintése",
   "activate": "Aktiválás",
   "playerInactiveMonths": "Játékos {months} hónapja inaktív",
   "@playerInactiveMonths": {
@@ -587,58 +488,15 @@
     }
   },
 
-  "selectBirthDate": "Születési dátum kiválasztása",
-  "selectTeamToAdd": "Hozzáadandó csapat kiválasztása",
-  "selectRole": "Szerepkör kiválasztása",
-  "forTeam": "{teamName} számára",
-  "@forTeam": {
-    "placeholders": {
-      "teamName": {
-        "type": "String"
-      }
-    }
-  },
-  "selectCoachToAdd": "Hozzáadandó edző kiválasztása",
-  "cancel": "Mégsem",
-  "noTeamsAvailable": "Nincsenek elérhető csapatok",
-  "allTeamsAssigned": "Minden csapat hozzárendelve",
-  "noCoachesAvailable": "Nincsenek elérhető edzők",
-  "allCoachesAssigned": "Minden edző hozzárendelve",
-  "playerInformation": "Játékos adatok",
-  "enterPlayerName": "Adja meg a játékos nevét",
-  "enterPosition": "Adja meg a pozíciót",
-  "teamInformation": "Csapat adatok",
-  "teamDescription": "Csapat leírása",
-  "teamNameRequired": "A csapat neve kötelező",
-  "teamNameMinLength": "A csapat nevének legalább 2 karakterből kell állnia",
-  "teamNameMaxLength": "A csapat neve kevesebb mint 30 karakterből kell álljon",
-  "teamDescriptionRequired": "A csapat leírása kötelező",
-  "descriptionMinLength": "A leírásnak legalább 10 karakterből kell állnia",
-  "descriptionMaxLength": "A leírás kevesebb mint 200 karakterből kell álljon",
-  "atLeastOneCoachRequired": "Legalább egy edzőt hozzá kell rendelni a csapat létrehozásához",
-  "atLeastOneCoachTeamRequired": "Legalább egy edzőt hozzá kell rendelni a csapathoz",
-  "maximumCoachesAssigned": "Maximum edzők hozzárendelve",
-  "addNewCoach": "Új edző hozzáadása a rendszerhez",
-  "registerNewPlayer": "Új játékos regisztrálása",
-  "createNewTeam": "Új csapat létrehozása",
-  "addNewEntry": "Új bejegyzés hozzáadása",
-  "profilePicture": "Profilkép",
-  "tapToSelectPicture": "Kattintson a fenti körre profilkép kiválasztásához",
-  "uploadImage": "Kép feltöltése",
-  "uploading": "Feltöltés...",
-  "assignToTeam": "Csapathoz rendelés",
   "editUser": "Felhasználó szerkesztése",
   "pleaseEnterName": "Kérjük, adjon meg egy nevet",
   "role": "Szerepkör",
   "enterRoleDescription": "Adja meg a szerepkör leírását...",
   "updating": "Frissítés...",
   "admin": "Admin",
-  "coach": "Edző",
-  "receptionist": "Recepciós",
   
   "loadingPaymentData": "Fizetési adatok betöltése...",
   "noPaymentDataAvailable": "Nincs elérhető fizetési adat",
-  "year": "Év",
   "filter": "Szűrő",
   "allPlayers": "Minden játékos",
   "overview": "Áttekintés",
@@ -722,7 +580,6 @@
   "weekly": "Heti",
   "monthly": "Havi",
   "autoBackup": "Automatikus mentés",
-  "exportData": "Adatok exportálása",
   
   "securityPrivacy": "Biztonság és adatvédelem",
   "currentPassword": "Jelenlegi jelszó",
@@ -778,66 +635,29 @@
   "after30Minutes": "30 perc után",
   "after1Hour": "1 óra után",
 
-  "refresh": "Frissítés",
-  "reports": "Jelentések",
   "notifications": "Értesítések",
-  "loading": "Betöltés...",
-  "somethingWentWrong": "Valami hiba történt",
-  "tryAgainOrContact": "Kérjük, próbálja újra vagy lépjen kapcsolatba az ügyfélszolgálattal",
-  "retry": "Újra",
-  "noResultsFor": "Nincs találat erre: \"{query}\"",
-  "@noResultsFor": {
-    "placeholders": {
-      "query": {
-        "type": "String"
-      }
-    }
-  },
-  "tryAdjustingSearch": "Próbálja módosítani a keresési kifejezéseket",
-  "present": "Jelen",
-  "comingSoon": "Hamarosan!",
-  "confirmLogout": "Biztosan ki szeretne jelentkezni?",
-  "logoutFailed": "Kijelentkezés sikertelen",
 
   "account": "Fiók",
   "administrator": "Adminisztrátor",
   "appearance": "Megjelenés",
-  "darkMode": "Sötét mód",
   "enableDarkModeForApp": "Sötét mód engedélyezése az alkalmazáshoz",
   "languageAndRegion": "Nyelv és régió",
-  "selectLanguage": "Nyelv kiválasztása",
-  "hungarian": "Magyar",
-  "english": "Angol",
   "security": "Biztonság",
   "twoFactorAuthentication": "Kétfaktoros hitelesítés",
   "addExtraSecurityLayer": "Extra biztonsági réteg hozzáadása",
-  "changePassword": "Jelszó módosítása",
   "updateAccountPassword": "Fiók jelszó frissítése",
-  "privacySettings": "Adatvédelmi beállítások",
   "manageDataPrivacy": "Adatvédelem kezelése",
   "soon": "Hamarosan",
   "aboutThisApp": "Az alkalmazásról",
-  "version": "Verzió",
   "currentAppVersion": "Jelenlegi alkalmazás verzió",
-  "termsOfService": "Szolgáltatási feltételek",
   "readTermsOfService": "Szolgáltatási feltételek elolvasása",
-  "privacyPolicy": "Adatvédelmi irányelvek",
   "readPrivacyPolicy": "Adatvédelmi irányelvek elolvasása",
-  "licenses": "Licencek",
   "viewOpenSourceLicenses": "Nyílt forráskódú licencek megtekintése",
 
   "searchUsers": "Felhasználók keresése...",
-  "admin": "Admin",
-  "coach": "Edző",
-  "receptionist": "Recepciós",
   "addNewUser": "Új felhasználó hozzáadása",
   "nameRequired": "A név megadása kötelező",
-  "nameMinLength": "A névnek legalább 2 karakterből kell állnia",
-  "emailRequired": "Az e-mail cím megadása kötelező",
-  "validEmailRequired": "Érvényes e-mail címet adjon meg",
   "passwordRequired": "A jelszó megadása kötelező",
-  "passwordMinLength": "A jelszónak legalább 6 karakterből kell állnia",
-  "role": "Szerep",
   "userAddedSuccessfully": "Felhasználó sikeresen hozzáadva!",
   "userUpdatedSuccessfully": "Felhasználó sikeresen frissítve!",
   "userDeletedSuccessfully": "Felhasználó sikeresen törölve!",
@@ -847,68 +667,20 @@
   "confirmDeletion": "Törlés megerősítése",
   "deleteUserWarning": "Biztosan törölni szeretné ezt a felhasználót?",
   "deleteUserDescription": "Ez a művelet nem vonható vissza. A felhasználó minden adata véglegesen törlődik.",
-  "editUser": "Felhasználó szerkesztése",
-  "currentPassword": "Jelenlegi jelszó",
-  "newPassword": "Új jelszó",
-  "confirmPassword": "Jelszó megerősítése",
   "leaveEmptyToKeep": "Hagyja üresen, ha nem szeretné módosítani",
 
-  "playerReport": "Játékos jelentés",
   "sessionReport": "Edzés jelentés", 
-  "teamReport": "Csapat jelentés",
-  "generateReport": "Jelentés generálása",
-  "exportPdf": "PDF exportálása",
-  "backToList": "Vissza a listához",
-  "basicInformation": "Alapinformációk",
-  "birthDate": "Születési dátum",
-  "position": "Pozíció",
-  "team": "Csapat",
   "attendanceInformation": "Jelenléti információk",
-  "totalMinutes": "Összes perc",
-  "sessionsAttended": "Részt vett edzések",
-  "attendanceRate": "Jelenléti arány",
-  "statistics": "Statisztikák",
   "trainingHistory": "Edzéstörténet",
-  "date": "Dátum",
   "duration": "Időtartam",
-  "status": "Állapot",
-  "noTrainingRecorded": "Nincs rögzített edzés",
-  "sessionStart": "Edzés kezdete",
-  "sessionEnd": "Edzés vége",
-  "trainingSummary": "Edzés összefoglaló",
-  "trainingType": "Edzés típusa",
-  "pitchLocation": "Pálya helyszíne",
-  "lastSession": "Utolsó edzés",
-  "noImage": "Nincs kép",
-  "loadError": "Betöltési hiba",
-  "minutes": "perc",
-  "sessions": "edzések",
-  "noTeamAssigned": "Nincs hozzárendelt csapat",
-  "totalPlayers": "Összes játékos",
-  "totalTeams": "Összes csapat",
-  "activeCoaches": "Aktív edzők",
-  "keyStatistics": "Főbb statisztikák",
-  "recentTrainingSessions": "Legutóbbi edzések",
-  "coachName": "Edző neve",
-  "playerDetails": "Játékos részletei",
-  "teamDetails": "Csapat részletei",
   "sessionDetails": "Edzés részletei",
   "playerName": "Játékos neve",
-  "teamName": "Csapat neve",
   "numberOfPlayers": "Játékosok száma",
-  "teamDescription": "Csapat leírása",
-  "assignedCoaches": "Hozzárendelt edzők",
   "sessionDate": "Edzés dátuma",
   "attendanceList": "Jelenléti lista",
   "presentPlayers": "Jelen lévő játékosok",
   "absentPlayers": "Hiányzó játékosok",
-  "absent": "Hiányzik",
-  "errorLoadingData": "Hiba az adatok betöltésekor",
-  "pdfGenerationError": "PDF generálási hiba",
-  "pdfGeneratedSuccess": "PDF sikeresen generálva",
-  "emailNotifications": "E-mail értesítések",
   "systemNotifications": "Rendszer értesítések",
-  "marketingEmails": "Marketing e-mailek",
   "securityAlerts": "Biztonsági riasztások",
   "refreshing": "Frissítés...",
   "seeAll": "Összes megtekintése",
@@ -916,6 +688,7 @@
   "teamReportTitle": "Csapat jelentés",
   "teamDetails": "Csapat részletek",
   "positionDistribution": "Pozíció eloszlás",
+  "teamPlayers": "Csapat játékosok",
   "teamPlayersCount": "Csapat játékosok ({count})",
   "@teamPlayersCount": {
     "placeholders": {
@@ -970,9 +743,7 @@
   "notesOptional": "Megjegyzések (opcionális)",
   "manageYourProfile": "Profil kezelése",
   "themeSettings": "Téma beállítások",
-  "contact": "Kapcsolat",
   "callSupport": "Támogatás hívása",
-  "emailSupport": "Email támogatás",
   "getHelpSupport": "Segítségkérés és támogatás",
   "appInformation": "Alkalmazás információk",
   "signOutAccount": "Kijelentkezés a fiókból",
@@ -1006,7 +777,6 @@
   "trainingSessionSaved": "Edzés elmentve! Még egyszer szerkesztheti.",
   "errorLoadingTeams": "Hiba a csapatok betöltésekor",
   "noTeamsAssigned": "Nincs hozzárendelt csapat",
-  "trainingActive": "Edzés aktív",
   "trainingEndsAt": "Vége: {time}",
   "@trainingEndsAt": {
     "placeholders": {
@@ -1015,7 +785,6 @@
       }
     }
   },
-  "errorLoadingPlayers": "Hiba a játékosok betöltésekor",
   "noPlayersFoundInTeam": "Nem található játékos ebben a csapatban",
   "themeTitle": "Téma",
   "coachRole": "Edző",
@@ -1037,8 +806,8 @@
   },
   "themeSettingsComingSoon": "Téma beállítások",
   "darkModeComingSoon": "Sötét mód és téma testreszabási lehetőségek hamarosan elérhetők lesznek.",
-  "languageChanged": "Nyelv megváltoztatva: {languageName}",
-  "@languageChanged": {
+  "languageChangedTo": "Nyelv megváltoztatva: {languageName}",
+  "@languageChangedTo": {
     "placeholders": {
       "languageName": {
         "type": "String"
@@ -1060,9 +829,6 @@
   "confirmNewPasswordLabel": "Új jelszó megerősítése",
   "saveLabel": "Mentés",
   
-  "theme": "Téma",
-  "lightMode": "Világos mód",
-  "darkMode": "Sötét mód",
   "contact": "Kapcsolat",
   "phoneSupport": "Telefonos támogatás",
   "emailSupport": "E-mail támogatás",

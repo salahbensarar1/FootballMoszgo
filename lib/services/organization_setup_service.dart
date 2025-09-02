@@ -1,8 +1,25 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../data/models/organization_model.dart';
 import '../data/models/user_model.dart' as app_user;
 import '../services/logging_service.dart';
+import '../services/organization_context.dart';
+
+/// Result class for organization setup operations
+class OrganizationSetupResult {
+  final Organization? organization;
+  final app_user.User? admin;
+  final bool success;
+  final String? error;
+
+  const OrganizationSetupResult({
+    this.organization,
+    this.admin,
+    required this.success,
+    this.error,
+  });
+}
 
 /// Tracks the progress of organization setup
 class OrganizationSetupProgress {
@@ -45,15 +62,16 @@ class OrganizationSetupProgress {
       teamsCreated: data['teams_created'] ?? false,
       playersAdded: data['players_added'] ?? false,
       paymentsConfigured: data['payments_configured'] ?? false,
-      lastUpdated: (data['last_updated'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      lastUpdated:
+          (data['last_updated'] as Timestamp?)?.toDate() ?? DateTime.now(),
     );
   }
 
   bool get isCompleted {
-    return basicInfoCompleted && 
-           adminCreated && 
-           teamsCreated && 
-           paymentsConfigured;
+    return basicInfoCompleted &&
+        adminCreated &&
+        teamsCreated &&
+        paymentsConfigured;
   }
 
   double get completionPercentage {
@@ -72,18 +90,23 @@ class OrganizationSetupService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   /// Check if any organization exists in the system
-  /// This should be called with anonymous authentication or after user login
+  /// If no authenticated user, assumes no organizations exist (setup needed)
   Future<bool> hasExistingOrganization() async {
     try {
-      // First ensure we have some kind of authentication
+      // Wait briefly for Firebase Auth to restore any persisted user after hot restart
+      await _restoreAuthState();
+
+      // If no authenticated user, assume setup is needed (no orgs exist)
       if (_auth.currentUser == null) {
-        // Sign in anonymously to check for existing organizations
-        await _auth.signInAnonymously();
-        LoggingService.info('Signed in anonymously to check organizations');
+        LoggingService.info('No authenticated user; assuming setup needed');
+        return false;
       }
 
+      // Query organizations collection with authenticated user
       final query = await _firestore.collection('organizations').limit(1).get();
-      return query.docs.isNotEmpty;
+      final hasOrgs = query.docs.isNotEmpty;
+      LoggingService.info('Organization existence check: $hasOrgs');
+      return hasOrgs;
     } catch (e, stackTrace) {
       LoggingService.error(
           'Failed to check existing organizations', e, stackTrace);
@@ -92,7 +115,29 @@ class OrganizationSetupService {
     }
   }
 
+  /// Waits for auth state rehydration after hot restart (non-fatal timeout)
+  Future<void> _restoreAuthState(
+      {Duration timeout = const Duration(seconds: 2)}) async {
+    if (_auth.currentUser != null) return; // Already have user
+    try {
+      final completer = Completer<void>();
+      late StreamSubscription<User?> sub;
+      sub = _auth.authStateChanges().listen((user) {
+        completer.complete();
+        sub.cancel();
+      });
+      await completer.future.timeout(timeout, onTimeout: () {
+        try {
+          sub.cancel();
+        } catch (_) {}
+      });
+    } catch (_) {
+      // Non-critical; continue without restored user
+    }
+  }
+
   /// Create a new organization with setup progress tracking
+  /// Requires an authenticated user (admin) to be signed in first
   Future<Organization> createOrganization({
     required String name,
     required String address,
@@ -100,13 +145,16 @@ class OrganizationSetupService {
     String? phoneNumber,
     String? email,
     String? website,
+    String? adminUserId,
   }) async {
     try {
-      // Ensure we have authentication - use anonymous if no user is signed in
+      // Ensure we have an authenticated user
       if (_auth.currentUser == null) {
-        await _auth.signInAnonymously();
-        LoggingService.info('Signed in anonymously for organization creation');
+        throw Exception(
+            'User must be authenticated before creating organization');
       }
+
+      final currentUserId = _auth.currentUser!.uid;
 
       // Create organization document
       final organizationRef = _firestore.collection('organizations').doc();
@@ -119,7 +167,8 @@ class OrganizationSetupService {
         phoneNumber: phoneNumber,
         email: email,
         website: website,
-        adminUserId: '', // Will be set when admin is created
+        adminUserId:
+            adminUserId ?? currentUserId, // Use provided admin or current user
         createdAt: DateTime.now(),
         settings: const {
           'currency': 'HUF',
@@ -151,6 +200,219 @@ class OrganizationSetupService {
     }
   }
 
+  /// Create admin user first (before organization creation)
+  /// This establishes authentication for subsequent Firestore operations
+  Future<app_user.User> createAdminUserFirst({
+    required String name,
+    required String email,
+    required String password,
+  }) async {
+    try {
+      // Ensure we start clean (sign out any existing user)
+      if (_auth.currentUser != null) {
+        await _auth.signOut();
+        LoggingService.info('Signed out existing user before admin creation');
+      }
+
+      // Create Firebase Auth user
+      final userCredential = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      final firebaseUser = userCredential.user;
+      if (firebaseUser == null) {
+        throw Exception('Failed to create Firebase user');
+      }
+
+      // Create user model
+      final user = app_user.User(
+        id: firebaseUser.uid,
+        name: name,
+        email: email,
+        role: 'admin',
+        roleDescription: 'System Administrator',
+        isActive: true,
+        createdAt: DateTime.now(),
+      );
+
+      // Store in global users collection
+      await _firestore
+          .collection('users')
+          .doc(firebaseUser.uid)
+          .set(user.toFirestore());
+
+      LoggingService.info('Admin user created and authenticated: $email');
+      return user;
+    } catch (e, stackTrace) {
+      LoggingService.error('Failed to create admin user first', e, stackTrace);
+      rethrow;
+    }
+  }
+
+  /// Create a complete organization setup in the right order
+  Future<OrganizationSetupResult> createCompleteOrganizationSetup({
+    required String organizationName,
+    required String organizationAddress,
+    required OrganizationType organizationType,
+    required String adminName,
+    required String adminEmail,
+    required String adminPassword,
+    String? organizationPhone,
+    String? organizationEmailContact,
+    String? organizationWebsite,
+  }) async {
+    try {
+      LoggingService.info(
+          'Starting complete organization setup for: $organizationName');
+
+      // Step 1: Create and authenticate admin user first
+      final admin = await createAdminUserFirst(
+        name: adminName,
+        email: adminEmail,
+        password: adminPassword,
+      );
+
+      // Step 2: Create organization with authenticated admin
+      final organization = await createOrganization(
+        name: organizationName,
+        address: organizationAddress,
+        type: organizationType,
+        phoneNumber: organizationPhone,
+        email: organizationEmailContact,
+        website: organizationWebsite,
+        adminUserId: admin.id,
+      );
+
+      // Step 3: Initialize organization context for scoped operations
+      await OrganizationContext.setCurrentOrganization(organization.id);
+
+      // Step 4: Create organization-scoped admin user document
+      await _firestore
+          .collection('organizations')
+          .doc(organization.id)
+          .collection('users')
+          .doc(admin.id)
+          .set({
+        'name': adminName,
+        'email': adminEmail,
+        'role': 'admin',
+        'role_description': 'System Administrator',
+        'is_active': true,
+        'created_at': FieldValue.serverTimestamp(),
+        'permissions': ['all'],
+        'uid': admin.id, // Firebase Auth UID
+      });
+
+      // Step 5: Create initial collections structure for the organization
+      await _createInitialCollectionsStructure(organization.id);
+
+      LoggingService.info('Complete organization setup successful');
+
+      return OrganizationSetupResult(
+        organization: organization,
+        admin: admin,
+        success: true,
+      );
+    } catch (e, stackTrace) {
+      LoggingService.error('Complete organization setup failed', e, stackTrace);
+      return OrganizationSetupResult(
+        success: false,
+        error: e.toString(),
+      );
+    }
+  }
+
+  /// Create initial collection structure for a new organization
+  Future<void> _createInitialCollectionsStructure(String organizationId) async {
+    try {
+      LoggingService.info(
+          '📁 Creating initial collection structure for org: $organizationId');
+
+      final batch = _firestore.batch();
+
+      // Create a placeholder document in each collection to ensure they exist
+      // Firestore collections are created only when they contain at least one document
+
+      // Teams collection placeholder
+      final teamsRef = _firestore
+          .collection('organizations')
+          .doc(organizationId)
+          .collection('teams')
+          .doc('_placeholder');
+
+      batch.set(teamsRef, {
+        '_placeholder': true,
+        'created_at': FieldValue.serverTimestamp(),
+        'note': 'This document will be removed when first real team is created',
+      });
+
+      // Players collection placeholder
+      final playersRef = _firestore
+          .collection('organizations')
+          .doc(organizationId)
+          .collection('players')
+          .doc('_placeholder');
+
+      batch.set(playersRef, {
+        '_placeholder': true,
+        'created_at': FieldValue.serverTimestamp(),
+        'note':
+            'This document will be removed when first real player is created',
+      });
+
+      // Training sessions collection placeholder
+      final sessionsRef = _firestore
+          .collection('organizations')
+          .doc(organizationId)
+          .collection('training_sessions')
+          .doc('_placeholder');
+
+      batch.set(sessionsRef, {
+        '_placeholder': true,
+        'created_at': FieldValue.serverTimestamp(),
+        'note':
+            'This document will be removed when first real session is created',
+      });
+
+      // Payments collection placeholder
+      final paymentsRef = _firestore
+          .collection('organizations')
+          .doc(organizationId)
+          .collection('payments')
+          .doc('_placeholder');
+
+      batch.set(paymentsRef, {
+        '_placeholder': true,
+        'created_at': FieldValue.serverTimestamp(),
+        'note':
+            'This document will be removed when first real payment is created',
+      });
+
+      // Reports collection placeholder
+      final reportsRef = _firestore
+          .collection('organizations')
+          .doc(organizationId)
+          .collection('reports')
+          .doc('_placeholder');
+
+      batch.set(reportsRef, {
+        '_placeholder': true,
+        'created_at': FieldValue.serverTimestamp(),
+        'note':
+            'This document will be removed when first real report is created',
+      });
+
+      await batch.commit();
+      LoggingService.info(
+          '✅ Initial collection structure created successfully');
+    } catch (e, stackTrace) {
+      LoggingService.error(
+          '❌ Failed to create initial collection structure', e, stackTrace);
+      throw Exception('Failed to create initial organization structure: $e');
+    }
+  }
+
   /// Create admin user for the organization
   Future<app_user.User> createAdminUser({
     required String organizationId,
@@ -165,13 +427,26 @@ class OrganizationSetupService {
         LoggingService.info('Signed out from anonymous account');
       }
 
-      // Create Firebase Auth user
-      final userCredential = await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+      // Create Firebase Auth user with fallback
+      UserCredential userCredential;
+      User? firebaseUser;
 
-      final firebaseUser = userCredential.user;
+      try {
+        userCredential = await _auth.createUserWithEmailAndPassword(
+          email: email,
+          password: password,
+        );
+        firebaseUser = userCredential.user;
+      } catch (e) {
+        if (e.toString().contains('admin-restricted-operation')) {
+          LoggingService.warning(
+              'Admin restricted operation, using anonymous auth fallback');
+          userCredential = await _auth.signInAnonymously();
+          firebaseUser = userCredential.user;
+        } else {
+          rethrow;
+        }
+      }
       if (firebaseUser == null) {
         throw Exception('Failed to create Firebase user');
       }
@@ -233,13 +508,26 @@ class OrganizationSetupService {
     required String password,
   }) async {
     try {
-      // Create Firebase Auth user
-      final userCredential = await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+      // Create Firebase Auth user with fallback
+      UserCredential userCredential;
+      User? firebaseUser;
 
-      final firebaseUser = userCredential.user;
+      try {
+        userCredential = await _auth.createUserWithEmailAndPassword(
+          email: email,
+          password: password,
+        );
+        firebaseUser = userCredential.user;
+      } catch (e) {
+        if (e.toString().contains('admin-restricted-operation')) {
+          LoggingService.warning(
+              'Admin restricted operation, using anonymous auth fallback');
+          userCredential = await _auth.signInAnonymously();
+          firebaseUser = userCredential.user;
+        } else {
+          rethrow;
+        }
+      }
       if (firebaseUser == null) {
         throw Exception('Failed to create Firebase user');
       }

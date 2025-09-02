@@ -1,17 +1,23 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:footballtraining/utils/responsive_utils.dart';
 import 'package:footballtraining/views/login/login_page.dart';
 import 'package:footballtraining/views/receptionist/dialogs/add_entry_dialog.dart';
 import 'package:footballtraining/views/receptionist/dialogs/coach_assignment_dialog.dart';
 import 'package:footballtraining/views/receptionist/payment_overview_screen.dart';
 import 'package:footballtraining/views/receptionist/settings_screen.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 import 'package:footballtraining/views/shared/widgets/payment_month_indicator.dart';
 import 'package:footballtraining/data/repositories/coach_management_service.dart';
+import 'package:footballtraining/services/organization_context.dart';
 import 'package:footballtraining/utils/responsive_utils.dart';
-import 'package:footballtraining/data/models/payment_model.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class ReceptionistScreen extends StatefulWidget {
@@ -180,6 +186,8 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
 
     try {
       final doc = await FirebaseFirestore.instance
+          .collection('organizations')
+          .doc(OrganizationContext.currentOrgId)
           .collection('users')
           .doc(user!.uid)
           .get();
@@ -222,13 +230,23 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
   Stream<QuerySnapshot> getStreamForCurrentTab() {
     if (currentTab == 0) {
       return FirebaseFirestore.instance
+          .collection('organizations')
+          .doc(OrganizationContext.currentOrgId)
           .collection('users')
           .where('role', isEqualTo: 'coach')
           .snapshots();
     } else if (currentTab == 1) {
-      return FirebaseFirestore.instance.collection('players').snapshots();
+      return FirebaseFirestore.instance
+          .collection('organizations')
+          .doc(OrganizationContext.currentOrgId)
+          .collection('players')
+          .snapshots();
     } else {
-      return FirebaseFirestore.instance.collection('teams').snapshots();
+      return FirebaseFirestore.instance
+          .collection('organizations')
+          .doc(OrganizationContext.currentOrgId)
+          .collection('teams')
+          .snapshots();
     }
   }
 
@@ -638,6 +656,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
             return playerName.contains(searchQuery.toLowerCase());
           } else {
             // Teams
+
             return doc['team_name']
                 .toString()
                 .toLowerCase()
@@ -1367,6 +1386,76 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
     }
   }
 
+  // Helper method to pick an image from gallery
+  Future<File?> _pickImageFromGallery() async {
+    try {
+      final pickedFile = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 512,
+        maxHeight: 512,
+        imageQuality: 70,
+      );
+
+      if (pickedFile != null) {
+        return File(pickedFile.path);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to pick image: $e'),
+          backgroundColor: Colors.red.shade600,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+    return null;
+  }
+
+  // Helper method to upload an image to Cloudinary
+  Future<String?> _uploadImageToCloudinary(File imageFile) async {
+    try {
+      String cloudName = "dycj9nypi";
+      String uploadPreset = "unsigned_preset";
+
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/image/upload'),
+      );
+
+      request.fields['upload_preset'] = uploadPreset;
+      request.fields['quality'] = 'auto:eco';
+      request.fields['fetch_format'] = 'auto';
+      request.files
+          .add(await http.MultipartFile.fromPath('file', imageFile.path));
+
+      var response = await request.send().timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          throw Exception('Upload timeout. Please check your connection.');
+        },
+      );
+
+      var responseData = await response.stream.bytesToString();
+      var jsonData = json.decode(responseData);
+
+      if (response.statusCode == 200) {
+        return jsonData['secure_url'];
+      } else {
+        throw Exception(jsonData['error']['message'] ?? 'Upload failed');
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              'Upload failed: ${e.toString().replaceAll('Exception: ', '')}'),
+          backgroundColor: Colors.red.shade600,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return null;
+    }
+  }
+
   void _editUser(DocumentSnapshot doc) {
     final l10n = AppLocalizations.of(context)!;
     final data = doc.data() as Map<String, dynamic>;
@@ -1382,6 +1471,11 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
 
     String selectedTeam = data['team'] ?? "";
     String selectedCoach = data['coach'] ?? "";
+
+    // State notifiers for image handling
+    final profileImageUrl = ValueNotifier<String?>(data['picture']);
+    final imageFile = ValueNotifier<File?>(null);
+    final isUploading = ValueNotifier<bool>(false);
 
     // For Players, show tabbed dialog with payment management
     if (currentTab == 1) {
@@ -1403,7 +1497,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                 ),
               ],
             ),
-            content: Container(
+            content: SizedBox(
               width: double.maxFinite,
               height: 450,
               child: Column(
@@ -1425,9 +1519,18 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(Icons.person_rounded, size: 16),
-                              const SizedBox(width: 4),
-                              Text(l10n.playerInfo),
+                              const Icon(Icons.person_rounded, size: 14),
+                              SizedBox(
+                                  width: ResponsiveUtils.isMobile(context)
+                                      ? 5
+                                      : 8),
+                              Text(
+                                l10n.playerInfo,
+                                style: TextStyle(
+                                    fontSize: ResponsiveUtils.isMobile(context)
+                                        ? 12
+                                        : 14),
+                              ),
                             ],
                           ),
                         ),
@@ -1437,7 +1540,13 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                             children: [
                               const Icon(Icons.payment_rounded, size: 16),
                               const SizedBox(width: 4),
-                              Text(l10n.payments),
+                              Text(
+                                l10n.payments,
+                                style: TextStyle(
+                                    fontSize: ResponsiveUtils.isMobile(context)
+                                        ? 12
+                                        : 14),
+                              ),
                             ],
                           ),
                         ),
@@ -1466,6 +1575,8 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                               const SizedBox(height: 16),
                               StreamBuilder<QuerySnapshot>(
                                 stream: FirebaseFirestore.instance
+                                    .collection('organizations')
+                                    .doc(OrganizationContext.currentOrgId)
                                     .collection('teams')
                                     .snapshots(),
                                 builder: (context, snapshot) {
@@ -1613,6 +1724,92 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                if (currentTab == 0) ...[
+                  // Profile image UI for coaches
+                  Center(
+                    child: ValueListenableBuilder<String?>(
+                      valueListenable: profileImageUrl,
+                      builder: (context, url, _) {
+                        return ValueListenableBuilder<File?>(
+                          valueListenable: imageFile,
+                          builder: (context, file, _) {
+                            return Stack(
+                              children: [
+                                Container(
+                                  width: 120,
+                                  height: 120,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.shade200,
+                                    shape: BoxShape.circle,
+                                    image: (file != null)
+                                        ? DecorationImage(
+                                            image: FileImage(file),
+                                            fit: BoxFit.cover,
+                                          )
+                                        : (url != null)
+                                            ? DecorationImage(
+                                                image: NetworkImage(url),
+                                                fit: BoxFit.cover,
+                                              )
+                                            : const DecorationImage(
+                                                image: AssetImage(
+                                                    'assets/images/default_profile.jpeg'),
+                                                fit: BoxFit.cover,
+                                              ),
+                                  ),
+                                ),
+                                Positioned(
+                                  right: 0,
+                                  bottom: 0,
+                                  child: ValueListenableBuilder<bool>(
+                                    valueListenable: isUploading,
+                                    builder: (context, uploading, _) {
+                                      return uploading
+                                          ? CircularProgressIndicator()
+                                          : InkWell(
+                                              onTap: () async {
+                                                final file =
+                                                    await _pickImageFromGallery();
+                                                if (file != null) {
+                                                  imageFile.value = file;
+                                                  isUploading.value = true;
+
+                                                  final url =
+                                                      await _uploadImageToCloudinary(
+                                                          file);
+                                                  isUploading.value = false;
+
+                                                  if (url != null) {
+                                                    profileImageUrl.value = url;
+                                                  }
+                                                }
+                                              },
+                                              child: Container(
+                                                padding: EdgeInsets.all(8),
+                                                decoration: BoxDecoration(
+                                                  color: tabConfigs[currentTab]
+                                                      .gradient[0],
+                                                  shape: BoxShape.circle,
+                                                ),
+                                                child: Icon(
+                                                  Icons.camera_alt,
+                                                  color: Colors.white,
+                                                  size: 18,
+                                                ),
+                                              ),
+                                            );
+                                    },
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                ],
                 _buildTextField(
                   controller: nameController,
                   label: currentTab == 2 ? l10n.teamName : l10n.name,
@@ -1727,7 +1924,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                             ),
                           ),
                         ),
-                        SizedBox(height: 8),
+                        const SizedBox(height: 8),
                         Text(
                           l10n.assignMultipleCoaches,
                           style: GoogleFonts.poppins(
@@ -1764,17 +1961,29 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
               onPressed: () async {
                 try {
                   if (currentTab == 0) {
-                    await FirebaseFirestore.instance
-                        .collection('users')
-                        .doc(doc.id)
-                        .update({
+                    // For coaches, include profile image URL if changed
+                    Map<String, dynamic> updateData = {
                       'name': nameController.text,
                       'email': emailController.text,
                       'role_description': descriptionController.text,
                       'team': selectedTeam,
-                    });
+                    };
+
+                    // Only add the picture field if we have a new image URL
+                    if (profileImageUrl.value != data['picture']) {
+                      updateData['picture'] = profileImageUrl.value;
+                    }
+
+                    await FirebaseFirestore.instance
+                        .collection('organizations')
+                        .doc(OrganizationContext.currentOrgId)
+                        .collection('users')
+                        .doc(doc.id)
+                        .update(updateData);
                   } else if (currentTab == 2) {
                     await FirebaseFirestore.instance
+                        .collection('organizations')
+                        .doc(OrganizationContext.currentOrgId)
                         .collection('teams')
                         .doc(doc.id)
                         .update({
@@ -1807,7 +2016,8 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                         children: [
                           const Icon(Icons.error_outline, color: Colors.white),
                           const SizedBox(width: 8),
-                          Expanded(child: Text(l10n.failedToUpdate(e.toString()))),
+                          Expanded(
+                              child: Text(l10n.failedToUpdate(e.toString()))),
                         ],
                       ),
                       backgroundColor: Colors.red.shade600,
@@ -1908,6 +2118,8 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
         } else {
           // Regular user deletion for non-coaches
           await FirebaseFirestore.instance
+              .collection('organizations')
+              .doc(OrganizationContext.currentOrgId)
               .collection('users')
               .doc(doc.id)
               .delete();
@@ -1919,6 +2131,8 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
         // Decrement the number_of_players in the assigned team
         String teamName = doc['team'];
         final teamSnapshot = await FirebaseFirestore.instance
+            .collection('organizations')
+            .doc(OrganizationContext.currentOrgId)
             .collection('teams')
             .where('team_name', isEqualTo: teamName)
             .limit(1)
@@ -1926,8 +2140,11 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
 
         if (teamSnapshot.docs.isNotEmpty) {
           final teamDoc = teamSnapshot.docs.first;
-          final teamRef =
-              FirebaseFirestore.instance.collection('teams').doc(teamDoc.id);
+          final teamRef = FirebaseFirestore.instance
+              .collection('organizations')
+              .doc(OrganizationContext.currentOrgId)
+              .collection('teams')
+              .doc(teamDoc.id);
 
           await FirebaseFirestore.instance.runTransaction((transaction) async {
             final snapshot = await transaction.get(teamRef);
@@ -1986,6 +2203,85 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
     }
   }
 
+  /// 🔥 ENTERPRISE-GRADE: Responsive configuration for the payment grid
+  /// Calculates optimal layout parameters based on device characteristics
+  Map<String, dynamic> _calculateResponsiveLayout({
+    required double screenWidth,
+    required double screenHeight,
+    required bool isLandscape,
+    required double availableWidth,
+    required double textScaleFactor,
+    required double devicePixelRatio,
+  }) {
+    // 🔥 ADVANCED: Calculate effective screen real estate
+    final isHighDensity = devicePixelRatio >= 3.0;
+    final accessibilityScale = textScaleFactor.clamp(0.8, 1.4);
+
+    // 🔥 DYNAMIC BREAKPOINTS: Based on actual usable space and device characteristics
+    int crossAxisCount;
+    double cardAspectRatio;
+    double baseSpacing;
+
+    if (availableWidth < 360) {
+      // Small phones (iPhone SE, older Android)
+      crossAxisCount = isLandscape ? 4 : 2;
+      cardAspectRatio = isLandscape ? 1.4 : 1.1;
+      baseSpacing = 8.0;
+    } else if (availableWidth < 400) {
+      // Medium phones (iPhone 12 mini, Pixel 4a)
+      crossAxisCount = isLandscape ? 5 : 3;
+      cardAspectRatio = isLandscape ? 1.3 : 1.0;
+      baseSpacing = 10.0;
+    } else if (availableWidth < 500) {
+      // Large phones (iPhone 14 Pro Max, Pixel 6 Pro)
+      crossAxisCount = isLandscape ? 5 : 3;
+      cardAspectRatio = isLandscape ? 1.3 : 1.2;
+      baseSpacing = 12.0;
+    } else if (availableWidth < 700) {
+      // Small tablets (iPad mini)
+      crossAxisCount = isLandscape ? 6 : 4;
+      cardAspectRatio = 1.3;
+      baseSpacing = 14.0;
+    } else if (availableWidth < 1000) {
+      // Standard tablets (iPad)
+      crossAxisCount = isLandscape ? 7 : 5;
+      cardAspectRatio = 1.4;
+      baseSpacing = 16.0;
+    } else {
+      // Large tablets/Desktop (iPad Pro 12.9")
+      crossAxisCount = isLandscape ? 8 : 6;
+      cardAspectRatio = 1.5;
+      baseSpacing = 18.0;
+    }
+
+    // 🔥 ADAPTIVE SPACING: Scales with device size and density
+    final scaledSpacing = baseSpacing * (isHighDensity ? 1.2 : 1.0);
+    final deviceScale =
+        (availableWidth / 360).clamp(0.8, 2.0); // Base scale from iPhone SE
+
+    return {
+      'crossAxisCount': crossAxisCount,
+      'cardAspectRatio': cardAspectRatio,
+      'paddingTiny': (scaledSpacing * 0.25 * deviceScale).clamp(2.0, 6.0),
+      'paddingSmall': (scaledSpacing * 0.5 * deviceScale).clamp(4.0, 12.0),
+      'paddingMedium': (scaledSpacing * 0.75 * deviceScale).clamp(8.0, 20.0),
+      'paddingLarge': (scaledSpacing * 1.0 * deviceScale).clamp(12.0, 28.0),
+      'gridSpacing': (scaledSpacing * 0.6 * deviceScale).clamp(6.0, 16.0),
+      'titleFontSize':
+          (16.0 * deviceScale * accessibilityScale).clamp(14.0, 24.0),
+      'monthFontSize':
+          (12.0 * deviceScale * accessibilityScale).clamp(10.0, 18.0),
+      'buttonFontSize':
+          (14.0 * deviceScale * accessibilityScale).clamp(12.0, 20.0),
+      'iconSize': (18.0 * deviceScale).clamp(16.0, 32.0),
+      'borderRadius': (8.0 * deviceScale).clamp(8.0, 20.0),
+      'shadowBlur': isHighDensity ? 12.0 : 8.0,
+      'shadowOffset': isHighDensity ? 3.0 : 2.0,
+      'buttonVerticalPadding':
+          (12.0 * deviceScale * accessibilityScale).clamp(10.0, 24.0),
+    };
+  }
+
   Widget _buildPaymentManagementTab(String playerId) {
     final l10n = AppLocalizations.of(context)!;
     final now = DateTime.now();
@@ -2007,200 +2303,228 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final width = constraints.maxWidth;
-        final isTablet = width >= 600 && width < 1024;
-        final isDesktop = width >= 1024;
-        final crossAxisCount = isDesktop
-            ? 6
-            : isTablet
-                ? 4
-                : 3;
-        final cardAspect = isDesktop
-            ? 1.5
-            : isTablet
-                ? 1.2
-                : 1.0;
-        final fontSize = isDesktop
-            ? 18.0
-            : isTablet
-                ? 15.0
-                : 12.0;
-        final iconSize = isDesktop
-            ? 28.0
-            : isTablet
-                ? 22.0
-                : 18.0;
-        final borderRadius = isDesktop
-            ? 18.0
-            : isTablet
-                ? 14.0
-                : 12.0;
-        final padding = isDesktop
-            ? 24.0
-            : isTablet
-                ? 20.0
-                : 12.0;
+        // 🔥 SENIOR-LEVEL: Advanced responsive design using MediaQuery and device context
+        final mediaQuery = MediaQuery.of(context);
+        final screenWidth = mediaQuery.size.width;
+        final screenHeight = mediaQuery.size.height;
+        final isLandscape = mediaQuery.orientation == Orientation.landscape;
+        final devicePixelRatio = mediaQuery.devicePixelRatio;
+        final textScaleFactor = mediaQuery.textScaler.scale(1.0);
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: EdgeInsets.all(padding),
-              decoration: BoxDecoration(
-                color: tabConfigs[currentTab].gradient[0].withOpacity(0.1),
-                borderRadius: BorderRadius.circular(borderRadius),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.calendar_today_rounded,
-                    color: tabConfigs[currentTab].gradient[0],
-                    size: iconSize,
+        // 🔥 ENTERPRISE-GRADE: Dynamic breakpoints based on actual device capabilities
+        final config = _calculateResponsiveLayout(
+          screenWidth: screenWidth,
+          screenHeight: screenHeight,
+          isLandscape: isLandscape,
+          availableWidth: constraints.maxWidth,
+          textScaleFactor: textScaleFactor,
+          devicePixelRatio: devicePixelRatio,
+        );
+
+        return SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 🔥 RESPONSIVE HEADER with adaptive spacing
+              Container(
+                margin: EdgeInsets.all(config['paddingMedium']),
+                padding: EdgeInsets.all(config['paddingLarge']),
+                decoration: BoxDecoration(
+                  color: tabConfigs[currentTab].gradient[0].withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(config['borderRadius']),
+                  border: Border.all(
+                    color: tabConfigs[currentTab].gradient[0].withOpacity(0.2),
+                    width: 1,
                   ),
-                  SizedBox(width: padding / 2),
-                  Text(
-                    "$currentYear Payment Management",
-                    style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.w600,
-                      fontSize: fontSize + 2,
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.calendar_today_rounded,
                       color: tabConfigs[currentTab].gradient[0],
+                      size: config['iconSize'],
                     ),
-                  ),
-                ],
+                    SizedBox(width: config['paddingMedium']),
+                    Expanded(
+                      child: Text(
+                        "$currentYear Payment Management",
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w600,
+                          fontSize: config['titleFontSize'],
+                          color: tabConfigs[currentTab].gradient[0],
+                          letterSpacing: 0.5,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            SizedBox(height: padding),
-            // Responsive Payment Grid
-            Expanded(
-              child: StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore.instance
-                    .collection('players')
-                    .doc(playerId)
-                    .collection('payments')
-                    .where('year', isEqualTo: currentYear.toString())
-                    .snapshots(),
-                builder: (context, snapshot) {
-                  // ENTERPRISE-GRADE: Store payment status with 3 states
-                  Map<String, PaymentStatus> payments = {};
-                  if (snapshot.hasData) {
-                    for (var doc in snapshot.data!.docs) {
-                      final paymentData = doc.data() as Map<String, dynamic>;
-                      final isPaid = paymentData['isPaid'] ?? false;
-                      final isActive = paymentData['isActive'] ?? true;
 
-                      // Determine 3-state payment status
-                      PaymentStatus status;
-                      if (!isActive) {
-                        status = PaymentStatus.notActive; // Grey - Not Active
-                      } else if (isPaid) {
-                        status = PaymentStatus.paid; // Green - Paid
-                      } else {
-                        status = PaymentStatus.unpaid; // Red - Unpaid
+              // 🔥 RESPONSIVE PAYMENT GRID with optimized scrolling
+              Expanded(
+                child: StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('players')
+                      .doc(playerId)
+                      .collection('payments')
+                      .where('year', isEqualTo: currentYear.toString())
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    // ENTERPRISE-GRADE: Store payment status with 3 states
+                    Map<String, PaymentStatus> payments = {};
+                    if (snapshot.hasData) {
+                      for (var doc in snapshot.data!.docs) {
+                        final paymentData = doc.data() as Map<String, dynamic>;
+                        final isPaid = paymentData['isPaid'] ?? false;
+                        final isActive = paymentData['isActive'] ?? true;
+
+                        // Determine 3-state payment status
+                        PaymentStatus status;
+                        if (!isActive) {
+                          status = PaymentStatus.notActive; // Grey - Not Active
+                        } else if (isPaid) {
+                          status = PaymentStatus.paid; // Green - Paid
+                        } else {
+                          status = PaymentStatus.unpaid; // Red - Unpaid
+                        }
+
+                        payments[doc['month']] = status;
                       }
-
-                      payments[doc['month']] = status;
                     }
-                  }
-                  return GridView.builder(
-                    shrinkWrap: true,
-                    physics: const BouncingScrollPhysics(),
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: crossAxisCount,
-                      childAspectRatio: cardAspect,
-                      crossAxisSpacing: padding / 2,
-                      mainAxisSpacing: padding / 2,
-                    ),
-                    itemCount: 12,
-                    itemBuilder: (context, index) {
-                      final monthNumber =
-                          (index + 1).toString().padLeft(2, '0');
-                      final paymentStatus =
-                          payments[monthNumber] ?? PaymentStatus.unpaid;
-                      final statusColors = _getGridStatusColors(paymentStatus);
 
-                      return GestureDetector(
-                        onTap: () => _togglePaymentStatusInGrid(playerId,
-                            currentYear.toString(), monthNumber, paymentStatus),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 300),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: statusColors,
-                            ),
-                            borderRadius: BorderRadius.circular(borderRadius),
-                            boxShadow: [
-                              BoxShadow(
-                                color: statusColors[0].withValues(alpha: 0.18),
-                                blurRadius: isDesktop ? 16 : 8,
-                                offset: const Offset(0, 4),
+                    return Container(
+                      margin: EdgeInsets.symmetric(
+                          horizontal: config['paddingMedium']),
+                      child: GridView.builder(
+                        shrinkWrap: true,
+                        physics: const BouncingScrollPhysics(),
+                        padding: EdgeInsets.all(config['paddingSmall']),
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: config['crossAxisCount'],
+                          childAspectRatio: config['cardAspectRatio'],
+                          crossAxisSpacing: config['gridSpacing'],
+                          mainAxisSpacing: config['gridSpacing'],
+                        ),
+                        itemCount: 12,
+                        itemBuilder: (context, index) {
+                          final monthNumber =
+                              (index + 1).toString().padLeft(2, '0');
+                          final paymentStatus =
+                              payments[monthNumber] ?? PaymentStatus.unpaid;
+                          final statusColors =
+                              _getGridStatusColors(paymentStatus);
+
+                          return GestureDetector(
+                            onTap: () => _togglePaymentStatusInGrid(
+                                playerId,
+                                currentYear.toString(),
+                                monthNumber,
+                                paymentStatus),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeInOut,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: statusColors,
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                borderRadius: BorderRadius.circular(
+                                    config['borderRadius']),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color:
+                                        statusColors[0].withValues(alpha: 0.25),
+                                    blurRadius: config['shadowBlur'],
+                                    offset: Offset(0, config['shadowOffset']),
+                                    spreadRadius: 1,
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                months[index],
-                                style: GoogleFonts.poppins(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: fontSize,
-                                  color: Colors.white,
-                                  letterSpacing: 0.5,
+                              child: Container(
+                                padding: EdgeInsets.all(config['paddingSmall']),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        months[index],
+                                        style: GoogleFonts.poppins(
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: config['monthFontSize'],
+                                          color: Colors.white,
+                                          letterSpacing: 0.5,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    SizedBox(height: config['paddingTiny']),
+                                    Icon(
+                                      paymentStatus == PaymentStatus.paid
+                                          ? Icons.check_circle_rounded
+                                          : paymentStatus ==
+                                                  PaymentStatus.notActive
+                                              ? Icons
+                                                  .remove_circle_outline_rounded
+                                              : Icons.cancel_rounded,
+                                      color: Colors.white,
+                                      size: config['iconSize'],
+                                    ),
+                                  ],
                                 ),
                               ),
-                              SizedBox(height: 4),
-                              Icon(
-                                paymentStatus == PaymentStatus.paid
-                                    ? Icons.check_circle_rounded
-                                    : paymentStatus == PaymentStatus.notActive
-                                        ? Icons.remove_circle_outline_rounded
-                                        : Icons.cancel_rounded,
-                                color: Colors.white,
-                                size: iconSize,
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  );
-                },
+                            ),
+                          );
+                        },
+                      ),
+                    );
+                  },
+                ),
               ),
-            ),
-            // Action buttons
-            Padding(
-              padding: EdgeInsets.all(padding),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      icon: Icon(Icons.email_rounded, size: iconSize),
-                      label: Text(
-                        "Send Reminder",
-                        style: GoogleFonts.poppins(
-                            fontWeight: FontWeight.w600, fontSize: fontSize),
+
+              // 🔥 RESPONSIVE ACTION BUTTONS with adaptive sizing
+              Container(
+                margin: EdgeInsets.all(config['paddingMedium']),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    icon: Icon(Icons.email_rounded, size: config['iconSize']),
+                    label: Text(
+                      "Send Reminder",
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.w600,
+                        fontSize: config['buttonFontSize'],
+                        letterSpacing: 0.5,
                       ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: tabConfigs[currentTab].gradient[0],
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(borderRadius)),
-                        padding: EdgeInsets.symmetric(vertical: padding * 0.75),
-                        textStyle: GoogleFonts.poppins(
-                            fontWeight: FontWeight.w600, fontSize: fontSize),
-                      ),
-                      onPressed: () => _sendPaymentReminder(playerId),
                     ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: tabConfigs[currentTab].gradient[0],
+                      foregroundColor: Colors.white,
+                      elevation: 3,
+                      shadowColor:
+                          tabConfigs[currentTab].gradient[0].withOpacity(0.3),
+                      shape: RoundedRectangleBorder(
+                        borderRadius:
+                            BorderRadius.circular(config['borderRadius']),
+                      ),
+                      padding: EdgeInsets.symmetric(
+                        vertical: config['buttonVerticalPadding'],
+                        horizontal: config['paddingLarge'],
+                      ),
+                    ),
+                    onPressed: () => _sendPaymentReminder(playerId),
                   ),
-                ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         );
       },
     );
   }
-
 
   // Enhanced method to cycle through all 3 payment states
   Future<void> _togglePaymentStatusInGrid(String playerId, String year,
@@ -2233,7 +2557,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
             'year': year,
             'month': month,
             'isPaid': false,
-            'isActive': false,  // Set to inactive (grey)
+            'isActive': false, // Set to inactive (grey)
             'updatedAt': Timestamp.now(),
             'updatedBy': FirebaseAuth.instance.currentUser?.email ?? 'Unknown',
           }, SetOptions(merge: true));
@@ -2245,19 +2569,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
             'year': year,
             'month': month,
             'isPaid': false,
-            'isActive': true,   // Back to active but unpaid
-            'updatedAt': Timestamp.now(),
-            'updatedBy': FirebaseAuth.instance.currentUser?.email ?? 'Unknown',
-          }, SetOptions(merge: true));
-          break;
-        default:
-          // Default case - treat as unpaid
-          await docRef.set({
-            'playerId': playerId,
-            'year': year,
-            'month': month,
-            'isPaid': false,
-            'isActive': true,
+            'isActive': true, // Back to active but unpaid
             'updatedAt': Timestamp.now(),
             'updatedBy': FirebaseAuth.instance.currentUser?.email ?? 'Unknown',
           }, SetOptions(merge: true));
@@ -2277,7 +2589,8 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
             ),
             backgroundColor: Colors.red.shade600,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
         );
       }
@@ -2574,21 +2887,6 @@ List<Color> _getGridStatusColors(PaymentStatus status) {
       return [Colors.red.shade400, Colors.red.shade700];
     case PaymentStatus.notActive:
       return [Colors.grey.shade400, Colors.grey.shade600];
-    default:
-      return [Colors.grey.shade400, Colors.grey.shade600];
-  }
-}
-
-// Helper to get icon for payment status grid
-IconData _getGridStatusIcon(PaymentStatus status) {
-  switch (status) {
-    case PaymentStatus.paid:
-      return Icons.check_circle_rounded;
-    case PaymentStatus.notActive:
-      return Icons.remove_circle_outline_rounded;
-    case PaymentStatus.unpaid:
-    default:
-      return Icons.cancel_rounded;
   }
 }
 

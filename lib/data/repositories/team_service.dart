@@ -4,6 +4,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:footballtraining/data/models/team_model.dart';
 import 'package:footballtraining/data/models/user_model.dart' as user_model;
 import 'package:footballtraining/services/logging_service.dart';
+import 'package:footballtraining/services/organization_context.dart';
 
 class TeamService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -12,9 +13,14 @@ class TeamService {
   // Get current user ID for audit trail
   String get _currentUserId => _auth.currentUser?.uid ?? 'unknown';
 
-  // 🔥 FIXED: Get teams for coach - handles BOTH old and new data structures
+  // 🔥 FIXED: Get teams for coach - uses organization-scoped collections
   Stream<List<Team>> getTeamsForCoach(String coachUserId) {
-    return _firestore.collection('teams').snapshots().map((snapshot) {
+    return _firestore
+        .collection('organizations')
+        .doc(OrganizationContext.currentOrgId)
+        .collection('teams')
+        .snapshots()
+        .map((snapshot) {
       final coachTeams = <Team>[];
 
       for (final doc in snapshot.docs) {
@@ -38,6 +44,8 @@ class TeamService {
     });
   }
 
+
+
   /// Helper method to check if coach is assigned to team (handles all data structures)
   bool _isCoachAssignedToTeam(
       Map<String, dynamic> teamData, String coachUserId) {
@@ -46,7 +54,8 @@ class TeamService {
       final coaches = teamData['coaches'] as List;
       for (final coach in coaches) {
         if (coach is Map &&
-            (coach['userId'] == coachUserId || coach['coach_id'] == coachUserId) &&
+            (coach['userId'] == coachUserId ||
+                coach['coach_id'] == coachUserId) &&
             (coach['isActive'] ?? true)) {
           return true;
         }
@@ -75,7 +84,11 @@ class TeamService {
       final batch = _firestore.batch();
 
       // 1. Get all teams where coach is assigned
-      final teamsSnapshot = await _firestore.collection('teams').get();
+      final teamsSnapshot = await _firestore
+          .collection('organizations')
+          .doc(OrganizationContext.currentOrgId)
+          .collection('teams')
+          .get();
 
       for (final teamDoc in teamsSnapshot.docs) {
         final data = teamDoc.data();
@@ -177,73 +190,6 @@ class TeamService {
     }
   }
 
-  // 🔥 FIXED: Alternative query method for immediate debugging
-  Future<List<Team>> getTeamsForCoachDebug(String coachUserId) async {
-    try {
-      LoggingService.debug('🔍 DEBUG: Getting teams for coach: $coachUserId');
-
-      final snapshot = await _firestore.collection('teams').get();
-      LoggingService.debug('📊 DEBUG: Total teams in database: ${snapshot.docs.length}');
-
-      final coachTeams = <Team>[];
-
-      for (final doc in snapshot.docs) {
-        final data = doc.data();
-        LoggingService.debug('🏟️ DEBUG: Checking team: ${data['team_name']} (${doc.id})');
-        LoggingService.debug('📋 DEBUG: Team data keys: ${data.keys.toList()}');
-
-        // Check all possible coach storage methods
-        bool isCoachInTeam = false;
-        String foundMethod = '';
-
-        // Check coach_ids array
-        if (data['coach_ids'] != null) {
-          LoggingService.debug('🔍 DEBUG: coach_ids found: ${data['coach_ids']}');
-          final coachIds = List<String>.from(data['coach_ids']);
-          if (coachIds.contains(coachUserId)) {
-            isCoachInTeam = true;
-            foundMethod = 'coach_ids array';
-          }
-        }
-
-        // Check coaches array
-        if (data['coaches'] != null) {
-          LoggingService.debug('🔍 DEBUG: coaches found: ${data['coaches']}');
-          final coaches = data['coaches'] as List;
-          for (final coach in coaches) {
-            if (coach is Map && (coach['userId'] == coachUserId || coach['coach_id'] == coachUserId)) {
-              isCoachInTeam = true;
-              foundMethod = 'coaches array';
-              break;
-            }
-          }
-        }
-
-        // Check single coach
-        if (data['coach'] != null) {
-          LoggingService.debug('🔍 DEBUG: single coach found: ${data['coach']}');
-          if (data['coach'] == coachUserId) {
-            isCoachInTeam = true;
-            foundMethod = 'single coach';
-          }
-        }
-
-        if (isCoachInTeam) {
-          LoggingService.debug('✅ DEBUG: Coach found in team via $foundMethod');
-          final team = Team.fromFirestore(doc);
-          coachTeams.add(team);
-        } else {
-          LoggingService.debug('❌ DEBUG: Coach NOT found in this team');
-        }
-      }
-
-      LoggingService.debug('🏆 DEBUG: Final result: ${coachTeams.length} teams found');
-      return coachTeams;
-    } catch (e) {
-      LoggingService.error('❌ DEBUG: Error getting teams', e);
-      return [];
-    }
-  }
 
   // COACH MANAGEMENT METHODS
 
@@ -291,7 +237,8 @@ class TeamService {
         'updated_at': FieldValue.serverTimestamp(),
       });
 
-      LoggingService.info('✅ Coach added successfully: $coachUserId to team $teamId');
+      LoggingService.info(
+          '✅ Coach added successfully: $coachUserId to team $teamId');
     } catch (e) {
       LoggingService.error('❌ Error adding coach', e);
       rethrow;
@@ -339,7 +286,8 @@ class TeamService {
         'updated_at': FieldValue.serverTimestamp(),
       });
 
-      LoggingService.info('✅ Coach removed successfully: $coachUserId from team $teamId');
+      LoggingService.info(
+          '✅ Coach removed successfully: $coachUserId from team $teamId');
     } catch (e) {
       LoggingService.error('❌ Error removing coach', e);
       rethrow;
@@ -396,14 +344,24 @@ class TeamService {
 
   /// Get all teams as models
   Stream<List<Team>> getAllTeams() {
-    return _firestore.collection('teams').snapshots().map((snapshot) =>
-        snapshot.docs.map((doc) => Team.fromFirestore(doc)).toList());
+    return _firestore
+        .collection('organizations')
+        .doc(OrganizationContext.currentOrgId)
+        .collection('teams')
+        .snapshots()
+        .map((snapshot) =>
+            snapshot.docs.map((doc) => Team.fromFirestore(doc)).toList());
   }
 
   /// Get single team by ID
   Future<Team?> getTeamById(String teamId) async {
     try {
-      final doc = await _firestore.collection('teams').doc(teamId).get();
+      final doc = await _firestore
+          .collection('organizations')
+          .doc(OrganizationContext.currentOrgId)
+          .collection('teams')
+          .doc(teamId)
+          .get();
       if (doc.exists) {
         return Team.fromFirestore(doc);
       }
@@ -420,6 +378,8 @@ class TeamService {
   Future<List<user_model.User>> getAvailableCoaches() async {
     try {
       final querySnapshot = await _firestore
+          .collection('organizations')
+          .doc(OrganizationContext.currentOrgId)
           .collection('users')
           .where('role', isEqualTo: 'coach')
           .where('is_active', isEqualTo: true)
@@ -477,7 +437,8 @@ class TeamService {
             });
           }
         } catch (e) {
-          LoggingService.warning('⚠️ Error getting coach details for ${teamCoach.userId}', e);
+          LoggingService.warning(
+              '⚠️ Error getting coach details for ${teamCoach.userId}', e);
         }
       }
 
@@ -522,7 +483,11 @@ class TeamService {
         teamData['coach'] = initialCoachId; // Backwards compatibility
       }
 
-      final docRef = await _firestore.collection('teams').add(teamData);
+      final docRef = await _firestore
+          .collection('organizations')
+          .doc(OrganizationContext.currentOrgId)
+          .collection('teams')
+          .add(teamData);
       LoggingService.info('✅ Team created successfully: ${docRef.id}');
       return docRef.id;
     } catch (e) {
@@ -600,7 +565,8 @@ class TeamService {
         }
       }
 
-      LoggingService.info('✅ Migration completed: $migratedCount teams migrated');
+      LoggingService.info(
+          '✅ Migration completed: $migratedCount teams migrated');
     } catch (e) {
       LoggingService.error('❌ Error during migration', e);
       rethrow;

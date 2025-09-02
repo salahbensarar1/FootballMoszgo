@@ -4,6 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:footballtraining/main.dart'; // For language switching
+import 'package:footballtraining/services/team_data_fixer_service.dart';
+import 'package:footballtraining/views/admin/widgets/emergency_data_fix_button.dart';
+import 'package:footballtraining/views/admin/widgets/coach_count_fix_button.dart';
+import 'package:footballtraining/views/admin/widgets/coach_debug_button.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -149,6 +153,10 @@ class _SettingsScreenState extends State<SettingsScreen>
                 _buildLanguageSection(l10n),
                 SizedBox(height: 24),
                 _buildSecuritySection(l10n),
+                SizedBox(height: 24),
+                _buildDeveloperSection(l10n),
+                SizedBox(height: 24),
+                _buildEmergencyFixSection(),
                 SizedBox(height: 24),
                 _buildAboutSection(l10n),
                 SizedBox(height: 32),
@@ -422,6 +430,86 @@ class _SettingsScreenState extends State<SettingsScreen>
             ),
           ),
           onTap: () => _showComingSoon('Two-Factor Authentication'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDeveloperSection(AppLocalizations l10n) {
+    return _buildSection(
+      title: "Developer Tools",
+      icon: Icons.developer_mode,
+      children: [
+        _buildSettingCard(
+          icon: Icons.build_rounded,
+          title: "Team Data Fixer",
+          subtitle: "Fix team coach assignment issues",
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => TeamDataFixerWidget(),
+            ),
+          ),
+        ),
+        SizedBox(height: 12),
+        _buildSettingCard(
+          icon: Icons.bug_report_outlined,
+          title: "Debug Information",
+          subtitle: "View app and database diagnostics",
+          onTap: () => _showComingSoon("Debug Information"),
+        ),
+      ],
+    );
+  }
+
+  /// 🚨 EMERGENCY FIX SECTION - Critical data consistency fixes
+  Widget _buildEmergencyFixSection() {
+    return _buildSection(
+      icon: Icons.warning_rounded,
+      title: '🚨 EMERGENCY DATA FIX',
+      children: [
+        const EmergencyDataFixButton(),
+        const CoachCountFixButton(),
+        const CoachDebugButton(),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.orange.shade50,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.orange.shade200),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.info_outlined, color: Colors.orange.shade600, size: 20),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'About This Fix',
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        color: Colors.orange.shade800,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Fixes coach assignment inconsistencies between teams and users collections. '
+                      'Resolves field name mismatches (userId vs coach_id) and ensures bidirectional sync.',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: Colors.orange.shade700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );

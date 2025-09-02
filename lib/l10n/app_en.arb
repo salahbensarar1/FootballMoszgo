@@ -208,56 +208,17 @@
     }
   },
   
-  "sendReminder": "Send Reminder",
   "paymentReminder": "Payment Reminder",
-  "paymentReminderEmail": "Payment Reminder Email",
-  "sendEmail": "Send Email",
-  "close": "Close",
-  
-  "name": "Name",
   "position": "Position",
   "team": "Team",
-  "teamName": "Team Name",
   "selectTeam": "Select Team",
   "assignCoach": "Assign Coach",
-  "roleDescription": "Role Description",
   
   "trainingType": "Training Type",
   "pitchLocation": "Pitch Location",
   "startTraining": "Start Training (2-hour window)",
   "saveSession": "Save Session",
   
-  "successfullyUpdated": "Successfully updated.",
-  "failedToUpdate": "Failed to update: {error}",
-  "@failedToUpdate": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
-  
-  "deletedSuccessfully": "Deleted successfully.",
-  "failedToDelete": "Failed to delete: {error}",
-  "@failedToDelete": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
-  
-  "noEmailAvailable": "No email available for this player",
-  "emailSentSuccessfully": "Email sent successfully to {email}",
-  "@emailSentSuccessfully": {
-    "placeholders": {
-      "email": {
-        "type": "String"
-      }
-    }
-  },
-  
-  "allMonthsPaid": "All months are paid!",
   "failedToSendEmail": "Failed to send email. Please try again.",
   
   "totalPlayers": "Total Players",
@@ -296,7 +257,6 @@
   "noTeamAssigned": "No Team Assigned",
   "editFunctionality": "Edit functionality coming soon",
   
-  "appTitle": "Football Training",
   "userNotFound": "No user found with this email",
   "wrongPassword": "Incorrect password",
   "invalidEmail": "Invalid email address",
@@ -312,49 +272,13 @@
   "loading": "Loading...",
   "refresh": "Refresh",
   "comingSoon": "Coming Soon!",
-  "confirmLogout": "Are you sure you want to logout?",
   "logoutFailed": "Logout failed",
-  "confirmDelete": "Confirm Delete",
-  "confirmDeleteMessage": "Are you sure you want to delete this item? This action cannot be undone.",
   "deleteSuccess": "Deleted successfully.",
   "coachDeleteSuccess": "Coach deleted from all teams and authentication successfully.",
-  "failedToDelete": "Failed to delete",
   "somethingWentWrong": "Something went wrong",
   "tryAgainOrContact": "Please try again or contact support",
   "retry": "Retry",
-  "noEntityFound": "No {entity} found",
-  "@noEntityFound": {
-    "placeholders": {
-      "entity": {
-        "type": "String"
-      }
-    }
-  },
-  "addSomeEntity": "Add some {entity} to get started",
-  "@addSomeEntity": {
-    "placeholders": {
-      "entity": {
-        "type": "String"
-      }
-    }
-  },
-  "noResultsFor": "No results for \"{query}\"",
-  "@noResultsFor": {
-    "placeholders": {
-      "query": {
-        "type": "String"
-      }
-    }
-  },
-  "tryAdjustingSearch": "Try adjusting your search terms",
   "paymentOverview": "Payment Overview",
-  "manageTeamCoaches": "Manage Team Coaches",
-  "coachesManagement": "Coaches Management",
-  "assignMultipleCoaches": "Assign multiple coaches with different roles",
-  "teamName": "Team Name",
-  "email": "Email",
-  "roleDescription": "Role Description",
-  "team": "Team",
   "unnamedPlayer": "Unnamed Player",
   "unnamedCoach": "Unnamed Coach",
   "unnamedTeam": "Unnamed Team",
@@ -362,12 +286,7 @@
   "unknown": "Unknown",
   "unknownTeam": "Unknown Team",
   "receptionist": "Receptionist",
-  "paymentReminder": "Payment Reminder",
-  "sendReminder": "Send Reminder",
-  "playerNotFound": "Player not found",
   "noEmailForPlayer": "No email available for this player",
-  "allMonthsPaid": "All months are paid!",
-  "paymentReminderEmail": "Payment Reminder Email",
   "to": "To",
   "subject": "Subject",
   "paymentReminderFor": "Payment Reminder for {playerName}",
@@ -379,19 +298,7 @@
     }
   },
   "dearParentGuardian": "Dear Parent/Guardian,",
-  "reminderUnpaidMonths": "This is a reminder that the following months are unpaid:",
   "pleasePayEarliest": "Please make the payment at your earliest convenience.",
-  "thankYou": "Thank you,",
-  "footballClubManagement": "Football Club Management",
-  "sendEmail": "Send Email",
-  "emailSentTo": "Email sent to {email}",
-  "@emailSentTo": {
-    "placeholders": {
-      "email": {
-        "type": "String"
-      }
-    }
-  },
   "errorUpdatingPayment": "Error updating payment",
   "paymentManagementFor": "{year} Payment Management",
   "@paymentManagementFor": {
@@ -401,8 +308,7 @@
       }
     }
   },
-  
-  "close": "Close",
+
   "adding": "Adding...",
   "personalInformation": "Personal Information",
   "coachNameRequired": "Coach name is required",
@@ -524,7 +430,6 @@
   },
   "selectPlayer": "Select Player",
   "selectMonth": "Select Month",
-  "paymentStatus": "Payment Status",
   "paymentSummary": "Payment Summary",
   "year": "Year",
   "month": "month",
@@ -535,10 +440,7 @@
   "notes": "Notes",
   "optionalNotes": "Optional notes or comments...",
   
-  "fullyPaid": "Fully Paid",
   "partiallyPaid": "Partially Paid",
-  "unpaid": "Unpaid",
-  "notActive": "Not Active",
   "inactive": "Inactive",
   
   "paymentFullyCompleted": "Payment fully completed",
@@ -557,7 +459,6 @@
   "playerMarkedInactiveSuccess": "Player marked as INACTIVE successfully!",
   "errorMarkingPayment": "Error marking payment",
 
-  "viewDetails": "View Details",
   "activate": "Activate",
   "playerInactiveMonths": "Player inactive for {months} months",
   "@playerInactiveMonths": {
@@ -587,58 +488,15 @@
     }
   },
 
-  "selectBirthDate": "Select birth date",
-  "selectTeamToAdd": "Select Team to Add",
-  "selectRole": "Select Role",
-  "forTeam": "for {teamName}",
-  "@forTeam": {
-    "placeholders": {
-      "teamName": {
-        "type": "String"
-      }
-    }
-  },
-  "selectCoachToAdd": "Select Coach to Add",
-  "cancel": "Cancel",
-  "noTeamsAvailable": "No teams available",
-  "allTeamsAssigned": "All teams assigned",
-  "noCoachesAvailable": "No coaches available",
-  "allCoachesAssigned": "All coaches assigned",
-  "playerInformation": "Player Information",
-  "enterPlayerName": "Enter player name",
-  "enterPosition": "Enter position",
-  "teamInformation": "Team Information",
-  "teamDescription": "Team Description",
-  "teamNameRequired": "Team name is required",
-  "teamNameMinLength": "Team name must be at least 2 characters",
-  "teamNameMaxLength": "Team name must be less than 30 characters",
-  "teamDescriptionRequired": "Team description is required",
-  "descriptionMinLength": "Description must be at least 10 characters",
-  "descriptionMaxLength": "Description must be less than 200 characters",
-  "atLeastOneCoachRequired": "At least one coach must be assigned to create a team",
-  "atLeastOneCoachTeamRequired": "At least one coach must be assigned to the team",
-  "maximumCoachesAssigned": "Maximum coaches assigned",
-  "addNewCoach": "Add a new coach to the system",
-  "registerNewPlayer": "Register a new player",
-  "createNewTeam": "Create a new team",
-  "addNewEntry": "Add new entry",
-  "profilePicture": "Profile Picture",
-  "tapToSelectPicture": "Tap the circle above to select a profile picture",
-  "uploadImage": "Upload Image",
-  "uploading": "Uploading...",
-  "assignToTeam": "Assign to Team",
   "editUser": "Edit User",
   "pleaseEnterName": "Please enter a name",
   "role": "Role",
   "enterRoleDescription": "Enter role description...",
   "updating": "Updating...",
   "admin": "Admin",
-  "coach": "Coach",
-  "receptionist": "Receptionist",
   
   "loadingPaymentData": "Loading payment data...",
   "noPaymentDataAvailable": "No payment data available",
-  "year": "Year",
   "filter": "Filter",
   "allPlayers": "All Players",
   "overview": "Overview",
@@ -722,7 +580,6 @@
   "weekly": "Weekly",
   "monthly": "Monthly",
   "autoBackup": "Auto Backup",
-  "exportData": "Export Data",
   
   "securityPrivacy": "Security & Privacy",
   "currentPassword": "Current Password",
@@ -778,32 +635,17 @@
   "after30Minutes": "After 30 minutes",
   "after1Hour": "After 1 hour",
 
-  "refresh": "Refresh",
-  "reports": "Reports",
   "notifications": "Notifications",
-  "loading": "Loading...",
-  "somethingWentWrong": "Something went wrong",
-  "tryAgainOrContact": "Please try again or contact support",
-  "retry": "Retry",
-  "tryAdjustingSearch": "Try adjusting your search terms",
-  "present": "Present",
-  "comingSoon": "Coming Soon!",
-  "logoutFailed": "Logout failed",
 
   "account": "Account",
   "administrator": "Administrator",
   "appearance": "Appearance",
-  "darkMode": "Dark Mode",
   "enableDarkModeForApp": "Enable dark mode for the app",
   "languageAndRegion": "Language & Region",
-  "selectLanguage": "Select Language",
-  "hungarian": "Hungarian",
-  "english": "English",
   "security": "Security",
   "twoFactorAuthentication": "Two-Factor Authentication",
   "addExtraSecurityLayer": "Add an extra layer of security",
   "updateAccountPassword": "Update your account password",
-  "privacySettings": "Privacy Settings",
   "manageDataPrivacy": "Manage your data privacy",
   "soon": "Soon",
   "aboutThisApp": "About This App",
@@ -815,11 +657,7 @@
   "searchUsers": "Search users...",
   "addNewUser": "Add New User",
   "nameRequired": "Name is required",
-  "nameMinLength": "Name must be at least 2 characters",
-  "emailRequired": "Email is required",
-  "validEmailRequired": "Please enter a valid email",
   "passwordRequired": "Password is required",
-  "passwordMinLength": "Password must be at least 6 characters",
   "userAddedSuccessfully": "User added successfully!",
   "userUpdatedSuccessfully": "User updated successfully!",
   "userDeletedSuccessfully": "User deleted successfully!",
@@ -831,30 +669,17 @@
   "deleteUserDescription": "This action cannot be undone. All user data will be permanently deleted.",
   "leaveEmptyToKeep": "Leave empty to keep current password",
 
-  "playerReport": "Player Report",
   "sessionReport": "Session Report", 
-  "teamReport": "Team Report",
   "attendanceInformation": "Attendance Information",
   "trainingHistory": "Training History",
   "duration": "Duration",
-  "noTrainingRecorded": "No training recorded",
-  "sessionStart": "Session Start",
-  "sessionEnd": "Session End",
-  "trainingSummary": "Training Summary",
-  "pitchLocation": "Pitch Location",
-  "coachName": "Coach Name",
-  "playerDetails": "Player Details",
-  "teamDetails": "Team Details",
   "sessionDetails": "Session Details",
   "playerName": "Player Name",
   "numberOfPlayers": "Number of Players",
-  "assignedCoaches": "Assigned Coaches",
   "sessionDate": "Session Date",
   "attendanceList": "Attendance List",
   "presentPlayers": "Present Players",
   "absentPlayers": "Absent Players",
-  "pdfGenerationError": "PDF generation error",
-  "pdfGeneratedSuccess": "PDF generated successfully",
   "systemNotifications": "System Notifications",
   "securityAlerts": "Security Alerts",
   "refreshing": "Refreshing...",
@@ -994,6 +819,7 @@
   "teamReportTitle": "Team Report",
   "teamDetails": "Team Details",
   "positionDistribution": "Position Distribution",
+  "teamPlayers": "Team Players",
   "teamPlayersCount": "Team Players ({count})",
   "@teamPlayersCount": {
     "placeholders": {
@@ -1034,7 +860,6 @@
   "help": "Help",
   "about": "About",
 
-  "selectTeam": "Select Team",
   "updateCloseSession": "Update & Close Session",
   "trainingActive": "Training Active",
   "endsAt": "Ends at {time}",
@@ -1084,7 +909,6 @@
   "trainingSessionSaved": "Training session saved! You can edit it once more.",
   "errorLoadingTeams": "Error loading teams",
   "noTeamsAssigned": "No teams assigned",
-  "trainingActive": "Training Active",
   "trainingEndsAt": "Ends at {time}",
   "@trainingEndsAt": {
     "placeholders": {
@@ -1093,7 +917,6 @@
       }
     }
   },
-  "errorLoadingPlayers": "Error loading players",
   "noPlayersFoundInTeam": "No players found in this team",
   "themeTitle": "Theme",
   "coachRole": "Coach",
@@ -1115,8 +938,8 @@
   },
   "themeSettingsComingSoon": "Theme Settings",
   "darkModeComingSoon": "Dark mode and theme customization options will be available soon.",
-  "languageChanged": "Language changed to {languageName}",
-  "@languageChanged": {
+  "languageChangedTo": "Language changed to {languageName}",
+  "@languageChangedTo": {
     "placeholders": {
       "languageName": {
         "type": "String"
@@ -1136,35 +959,12 @@
   "currentPasswordLabel": "Current Password",
   "newPasswordLabel": "New Password",
   "confirmNewPasswordLabel": "Confirm New Password",
-    "saveLabel": "Save",
+  "saveLabel": "Save",
   
-  "theme": "Theme",
-  "lightMode": "Light Mode",
-  "darkMode": "Dark Mode",
   "contact": "Contact",
   "phoneSupport": "Phone Support",
-  "emailSupport": "Email Support",
   "support": "Support",
   "profileManagement": "Profile Management",
   "helpAndSupport": "Help and Support",
-  "applicationInfo": "Application Information",
-    "helpAndSupport": "Help and Support",
-  "applicationInfo": "Application Information",
-  "account": "Account",
-  "profile": "Profile",
-  "language": "Language",
-  "help": "Help",
-  "about": "About",
-  "signOutAccount": "Sign Out",
-  "confirmSignOut": "Are you sure you want to sign out of your account?",
-  
-  "trainingTypeGame": "Game",
-  "trainingTypeTraining": "Training",
-  "trainingTypeTactical": "Tactical",
-  "trainingTypeFitness": "Fitness",
-  "trainingTypeTechnical": "Technical",
-  "trainingTypeTheoretical": "Theoretical",
-  "trainingTypeSurvey": "Survey",
-  "trainingTypeMixed": "Mixed"
+  "applicationInfo": "Application Information"
 }
-

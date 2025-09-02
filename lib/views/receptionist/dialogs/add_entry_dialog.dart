@@ -7,6 +7,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:footballtraining/data/repositories/team_service.dart';
+import 'package:footballtraining/services/enhanced_coach_team_sync_service.dart';
+import 'package:footballtraining/services/organization_context.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
@@ -36,7 +38,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
 
   // Focus nodes for better UX
   final List<FocusNode> _focusNodes = [];
-  
+
   // PRODUCTION-FIX: Stream subscriptions to prevent memory leaks
   StreamSubscription<QuerySnapshot>? _teamsSubscription;
   StreamSubscription<QuerySnapshot>? _coachesSubscription;
@@ -97,14 +99,19 @@ class _AddEntryDialogState extends State<AddEntryDialog>
     _setupFocusNodes();
     _initializeStreams();
   }
-  
+
   // PRODUCTION-FIX: Initialize streams once to prevent memory leaks
   void _initializeStreams() {
-    // Teams stream
+    // Teams stream - updated to use organization-scoped collections
+    print(
+        '🔍 Initializing teams stream for org: ${OrganizationContext.currentOrgId}');
     _teamsSubscription = FirebaseFirestore.instance
+        .collection('organizations')
+        .doc(OrganizationContext.currentOrgId)
         .collection('teams')
         .snapshots()
         .listen((snapshot) {
+      print('🔍 Teams stream: received ${snapshot.docs.length} teams');
       if (mounted) {
         setState(() {
           _teams = snapshot.docs;
@@ -112,6 +119,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
         });
       }
     }, onError: (error) {
+      print('❌ Teams stream error: $error');
       if (mounted) {
         setState(() => _teamsLoading = false);
       }
@@ -119,6 +127,8 @@ class _AddEntryDialogState extends State<AddEntryDialog>
 
     // Coaches stream
     _coachesSubscription = FirebaseFirestore.instance
+        .collection('organizations')
+        .doc(OrganizationContext.currentOrgId)
         .collection('users')
         .where('role', isEqualTo: 'coach')
         .snapshots()
@@ -243,6 +253,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
                   _buildHeader(l10n),
                   Flexible(
                     child: SingleChildScrollView(
+                      controller: _scrollController,
                       physics: BouncingScrollPhysics(),
                       child: _buildBody(l10n, isSmallScreen),
                     ),
@@ -580,21 +591,24 @@ class _AddEntryDialogState extends State<AddEntryDialog>
           // Selected Teams List
           if (selectedTeamsForCoach.isNotEmpty) ...[
             SizedBox(height: isSmallScreen ? 8 : 12),
-            ConstrainedBox(
-              constraints: BoxConstraints(
-                maxHeight: isSmallScreen ? 120 : 140,
-              ),
-              child: ListView.separated(
-                shrinkWrap: true,
-                physics: selectedTeamsForCoach.length > 2
-                    ? BouncingScrollPhysics()
-                    : NeverScrollableScrollPhysics(),
-                itemCount: selectedTeamsForCoach.length,
-                separatorBuilder: (_, __) => SizedBox(height: 6),
-                itemBuilder: (context, index) {
-                  final team = selectedTeamsForCoach[index];
-                  return _buildSelectedTeamCard(team, isSmallScreen);
-                },
+            Flexible(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: isSmallScreen ? 100 : 120,
+                  minHeight: 0,
+                ),
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  physics: selectedTeamsForCoach.length > 1
+                      ? BouncingScrollPhysics()
+                      : NeverScrollableScrollPhysics(),
+                  itemCount: selectedTeamsForCoach.length,
+                  separatorBuilder: (_, __) => SizedBox(height: 4),
+                  itemBuilder: (context, index) {
+                    final team = selectedTeamsForCoach[index];
+                    return _buildSelectedTeamCard(team, isSmallScreen);
+                  },
+                ),
               ),
             ),
           ],
@@ -675,7 +689,8 @@ class _AddEntryDialogState extends State<AddEntryDialog>
       height: isSmallScreen ? 44 : 48,
       child: OutlinedButton.icon(
         onPressed: isEnabled
-            ? () => _showTeamSelectionDialog(availableTeams, isSmallScreen, l10n)
+            ? () =>
+                _showTeamSelectionDialog(availableTeams, isSmallScreen, l10n)
             : null,
         icon: Icon(
           isEnabled ? Icons.add_circle_outline : Icons.info_outline,
@@ -732,8 +747,8 @@ class _AddEntryDialogState extends State<AddEntryDialog>
   }
 
 // PRODUCTION-READY: Team selection dialog
-  void _showTeamSelectionDialog(
-      List<QueryDocumentSnapshot> availableTeams, bool isSmallScreen, AppLocalizations l10n) {
+  void _showTeamSelectionDialog(List<QueryDocumentSnapshot> availableTeams,
+      bool isSmallScreen, AppLocalizations l10n) {
     final screenHeight = MediaQuery.of(context).size.height;
     final dialogHeight = (screenHeight * 0.6).clamp(300.0, 500.0);
 
@@ -865,8 +880,8 @@ class _AddEntryDialogState extends State<AddEntryDialog>
         borderRadius: BorderRadius.circular(isSmallScreen ? 8 : 12),
         onTap: () {
           Navigator.pop(context);
-          _showTeamRoleSelectionDialog(
-              teamId, teamData['team_name'], isSmallScreen, AppLocalizations.of(context)!);
+          _showTeamRoleSelectionDialog(teamId, teamData['team_name'],
+              isSmallScreen, AppLocalizations.of(context)!);
         },
         child: Container(
           padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
@@ -930,8 +945,8 @@ class _AddEntryDialogState extends State<AddEntryDialog>
   }
 
 // Team role selection dialog
-  void _showTeamRoleSelectionDialog(
-      String teamId, String teamName, bool isSmallScreen, AppLocalizations l10n) {
+  void _showTeamRoleSelectionDialog(String teamId, String teamName,
+      bool isSmallScreen, AppLocalizations l10n) {
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -1026,7 +1041,8 @@ class _AddEntryDialogState extends State<AddEntryDialog>
                               SizedBox(width: isSmallScreen ? 12 : 16),
                               Expanded(
                                 child: Text(
-                                  TeamService.getCoachRoleDisplayName(role, AppLocalizations.of(context)!),
+                                  TeamService.getCoachRoleDisplayName(
+                                      role, AppLocalizations.of(context)!),
                                   style: GoogleFonts.poppins(
                                     fontSize: isSmallScreen ? 14 : 16,
                                     fontWeight: FontWeight.w500,
@@ -1078,7 +1094,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
     );
   }
 
-// PRODUCTION-READY: Updated coach creation method
+// ✅ PRODUCTION-READY: Enhanced coach creation with proper sync
   Future<void> _addCoach() async {
     final l10n = AppLocalizations.of(context)!;
 
@@ -1100,66 +1116,38 @@ class _AddEntryDialogState extends State<AddEntryDialog>
 
       final String coachUID = userCredential.user!.uid;
 
-      // Prepare teams data for coach
-      final List<Map<String, dynamic>> teamsData = selectedTeamsForCoach
-          .map((team) => {
-                'team_id': team['id'],
-                'team_name': team['team_name'],
-                'role': team['role'],
-                'assigned_at': Timestamp.now(),
-              })
-          .toList();
+      // ✅ Use Enhanced Sync Service for proper bidirectional updates
+      await EnhancedCoachTeamSyncService.syncCoachAssignments(
+        coachUserId: coachUID,
+        coachName: name,
+        coachEmail: email,
+        teamAssignments: selectedTeamsForCoach,
+      );
 
-      // Save coach details in users collection with multiple teams
-      await FirebaseFirestore.instance.collection('users').doc(coachUID).set({
-        "name": name,
-        "email": email,
-        "role": "coach",
-        "role_description": roleDescription,
-        "teams": teamsData, // Multiple teams
-        "primary_team": selectedTeamsForCoach.isNotEmpty
-            ? selectedTeamsForCoach.first['team_name']
-            : null,
-        "team_count": selectedTeamsForCoach.length,
-        "picture": _uploadedImageUrl,
-        "created_at": Timestamp.now(),
+      // Add role description and picture
+      await FirebaseFirestore.instance
+          .collection('organizations')
+          .doc(OrganizationContext.currentOrgId)
+          .collection('users')
+          .doc(coachUID)
+          .update({
+        'role_description': roleDescription,
+        'picture': _uploadedImageUrl,
       });
-
-      // Update each team to include this coach
-      if (selectedTeamsForCoach.isNotEmpty) {
-        final batch = FirebaseFirestore.instance.batch();
-
-        for (var teamAssignment in selectedTeamsForCoach) {
-          final teamRef = FirebaseFirestore.instance
-              .collection('teams')
-              .doc(teamAssignment['id']);
-
-          // Add coach to team's coaches array
-          batch.update(teamRef, {
-            'coaches': FieldValue.arrayUnion([
-              {
-                'coach_id': coachUID,
-                'coach_name': name,
-                'role': teamAssignment['role'],
-                'assigned_at': Timestamp.now(),
-              }
-            ]),
-            'coach_count': FieldValue.increment(1),
-          });
-        }
-
-        await batch.commit();
-      }
 
       final teamCount = selectedTeamsForCoach.length;
       final message = teamCount > 0
-          ? 'Coach added successfully to $teamCount team(s)!'
-          : 'Coach added successfully!';
+          ? l10n.coachAddedSuccessfully(teamCount.toString())
+          : l10n.coachAddedSuccessfullySimple;
 
-      _showSuccessSnackBar(message);
-      Navigator.pop(context);
+      if (mounted) {
+        _showSuccessSnackBar(message);
+        Navigator.pop(context);
+      }
     } catch (e) {
-      _showErrorSnackBar('Error adding coach: $e');
+      if (mounted) {
+        _showErrorSnackBar('${l10n.errorAddingCoach}: $e');
+      }
     }
   }
 
@@ -1213,7 +1201,8 @@ class _AddEntryDialogState extends State<AddEntryDialog>
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
-                      TeamService.getCoachRoleDisplayName(team['role'], AppLocalizations.of(context)),
+                      TeamService.getCoachRoleDisplayName(
+                          team['role'], AppLocalizations.of(context)),
                       style: GoogleFonts.poppins(
                         fontSize: isSmallScreen ? 10 : 11,
                         color: Colors.green.shade700,
@@ -1400,21 +1389,24 @@ class _AddEntryDialogState extends State<AddEntryDialog>
           // Selected Coaches List
           if (selectedCoaches.isNotEmpty) ...[
             SizedBox(height: isSmallScreen ? 8 : 12),
-            ConstrainedBox(
-              constraints: BoxConstraints(
-                maxHeight: isSmallScreen ? 140 : 160, // Fixed reasonable height
-              ),
-              child: ListView.separated(
-                shrinkWrap: true,
-                physics: selectedCoaches.length > 2
-                    ? BouncingScrollPhysics()
-                    : NeverScrollableScrollPhysics(),
-                itemCount: selectedCoaches.length,
-                separatorBuilder: (_, __) => SizedBox(height: 6),
-                itemBuilder: (context, index) {
-                  final coach = selectedCoaches[index];
-                  return _buildSelectedCoachCard(coach, isSmallScreen);
-                },
+            Flexible(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: isSmallScreen ? 100 : 120,
+                  minHeight: 0,
+                ),
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  physics: selectedCoaches.length > 1
+                      ? BouncingScrollPhysics()
+                      : NeverScrollableScrollPhysics(),
+                  itemCount: selectedCoaches.length,
+                  separatorBuilder: (_, __) => SizedBox(height: 4),
+                  itemBuilder: (context, index) {
+                    final coach = selectedCoaches[index];
+                    return _buildSelectedCoachCard(coach, isSmallScreen);
+                  },
+                ),
               ),
             ),
           ],
@@ -1445,7 +1437,8 @@ class _AddEntryDialogState extends State<AddEntryDialog>
                 ),
 
           // Validation Warning
-          if (selectedCoaches.isEmpty) _buildValidationWarning(isSmallScreen, l10n),
+          if (selectedCoaches.isEmpty)
+            _buildValidationWarning(isSmallScreen, l10n),
         ],
       ),
     );
@@ -1502,7 +1495,8 @@ class _AddEntryDialogState extends State<AddEntryDialog>
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
-                    TeamService.getCoachRoleDisplayName(coach['role'], AppLocalizations.of(context)),
+                    TeamService.getCoachRoleDisplayName(
+                        coach['role'], AppLocalizations.of(context)),
                     style: GoogleFonts.poppins(
                       fontSize: isSmallScreen ? 10 : 11,
                       color: Colors.green.shade700,
@@ -1562,7 +1556,8 @@ class _AddEntryDialogState extends State<AddEntryDialog>
       height: isSmallScreen ? 44 : 48,
       child: OutlinedButton.icon(
         onPressed: isEnabled
-            ? () => _showCoachSelectionDialog(availableCoaches, isSmallScreen, l10n)
+            ? () =>
+                _showCoachSelectionDialog(availableCoaches, isSmallScreen, l10n)
             : null,
         icon: Icon(
           isEnabled ? Icons.person_add : Icons.info_outline,
@@ -1646,8 +1641,8 @@ class _AddEntryDialogState extends State<AddEntryDialog>
   }
 
   // PRODUCTION-READY: Optimized coach selection dialog
-  void _showCoachSelectionDialog(
-      List<QueryDocumentSnapshot> availableCoaches, bool isSmallScreen, AppLocalizations l10n) {
+  void _showCoachSelectionDialog(List<QueryDocumentSnapshot> availableCoaches,
+      bool isSmallScreen, AppLocalizations l10n) {
     final screenHeight = MediaQuery.of(context).size.height;
     final dialogHeight = (screenHeight * 0.6).clamp(300.0, 500.0);
 
@@ -1780,7 +1775,8 @@ class _AddEntryDialogState extends State<AddEntryDialog>
         borderRadius: BorderRadius.circular(isSmallScreen ? 8 : 12),
         onTap: () {
           Navigator.pop(context);
-          _showRoleSelectionDialog(coachId, coachData['name'], isSmallScreen, AppLocalizations.of(context)!);
+          _showRoleSelectionDialog(coachId, coachData['name'], isSmallScreen,
+              AppLocalizations.of(context)!);
         },
         child: Container(
           padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
@@ -1843,8 +1839,8 @@ class _AddEntryDialogState extends State<AddEntryDialog>
   }
 
   // Responsive role selection dialog
-  void _showRoleSelectionDialog(
-      String coachId, String coachName, bool isSmallScreen, AppLocalizations l10n) {
+  void _showRoleSelectionDialog(String coachId, String coachName,
+      bool isSmallScreen, AppLocalizations l10n) {
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -1939,7 +1935,8 @@ class _AddEntryDialogState extends State<AddEntryDialog>
                               SizedBox(width: isSmallScreen ? 12 : 16),
                               Expanded(
                                 child: Text(
-                                  TeamService.getCoachRoleDisplayName(role, AppLocalizations.of(context)!),
+                                  TeamService.getCoachRoleDisplayName(
+                                      role, AppLocalizations.of(context)!),
                                   style: GoogleFonts.poppins(
                                     fontSize: isSmallScreen ? 14 : 16,
                                     fontWeight: FontWeight.w500,
@@ -2246,8 +2243,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
         decoration: InputDecoration(
           labelText: isCoach ? l10n.assignToTeam : l10n.selectTeam,
           labelStyle: GoogleFonts.poppins(color: Colors.grey.shade600),
-          prefixIcon:
-              Icon(Icons.groups_outlined, color: Colors.grey.shade500),
+          prefixIcon: Icon(Icons.groups_outlined, color: Colors.grey.shade500),
           border: InputBorder.none,
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -2450,7 +2446,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
       // PRODUCTION-FIX: Add timeout and compression settings
       request.fields['quality'] = 'auto:eco';
       request.fields['fetch_format'] = 'auto';
-      
+
       request.files
           .add(await http.MultipartFile.fromPath('file', _imageFile!.path));
 
@@ -2461,7 +2457,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
           throw Exception('Upload timeout. Please check your connection.');
         },
       );
-      
+
       var responseData = await response.stream.bytesToString();
       var jsonData = json.decode(responseData);
 
@@ -2479,7 +2475,8 @@ class _AddEntryDialogState extends State<AddEntryDialog>
     } catch (e) {
       if (mounted) {
         setState(() => _isUploading = false);
-        _showErrorSnackBar('Upload failed: ${e.toString().replaceAll('Exception: ', '')}');
+        _showErrorSnackBar(
+            'Upload failed: ${e.toString().replaceAll('Exception: ', '')}');
       }
     }
   }
@@ -2521,8 +2518,10 @@ class _AddEntryDialogState extends State<AddEntryDialog>
     }
 
     try {
-      // Find the team document by its name
+      // Find the team document by its name in organization collections
       final teamSnapshot = await FirebaseFirestore.instance
+          .collection('organizations')
+          .doc(OrganizationContext.currentOrgId)
           .collection('teams')
           .where('team_name', isEqualTo: selectedTeamForPlayer)
           .limit(1)
@@ -2530,16 +2529,24 @@ class _AddEntryDialogState extends State<AddEntryDialog>
 
       if (teamSnapshot.docs.isEmpty) {
         // Team doesn't exist: create it and set count = 1
-        await FirebaseFirestore.instance.collection('teams').add({
+        await FirebaseFirestore.instance
+            .collection('organizations')
+            .doc(OrganizationContext.currentOrgId)
+            .collection('teams')
+            .add({
           'team_name': selectedTeamForPlayer,
           'number_of_players': 1,
+          'organization_id': OrganizationContext.currentOrgId,
           'created_at': Timestamp.now(),
         });
       } else {
         // Team exists: increment player count
         final teamDoc = teamSnapshot.docs.first;
-        final teamRef =
-            FirebaseFirestore.instance.collection('teams').doc(teamDoc.id);
+        final teamRef = FirebaseFirestore.instance
+            .collection('organizations')
+            .doc(OrganizationContext.currentOrgId)
+            .collection('teams')
+            .doc(teamDoc.id);
 
         await FirebaseFirestore.instance.runTransaction((transaction) async {
           final snapshot = await transaction.get(teamRef);
@@ -2548,12 +2555,17 @@ class _AddEntryDialogState extends State<AddEntryDialog>
         });
       }
 
-      // Add the player to the players collection
-      await FirebaseFirestore.instance.collection('players').add({
+      // Add the player to the organization players collection
+      await FirebaseFirestore.instance
+          .collection('organizations')
+          .doc(OrganizationContext.currentOrgId)
+          .collection('players')
+          .add({
         "name": name,
         "birth_date": birthDate != null ? Timestamp.fromDate(birthDate!) : null,
         "position": position,
         "team": selectedTeamForPlayer,
+        "organization_id": OrganizationContext.currentOrgId,
         "created_at": Timestamp.now(),
       });
 
@@ -2590,13 +2602,18 @@ class _AddEntryDialogState extends State<AddEntryDialog>
           .toList();
 
       // Create team document with all coaches
-      final teamRef = await FirebaseFirestore.instance.collection('teams').add({
+      final teamRef = await FirebaseFirestore.instance
+          .collection('organizations')
+          .doc(OrganizationContext.currentOrgId)
+          .collection('teams')
+          .add({
         "team_name": teamName.trim(),
         "team_description": teamDescription.trim(),
         "number_of_players": 0,
         "coaches": coachesData,
         "primary_coach": selectedCoaches.first['id'], // First coach is primary
         "coach_count": selectedCoaches.length,
+        "organization_id": OrganizationContext.currentOrgId,
         "created_at": Timestamp.now(),
       });
 
@@ -2606,8 +2623,11 @@ class _AddEntryDialogState extends State<AddEntryDialog>
       final batch = FirebaseFirestore.instance.batch();
 
       for (var coach in selectedCoaches) {
-        final coachRef =
-            FirebaseFirestore.instance.collection('users').doc(coach['id']);
+        final coachRef = FirebaseFirestore.instance
+            .collection('organizations')
+            .doc(OrganizationContext.currentOrgId)
+            .collection('users')
+            .doc(coach['id']);
         batch.update(coachRef, {
           'team': teamName.trim(),
           'team_id': teamDocId,
@@ -2677,7 +2697,11 @@ class _AddEntryDialogState extends State<AddEntryDialog>
   }
 
   Stream<QuerySnapshot> getTeamsStream() {
-    return FirebaseFirestore.instance.collection('teams').snapshots();
+    return FirebaseFirestore.instance
+        .collection('organizations')
+        .doc(OrganizationContext.currentOrgId)
+        .collection('teams')
+        .snapshots();
   }
 }
 

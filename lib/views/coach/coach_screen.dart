@@ -60,26 +60,29 @@ class _CoachScreenState extends State<CoachScreen>
 
   // Training Types Configuration
   List<TrainingTypeConfig> _getTrainingTypes(AppLocalizations l10n) => [
-    TrainingTypeConfig(l10n.trainingTypeGame, Icons.sports_soccer,
-        [Colors.red.shade400, Colors.red.shade600]),
-    TrainingTypeConfig(
-        l10n.trainingTypeTraining, Icons.sports, [Colors.blue.shade400, Colors.blue.shade600]),
-    TrainingTypeConfig(l10n.trainingTypeTactical, Icons.analytics,
-        [Colors.purple.shade400, Colors.purple.shade600]),
-    TrainingTypeConfig(l10n.trainingTypeFitness, Icons.fitness_center,
-        [Colors.orange.shade400, Colors.orange.shade600]),
-    TrainingTypeConfig(l10n.trainingTypeTechnical, Icons.precision_manufacturing,
-        [Colors.green.shade400, Colors.green.shade600]),
-    TrainingTypeConfig(l10n.trainingTypeTheoretical, Icons.school,
-        [Colors.indigo.shade400, Colors.indigo.shade600]),
-    TrainingTypeConfig(
-        l10n.trainingTypeSurvey, Icons.quiz, [Colors.teal.shade400, Colors.teal.shade600]),
-    TrainingTypeConfig(
-        l10n.trainingTypeMixed, Icons.shuffle, [Colors.amber.shade400, Colors.amber.shade600]),
-  ];
-  
+        TrainingTypeConfig(l10n.trainingTypeGame, Icons.sports_soccer,
+            [Colors.red.shade400, Colors.red.shade600]),
+        TrainingTypeConfig(l10n.trainingTypeTraining, Icons.sports,
+            [Colors.blue.shade400, Colors.blue.shade600]),
+        TrainingTypeConfig(l10n.trainingTypeTactical, Icons.analytics,
+            [Colors.purple.shade400, Colors.purple.shade600]),
+        TrainingTypeConfig(l10n.trainingTypeFitness, Icons.fitness_center,
+            [Colors.orange.shade400, Colors.orange.shade600]),
+        TrainingTypeConfig(
+            l10n.trainingTypeTechnical,
+            Icons.precision_manufacturing,
+            [Colors.green.shade400, Colors.green.shade600]),
+        TrainingTypeConfig(l10n.trainingTypeTheoretical, Icons.school,
+            [Colors.indigo.shade400, Colors.indigo.shade600]),
+        TrainingTypeConfig(l10n.trainingTypeSurvey, Icons.quiz,
+            [Colors.teal.shade400, Colors.teal.shade600]),
+        TrainingTypeConfig(l10n.trainingTypeMixed, Icons.shuffle,
+            [Colors.amber.shade400, Colors.amber.shade600]),
+      ];
+
   // Getter for training types
-  List<TrainingTypeConfig> get trainingTypes => _getTrainingTypes(AppLocalizations.of(context)!);
+  List<TrainingTypeConfig> get trainingTypes =>
+      _getTrainingTypes(AppLocalizations.of(context)!);
 
   // In the initState method:
   @override
@@ -733,7 +736,7 @@ class _CoachScreenState extends State<CoachScreen>
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          'Hiba a csapatok betöltésekor: ${snapshot.error}',
+                          '${l10n.errorLoadingTeams}: ${snapshot.error}',
                           style: TextStyle(color: Colors.red.shade700),
                         ),
                       ),
@@ -746,7 +749,7 @@ class _CoachScreenState extends State<CoachScreen>
 
               if (teams.isEmpty) {
                 return _buildEmptyState(
-                    'Nincs hozzárendelt csapat', Icons.sports_soccer);
+                    "No teams assigned", Icons.sports_soccer);
               }
 
               return DropdownButtonFormField<Team>(
@@ -1280,7 +1283,7 @@ class _CoachScreenState extends State<CoachScreen>
                           ],
                         ),
                         _buildDrawerSection(
-                          title: 'Contact',
+                          title: l10n.contact,
                           items: [
                             DrawerItemData(
                               icon: Icons.phone_outlined,
@@ -1301,7 +1304,7 @@ class _CoachScreenState extends State<CoachScreen>
                           ],
                         ),
                         _buildDrawerSection(
-                          title: 'Support',
+                          title: l10n.support,
                           items: [
                             DrawerItemData(
                               icon: Icons.help_outline,
