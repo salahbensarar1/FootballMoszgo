@@ -308,90 +308,252 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   Widget _buildHeader(bool isSmallScreen, AppLocalizations l10n) {
     return Column(
       children: [
-        // MozGo Club Logo - Balanced Design
+        // MozGo Club Logo - Artistic Football Design
         Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: isSmallScreen ? 20 : 25,
-            vertical: isSmallScreen ? 20 : 25,
-          ),
+          width: isSmallScreen ? 300 : 340,
+          height: isSmallScreen ? 160 : 180,
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.95),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 20,
-                spreadRadius: 2,
-                offset: const Offset(0, 8),
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 25,
+                spreadRadius: 3,
+                offset: const Offset(0, 10),
               ),
             ],
           ),
-          child: Column(
+          child: Stack(
+            clipBehavior: Clip.hardEdge,
             children: [
-              // Main Logo Row
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // "moz" text
-                  Text(
-                    'moz',
-                    style: TextStyle(
-                      fontSize: isSmallScreen ? 32 : 36,
-                      fontWeight: FontWeight.w800,
-                      color: const Color(0xFF2D3748), // Match login form color
-                      letterSpacing: -1.5,
-                      height: 1.0,
-                    ),
+              // Abstract Background Shapes
+              Positioned(
+                top: -20,
+                left: -15,
+                child: Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE31E24).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(40),
                   ),
-                  SizedBox(width: isSmallScreen ? 8 : 10),
-                  // "GO" in gradient circle
-                  Container(
-                    width: isSmallScreen ? 48 : 52,
-                    height: isSmallScreen ? 48 : 52,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Color(0xFFE31E24), // Main red
-                          Color(0xFFC41E3A), // Deep red
+                ),
+              ),
+              Positioned(
+                bottom: -25,
+                right: -20,
+                child: Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE31E24).withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(50),
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 10,
+                right: 20,
+                child: Container(
+                  width: 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE31E24).withValues(alpha: 0.4),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+              ),
+              
+              // Main Content
+              Positioned.fill(
+                child: Padding(
+                  padding: EdgeInsets.all(isSmallScreen ? 20 : 24),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Logo Row with Football Elements
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Left football accent
+                          Transform.rotate(
+                            angle: -0.3,
+                            child: Container(
+                              width: 4,
+                              height: isSmallScreen ? 16 : 20,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFE31E24).withValues(alpha: 0.6),
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          
+                          // "moz" text
+                          Text(
+                            'moz',
+                            style: TextStyle(
+                              fontSize: isSmallScreen ? 28 : 32,
+                              fontWeight: FontWeight.w800,
+                              color: const Color(0xFF2D3748),
+                              letterSpacing: -1,
+                              height: 1.0,
+                            ),
+                          ),
+                          
+                          // "GO" in dynamic style
+                          Container(
+                            margin: EdgeInsets.symmetric(horizontal: isSmallScreen ? 6 : 8),
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                // Background red circles
+                                Container(
+                                  width: isSmallScreen ? 44 : 50,
+                                  height: isSmallScreen ? 44 : 50,
+                                  decoration: BoxDecoration(
+                                    gradient: const LinearGradient(
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                      colors: [
+                                        Color(0xFFE31E24),
+                                        Color(0xFFC41E3A),
+                                      ],
+                                    ),
+                                    borderRadius: BorderRadius.circular(25),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFFE31E24).withValues(alpha: 0.3),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 3),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                // "GO" text
+                                Text(
+                                  'GO',
+                                  style: TextStyle(
+                                    fontSize: isSmallScreen ? 14 : 16,
+                                    fontWeight: FontWeight.w900,
+                                    color: Colors.white,
+                                    letterSpacing: -0.5,
+                                    height: 1.0,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          
+                          // Football player silhouette icon
+                          Transform.rotate(
+                            angle: 0.2,
+                            child: Icon(
+                              Icons.sports_soccer,
+                              size: isSmallScreen ? 18 : 22,
+                              color: const Color(0xFF2D3748).withValues(alpha: 0.7),
+                            ),
+                          ),
+                          
+                          const SizedBox(width: 8),
+                          // Right football accent
+                          Transform.rotate(
+                            angle: 0.4,
+                            child: Container(
+                              width: 4,
+                              height: isSmallScreen ? 12 : 16,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFE31E24).withValues(alpha: 0.5),
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            ),
+                          ),
                         ],
                       ),
-                      borderRadius: BorderRadius.circular(26),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFFE31E24).withValues(alpha: 0.3),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Center(
-                      child: Text(
-                        'GO',
-                        style: TextStyle(
-                          fontSize: isSmallScreen ? 16 : 18,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white,
-                          letterSpacing: -0.5,
-                          height: 1.0,
-                        ),
+                      
+                      SizedBox(height: isSmallScreen ? 16 : 20),
+                      
+                      // Club Info with Style
+                      Column(
+                        children: [
+                          // Dynamic underline
+                          Container(
+                            width: isSmallScreen ? 60 : 80,
+                            height: 2,
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [
+                                  Colors.transparent,
+                                  Color(0xFFE31E24),
+                                  Colors.transparent,
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(1),
+                            ),
+                          ),
+                          
+                          SizedBox(height: isSmallScreen ? 8 : 12),
+                          
+                          // Club name
+                          Text(
+                            'NAGYKŐRÖS',
+                            style: TextStyle(
+                              fontSize: isSmallScreen ? 14 : 16,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF2D3748),
+                              letterSpacing: 1.5,
+                              height: 1.0,
+                            ),
+                          ),
+                          
+                          SizedBox(height: 2),
+                          
+                          // Subtitle
+                          Text(
+                            'LABDARÚGÓ KLUB',
+                            style: TextStyle(
+                              fontSize: isSmallScreen ? 10 : 12,
+                              fontWeight: FontWeight.w500,
+                              color: const Color(0xFF718096),
+                              letterSpacing: 1.2,
+                              height: 1.0,
+                            ),
+                          ),
+                        ],
                       ),
+                    ],
+                  ),
+                ),
+              ),
+              
+              // Additional decorative elements
+              Positioned(
+                bottom: 15,
+                left: 20,
+                child: Container(
+                  width: 3,
+                  height: 3,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE31E24).withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(1.5),
+                  ),
+                ),
+              ),
+              
+              Positioned(
+                top: 25,
+                left: 60,
+                child: Transform.rotate(
+                  angle: 0.5,
+                  child: Container(
+                    width: 2,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE31E24).withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(1),
                     ),
                   ),
-                ],
-              ),
-              SizedBox(height: isSmallScreen ? 12 : 16),
-              // Club subtitle
-              Text(
-                'Nagykörös Football Club',
-                style: TextStyle(
-                  fontSize: isSmallScreen ? 12 : 14,
-                  fontWeight: FontWeight.w500,
-                  color: const Color(0xFF718096), // Subtle gray to match page
-                  letterSpacing: 0.8,
-                  height: 1.2,
                 ),
               ),
             ],
