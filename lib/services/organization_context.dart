@@ -4,6 +4,15 @@ import 'package:footballtraining/data/models/organization_model.dart';
 import 'package:footballtraining/data/models/subscription_model.dart';
 import 'package:logger/logger.dart';
 
+/// Exception thrown when organization context is required but not set
+class OrganizationContextException implements Exception {
+  final String message;
+  const OrganizationContextException(this.message);
+
+  @override
+  String toString() => 'OrganizationContextException: $message';
+}
+
 /// Service for managing organization context in multi-tenant SaaS architecture
 class OrganizationContext {
   static final Logger _logger = Logger();
@@ -257,14 +266,38 @@ class OrganizationContext {
   
   /// Get organization-scoped collection reference
   static CollectionReference getCollection(String collectionName) {
-    if (_currentOrgId == null) {
-      throw Exception('Organization context not initialized');
-    }
+    enforceContext();
     
     return _firestore
         .collection('organizations')
         .doc(_currentOrgId!)
         .collection(collectionName);
+  }
+
+  /// Enforce organization context is set - throws if not
+  static void enforceContext() {
+    if (_currentOrgId == null || _currentOrg == null) {
+      throw const OrganizationContextException(
+        'Organization context not initialized. Protected operation requires active organization context.',
+      );
+    }
+  }
+
+  /// Get org-scoped document reference 
+  static DocumentReference getDocument(String collectionName, String docId) {
+    enforceContext();
+    return getCollection(collectionName).doc(docId);
+  }
+
+  /// Check if user is active in current organization
+  static bool get isUserActive {
+    return _userPermissions?['is_active'] == true;
+  }
+
+  /// Get safe Firestore collection path for current organization
+  static String getCollectionPath(String collectionName) {
+    enforceContext();
+    return 'organizations/${_currentOrgId!}/$collectionName';
   }
   
   /// Refresh organization context

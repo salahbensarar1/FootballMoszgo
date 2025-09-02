@@ -5,17 +5,25 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:footballtraining/views/admin/admin_screen.dart';
 import 'package:footballtraining/views/coach/coach_screen.dart';
 import 'package:footballtraining/views/receptionist/receptionist_screen.dart';
+import 'package:footballtraining/views/setup/organization_setup_wizard.dart';
+import 'package:footballtraining/views/setup/data_migration_screen.dart';
+import 'package:footballtraining/services/organization_context.dart';
 import 'package:footballtraining/utils/responsive_utils.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-class Loginpage extends StatefulWidget {
-  const Loginpage({super.key});
+class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
 
   @override
-  State<Loginpage> createState() => _LoginpageState();
+  State<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginpageState extends State<Loginpage> with TickerProviderStateMixin {
+// Keep the old name for backwards compatibility
+class Loginpage extends LoginPage {
+  const Loginpage({super.key});
+}
+
+class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   // Controllers
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
@@ -110,26 +118,41 @@ class _LoginpageState extends State<Loginpage> with TickerProviderStateMixin {
       final user = userCredential.user;
       if (user == null) throw Exception("Authentication failed");
 
-      // Get user role from Firestore
-      final userQuery = await FirebaseFirestore.instance
-          .collection('users')
-          .where('email', isEqualTo: user.email)
-          .limit(1)
-          .get();
+      // Find user in organization-scoped collections
+      String? userRole;
+      String? organizationId;
 
-      if (userQuery.docs.isEmpty) {
-        throw Exception("User not found in database");
+      // Get all organizations and search for user
+      final organizationsSnapshot =
+          await FirebaseFirestore.instance.collection('organizations').get();
+
+      for (final orgDoc in organizationsSnapshot.docs) {
+        final userQuery = await FirebaseFirestore.instance
+            .collection('organizations')
+            .doc(orgDoc.id)
+            .collection('users')
+            .where('email', isEqualTo: user.email)
+            .limit(1)
+            .get();
+
+        if (userQuery.docs.isNotEmpty) {
+          final userData = userQuery.docs.first.data();
+          userRole = userData['role'];
+          organizationId = orgDoc.id;
+          break;
+        }
       }
 
-      final userDoc = userQuery.docs.first;
-      final userData = userDoc.data();
-      final role = userData['role'];
+      if (userRole == null || organizationId == null) {
+        throw Exception("User not found in any organization");
+      }
 
-      if (role == null) throw Exception("User role not defined");
+      // Initialize organization context
+      await OrganizationContext.initialize(specificOrgId: organizationId);
 
       // Navigate based on role
       Widget destination;
-      switch (role) {
+      switch (userRole) {
         case 'admin':
           destination = const AdminScreen();
           break;
@@ -140,7 +163,7 @@ class _LoginpageState extends State<Loginpage> with TickerProviderStateMixin {
           destination = const CoachScreen();
           break;
         default:
-          throw Exception("Unauthorized role: $role");
+          throw Exception("Unauthorized role: $userRole");
       }
 
       if (mounted) {
@@ -170,15 +193,16 @@ class _LoginpageState extends State<Loginpage> with TickerProviderStateMixin {
 
   String _getErrorMessage(String error) {
     final l10n = AppLocalizations.of(context)!;
-    if (error.contains('user-not-found'))
-      return l10n.userNotFound;
+    if (error.contains('user-not-found')) return l10n.userNotFound;
     if (error.contains('wrong-password')) return l10n.wrongPassword;
     if (error.contains('invalid-email')) return l10n.invalidEmail;
     if (error.contains('user-disabled')) return l10n.userDisabled;
-    if (error.contains('too-many-requests'))
-      return l10n.tooManyRequests;
-    if (error.contains('network-request-failed'))
-      return l10n.networkError;
+    if (error.contains('too-many-requests')) return l10n.tooManyRequests;
+    if (error.contains('network-request-failed')) return l10n.networkError;
+    if (error.contains('User not found in any organization'))
+      return 'User not registered in any organization.';
+    if (error.contains('Unauthorized role'))
+      return 'Access denied. Contact your administrator.';
     return l10n.loginFailed;
   }
 
@@ -230,7 +254,8 @@ class _LoginpageState extends State<Loginpage> with TickerProviderStateMixin {
                 child: ConstrainedBox(
                   constraints: BoxConstraints(minHeight: constraints.maxHeight),
                   child: Padding(
-                    padding: ResponsiveUtils.getPadding(context,
+                    padding: ResponsiveUtils.getPadding(
+                      context,
                       mobile: 20.0,
                       tablet: 40.0,
                       desktop: 60.0,
@@ -242,13 +267,15 @@ class _LoginpageState extends State<Loginpage> with TickerProviderStateMixin {
                           opacity: _fadeAnimation,
                           child: _buildHeader(isMobile, l10n),
                         ),
-                        SizedBox(height: ResponsiveUtils.getSpacing(context,
+                        SizedBox(
+                            height: ResponsiveUtils.getSpacing(
+                          context,
                           mobile: 40.0,
                           tablet: 60.0,
                           desktop: 80.0,
                         )),
                         ResponsiveUtils.responsiveLayout(
-                          context: context,
+                          context,
                           mobile: SlideTransition(
                             position: _slideAnimation,
                             child: ScaleTransition(
@@ -257,7 +284,8 @@ class _LoginpageState extends State<Loginpage> with TickerProviderStateMixin {
                             ),
                           ),
                           tablet: Container(
-                            width: ResponsiveUtils.getWidthPercentage(context, tablet: 0.6),
+                            width: ResponsiveUtils.getWidthPercentage(context,
+                                tablet: 0.6),
                             child: SlideTransition(
                               position: _slideAnimation,
                               child: ScaleTransition(
@@ -267,7 +295,8 @@ class _LoginpageState extends State<Loginpage> with TickerProviderStateMixin {
                             ),
                           ),
                           desktop: Container(
-                            width: ResponsiveUtils.getWidthPercentage(context, desktop: 0.4),
+                            width: ResponsiveUtils.getWidthPercentage(context,
+                                desktop: 0.4),
                             child: SlideTransition(
                               position: _slideAnimation,
                               child: ScaleTransition(
@@ -402,6 +431,10 @@ class _LoginpageState extends State<Loginpage> with TickerProviderStateMixin {
 
               // Admin Button
               _buildAdminButton(l10n),
+              const SizedBox(height: 12),
+
+              // Migration Button (commented out for production)
+              // _buildMigrationButton(l10n),
             ],
           ),
         ),
@@ -496,8 +529,7 @@ class _LoginpageState extends State<Loginpage> with TickerProviderStateMixin {
         validator: (value) {
           final l10n = AppLocalizations.of(context)!;
           if (value?.isEmpty ?? true) return l10n.pleaseEnterPassword;
-          if (value!.length < 6)
-            return l10n.passwordMinLength;
+          if (value!.length < 6) return l10n.passwordMinLength;
           return null;
         },
         decoration: InputDecoration(
@@ -591,17 +623,54 @@ class _LoginpageState extends State<Loginpage> with TickerProviderStateMixin {
     return TextButton.icon(
       onPressed: () {
         HapticFeedback.lightImpact();
-        // Add admin management navigation if needed
+        // Navigate to organization setup wizard
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const OrganizationSetupWizard(),
+          ),
+        );
       },
       icon: const Icon(
-        Icons.admin_panel_settings_outlined,
+        Icons.business_outlined,
         color: Color(0xFF667eea),
         size: 20,
       ),
       label: Text(
-        l10n.adminManagement,
+        l10n.createNewOrganization,
         style: const TextStyle(
           color: Color(0xFF667eea),
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      style: TextButton.styleFrom(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+    );
+  }
+
+  Widget _buildMigrationButton(AppLocalizations l10n) {
+    return TextButton.icon(
+      onPressed: () {
+        HapticFeedback.lightImpact();
+        // Navigate to data migration screen
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const DataMigrationScreen(),
+          ),
+        );
+      },
+      icon: const Icon(
+        Icons.transform,
+        color: Color(0xFFff9800),
+        size: 20,
+      ),
+      label: const Text(
+        'Migrate Existing Data',
+        style: TextStyle(
+          color: Color(0xFFff9800),
           fontWeight: FontWeight.w500,
         ),
       ),

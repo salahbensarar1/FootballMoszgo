@@ -7,6 +7,7 @@ import 'package:footballtraining/views/admin/reports/session_report_screen.dart'
 import 'package:footballtraining/views/admin/reports/team_report_screen.dart';
 import 'package:footballtraining/views/dashboard/dashboard_screen.dart';
 import 'package:footballtraining/views/login/login_page.dart';
+import 'package:footballtraining/services/organization_context.dart';
 
 import 'package:footballtraining/views/admin/user_management_screen.dart';
 import 'package:footballtraining/views/admin/settings_screen.dart';
@@ -101,7 +102,12 @@ class _AdminScreenState extends State<AdminScreen>
     setState(() => isLoading = true);
 
     try {
-      final doc = await _firestore.collection('users').doc(user!.uid).get();
+      final doc = await _firestore
+          .collection('organizations')
+          .doc(OrganizationContext.currentOrgId)
+          .collection('users')
+          .doc(user!.uid)
+          .get();
       if (mounted) {
         if (doc.exists) {
           final data = doc.data() as Map<String, dynamic>;
@@ -146,7 +152,10 @@ class _AdminScreenState extends State<AdminScreen>
         }
         break;
       case 1: // Players
-        query = _firestore.collection('players');
+        query = _firestore
+            .collection('organizations')
+            .doc(OrganizationContext.currentOrgId)
+            .collection('players');
         if (searchQuery.isNotEmpty) {
           query = query
               .where('name', isGreaterThanOrEqualTo: searchQuery)
@@ -157,7 +166,10 @@ class _AdminScreenState extends State<AdminScreen>
         }
         break;
       case 2: // Teams
-        query = _firestore.collection('teams');
+        query = _firestore
+            .collection('organizations')
+            .doc(OrganizationContext.currentOrgId)
+            .collection('teams');
         if (searchQuery.isNotEmpty) {
           query = query
               .where('team_name', isGreaterThanOrEqualTo: searchQuery)
@@ -283,7 +295,7 @@ class _AdminScreenState extends State<AdminScreen>
   Widget _buildDrawerHeader(AppLocalizations l10n) {
     final size = MediaQuery.of(context).size;
     final isTablet = size.width > 768;
-    
+
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -393,13 +405,11 @@ class _AdminScreenState extends State<AdminScreen>
     final isTablet = size.width > 768;
     final isMobile = size.width < 480;
     final tabHeight = isTablet ? 88.0 : (isMobile ? 70.0 : 80.0);
-    
+
     return Container(
       height: tabHeight,
       padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 12 : 16, 
-        vertical: isMobile ? 8 : 12
-      ),
+          horizontal: isMobile ? 12 : 16, vertical: isMobile ? 8 : 12),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
@@ -438,18 +448,16 @@ class _AdminScreenState extends State<AdminScreen>
             final tabContentHeight = isTablet ? 56.0 : (isMobile ? 44.0 : 50.0);
             final fontSize = isTablet ? 14.0 : (isMobile ? 11.0 : 13.0);
             final iconSize = isTablet ? 22.0 : (isMobile ? 18.0 : 20.0);
-            
+
             return Tab(
               height: tabContentHeight,
               child: Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: isMobile ? 6 : 12
-                ),
+                padding: EdgeInsets.symmetric(horizontal: isMobile ? 6 : 12),
                 child: LayoutBuilder(
                   builder: (context, constraints) {
                     final availableWidth = constraints.maxWidth;
                     final showText = availableWidth > 60;
-                    
+
                     if (!showText) {
                       return Icon(
                         isActive
@@ -459,7 +467,7 @@ class _AdminScreenState extends State<AdminScreen>
                         color: isActive ? Colors.white : Colors.grey.shade600,
                       );
                     }
-                    
+
                     return Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -477,9 +485,12 @@ class _AdminScreenState extends State<AdminScreen>
                               title,
                               style: GoogleFonts.poppins(
                                 fontSize: fontSize,
-                                fontWeight:
-                                    isActive ? FontWeight.w600 : FontWeight.w500,
-                                color: isActive ? Colors.white : Colors.grey.shade600,
+                                fontWeight: isActive
+                                    ? FontWeight.w600
+                                    : FontWeight.w500,
+                                color: isActive
+                                    ? Colors.white
+                                    : Colors.grey.shade600,
                               ),
                               overflow: TextOverflow.ellipsis,
                               maxLines: 1,
@@ -501,16 +512,13 @@ class _AdminScreenState extends State<AdminScreen>
   Widget _buildSearchBar(AppLocalizations l10n, List<String> tabs) {
     final size = MediaQuery.of(context).size;
     final isMobile = size.width < 480;
-    
+
     return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 12 : 16, 
-        vertical: 8
-      ),
+      padding:
+          EdgeInsets.symmetric(horizontal: isMobile ? 12 : 16, vertical: 8),
       child: Container(
-        constraints: BoxConstraints(
-          maxWidth: size.width - (isMobile ? 24 : 32)
-        ),
+        constraints:
+            BoxConstraints(maxWidth: size.width - (isMobile ? 24 : 32)),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
@@ -550,7 +558,7 @@ class _AdminScreenState extends State<AdminScreen>
             suffixIcon: searchQuery.isNotEmpty
                 ? IconButton(
                     icon: Icon(
-                      Icons.clear_rounded, 
+                      Icons.clear_rounded,
                       color: Colors.grey.shade400,
                       size: isMobile ? 18 : 20,
                     ),
@@ -566,9 +574,7 @@ class _AdminScreenState extends State<AdminScreen>
                 : null,
             border: InputBorder.none,
             contentPadding: EdgeInsets.symmetric(
-              horizontal: 16, 
-              vertical: isMobile ? 12 : 16
-            ),
+                horizontal: 16, vertical: isMobile ? 12 : 16),
           ),
         ),
       ),
@@ -600,7 +606,7 @@ class _AdminScreenState extends State<AdminScreen>
   Widget _buildLoadingState(AppLocalizations l10n) {
     final size = MediaQuery.of(context).size;
     final isTablet = size.width > 768;
-    
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -633,7 +639,7 @@ class _AdminScreenState extends State<AdminScreen>
   Widget _buildErrorState(AppLocalizations l10n, String error) {
     final size = MediaQuery.of(context).size;
     final isTablet = size.width > 768;
-    
+
     return Center(
       child: Padding(
         padding: EdgeInsets.all(32),
@@ -1019,9 +1025,8 @@ class _AdminScreenState extends State<AdminScreen>
               ),
               Container(
                 padding: EdgeInsets.symmetric(
-                  horizontal: isTablet ? 16 : 12, 
-                  vertical: isTablet ? 12 : 8
-                ),
+                    horizontal: isTablet ? 16 : 12,
+                    vertical: isTablet ? 12 : 8),
                 decoration: BoxDecoration(
                   color: attendeeCount > 0
                       ? Colors.green.shade50
@@ -1134,7 +1139,8 @@ class _AdminScreenState extends State<AdminScreen>
                       Row(
                         children: [
                           Container(
-                            padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
                               color: Color(0xFF10B981).withOpacity(0.1),
                               borderRadius: BorderRadius.circular(6),
@@ -1241,9 +1247,8 @@ class _AdminScreenState extends State<AdminScreen>
                       children: [
                         Container(
                           padding: EdgeInsets.symmetric(
-                            horizontal: isTablet ? 10 : 8, 
-                            vertical: isTablet ? 6 : 4
-                          ),
+                              horizontal: isTablet ? 10 : 8,
+                              vertical: isTablet ? 6 : 4),
                           decoration: BoxDecoration(
                             color: Color(0xFF10B981).withOpacity(0.1),
                             borderRadius: BorderRadius.circular(8),
@@ -1492,9 +1497,8 @@ class _AdminScreenState extends State<AdminScreen>
               ),
               Container(
                 padding: EdgeInsets.symmetric(
-                  horizontal: isTablet ? 16 : 12, 
-                  vertical: isTablet ? 12 : 8
-                ),
+                    horizontal: isTablet ? 16 : 12,
+                    vertical: isTablet ? 12 : 8),
                 decoration: BoxDecoration(
                   color: playerCount > 0
                       ? Colors.blue.shade50

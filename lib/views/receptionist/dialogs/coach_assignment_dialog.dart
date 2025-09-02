@@ -1,8 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:footballtraining/data/repositories/team_service.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:footballtraining/services/organization_scoped_team_service.dart';
 import 'package:footballtraining/data/models/team_model.dart';
 import 'package:footballtraining/data/models/user_model.dart' as UserModel;
 
@@ -24,7 +25,8 @@ class CoachAssignmentDialog extends StatefulWidget {
 
 class _CoachAssignmentDialogState extends State<CoachAssignmentDialog>
     with TickerProviderStateMixin {
-  final TeamService _teamService = TeamService();
+  final OrganizationScopedTeamService _teamService =
+      OrganizationScopedTeamService();
 
   // Animation controllers
   late AnimationController _fadeController;
@@ -89,23 +91,56 @@ class _CoachAssignmentDialogState extends State<CoachAssignmentDialog>
     });
 
     try {
-      // Load team coach details and available coaches in parallel
+      print(
+          '🔄 CoachAssignmentDialog: Starting data load for team ${widget.teamId}');
+
+      // Load team coach details and available coaches in parallel with timeout
       final results = await Future.wait([
         _teamService.getTeamCoachDetails(widget.teamId),
         _teamService.getAvailableCoaches(),
-      ]);
+      ]).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          throw Exception(
+              'Request timeout - please check your connection and try again');
+        },
+      );
 
       if (mounted) {
+        final coachDetails = results[0] as List<Map<String, dynamic>>;
+        final coaches = results[1] as List<UserModel.User>;
+
+        print(
+            '✅ CoachAssignmentDialog: Loaded ${coachDetails.length} current coaches and ${coaches.length} available coaches');
+
         setState(() {
-          currentCoachDetails = results[0] as List<Map<String, dynamic>>;
-          availableCoaches = results[1] as List<UserModel.User>;
+          currentCoachDetails = coachDetails;
+          availableCoaches = coaches;
           isLoading = false;
         });
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('❌ CoachAssignmentDialog: Error loading data: $e');
+      print('📍 Stack trace: $stackTrace');
+
       if (mounted) {
+        String userFriendlyError;
+        if (e.toString().contains('Organization context not initialized')) {
+          userFriendlyError =
+              'Organization not selected. Please refresh the app and try again.';
+        } else if (e.toString().contains('not-found')) {
+          userFriendlyError =
+              'Team or coach data not found. This may be a permission issue.';
+        } else if (e.toString().contains('timeout')) {
+          userFriendlyError =
+              'Connection timeout. Please check your internet and try again.';
+        } else {
+          userFriendlyError =
+              'Failed to load coach data. Please try again.\n\nError: ${e.toString()}';
+        }
+
         setState(() {
-          errorMessage = 'Error loading data: ${e.toString()}';
+          errorMessage = userFriendlyError;
           isLoading = false;
         });
       }
@@ -231,7 +266,7 @@ class _CoachAssignmentDialogState extends State<CoachAssignmentDialog>
                 Text(
                   'Manage Coaches',
                   style: GoogleFonts.poppins(
-                    fontSize: isSmallScreen ? 18 : 20,
+                    fontSize: isSmallScreen ? 16 : 20,
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
                   ),
@@ -268,7 +303,7 @@ class _CoachAssignmentDialogState extends State<CoachAssignmentDialog>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          SizedBox(
+          const SizedBox(
             width: 60,
             height: 60,
             child: CircularProgressIndicator(
@@ -372,7 +407,7 @@ class _CoachAssignmentDialogState extends State<CoachAssignmentDialog>
               Row(
                 children: [
                   Container(
-                    padding: EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: Colors.green.shade50,
                       borderRadius: BorderRadius.circular(8),
@@ -383,7 +418,7 @@ class _CoachAssignmentDialogState extends State<CoachAssignmentDialog>
                       size: 20,
                     ),
                   ),
-                  SizedBox(width: 12),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       'Current Coaches (${currentCoachDetails.length})',
@@ -396,14 +431,14 @@ class _CoachAssignmentDialogState extends State<CoachAssignmentDialog>
                   ),
                 ],
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 14),
               Expanded(
                 child: currentCoachDetails.isEmpty
                     ? _buildEmptyCoaches()
                     : ListView.separated(
                         itemCount: currentCoachDetails.length,
                         separatorBuilder: (context, index) =>
-                            SizedBox(height: 12),
+                            const SizedBox(height: 12),
                         itemBuilder: (context, index) {
                           return _buildCurrentCoachCard(
                               currentCoachDetails[index], isSmallScreen);
@@ -451,11 +486,59 @@ class _CoachAssignmentDialogState extends State<CoachAssignmentDialog>
 
   Widget _buildCurrentCoachCard(
       Map<String, dynamic> coachDetail, bool isSmallScreen) {
-    final user = coachDetail['user'] as UserModel.User;
-    final teamCoach = coachDetail['teamCoach'] as TeamCoach;
+    // 🔥 DEFENSIVE NULL CHECKING - prevent cast exceptions
+    final user = coachDetail['user'] as UserModel.User?;
+    final teamCoach = coachDetail['teamCoach'] as TeamCoach?;
+
+    // Fallback if proper objects aren't available (backwards compatibility)
+    if (user == null || teamCoach == null) {
+      return Container(
+        padding: EdgeInsets.all(isSmallScreen ? 12 : 14),
+        decoration: BoxDecoration(
+          color: Colors.orange.shade50,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.orange.shade200),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.warning_rounded, color: Colors.orange.shade600),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Coach Data Error',
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.orange.shade800,
+                    ),
+                  ),
+                  Text(
+                    'Unable to load coach details. Please refresh.',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: Colors.orange.shade700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            ElevatedButton(
+              onPressed: _loadData,
+              child: Text('Refresh'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange.shade600,
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
 
     return Container(
-      padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+      padding: EdgeInsets.all(isSmallScreen ? 6 : 16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [Colors.green.shade50, Colors.white],
@@ -479,12 +562,14 @@ class _CoachAssignmentDialogState extends State<CoachAssignmentDialog>
                     style: GoogleFonts.poppins(
                       fontWeight: FontWeight.w600,
                       color: Colors.green.shade700,
-                      fontSize: isSmallScreen ? 14 : 16,
+                      fontSize: isSmallScreen ? 12 : 16,
                     ),
                   )
                 : null,
           ),
-          SizedBox(width: 12),
+          SizedBox(
+            width: isSmallScreen ? 8 : 16,
+          ),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -498,11 +583,15 @@ class _CoachAssignmentDialogState extends State<CoachAssignmentDialog>
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
-                SizedBox(height: 4),
+                SizedBox(
+                  height: isSmallScreen ? 6 : 9,
+                ),
                 Row(
                   children: [
                     Container(
-                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: EdgeInsets.symmetric(
+                          horizontal: isSmallScreen ? 6 : 9,
+                          vertical: isSmallScreen ? 6 : 9),
                       decoration: BoxDecoration(
                         color: Colors.green.shade100,
                         borderRadius: BorderRadius.circular(6),
@@ -516,19 +605,6 @@ class _CoachAssignmentDialogState extends State<CoachAssignmentDialog>
                         ),
                       ),
                     ),
-                    if (user.email.isNotEmpty) ...[
-                      SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          user.email,
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            color: Colors.grey.shade600,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
                   ],
                 ),
               ],
@@ -544,8 +620,8 @@ class _CoachAssignmentDialogState extends State<CoachAssignmentDialog>
                   children: [
                     Icon(Icons.swap_horiz,
                         size: 18, color: Colors.blue.shade600),
-                    SizedBox(width: 8),
-                    Text('Change Role'),
+                    SizedBox(width: isSmallScreen ? 6 : 9),
+                    const Text('Change Role'),
                   ],
                 ),
               ),
@@ -555,7 +631,7 @@ class _CoachAssignmentDialogState extends State<CoachAssignmentDialog>
                   children: [
                     Icon(Icons.remove_circle,
                         size: 18, color: Colors.red.shade600),
-                    SizedBox(width: 8),
+                    const SizedBox(width: 8),
                     Text('Remove',
                         style: TextStyle(color: Colors.red.shade600)),
                   ],
@@ -581,13 +657,23 @@ class _CoachAssignmentDialogState extends State<CoachAssignmentDialog>
   }
 
   Widget _buildAvailableCoaches(bool isSmallScreen) {
+    // 🔥 DEFENSIVE EXTRACTION - prevent null cast exceptions
     final assignedCoachIds = currentCoachDetails
-        .map((detail) => (detail['user'] as UserModel.User).id)
+        .map((detail) {
+          final user = detail['user'] as UserModel.User?;
+          return user?.id ?? detail['userId'] ?? ''; // Fallback to userId field
+        })
+        .where((id) => id.isNotEmpty)
         .toList();
 
-    final unassignedCoaches = availableCoaches
-        .where((coach) => !assignedCoachIds.contains(coach.id))
-        .toList();
+    // ✅ FIXED: Show ALL coaches, allowing multi-team assignments
+    // Coaches can be assigned to multiple teams with different roles
+    
+    // Show ALL available coaches regardless of current assignment
+    final displayCoaches = availableCoaches;
+    
+    print('🔍 Available coaches to display: ${displayCoaches.length}');
+    print('📋 Already assigned coach IDs: $assignedCoachIds');
 
     return Expanded(
       flex: 2,
@@ -616,7 +702,7 @@ class _CoachAssignmentDialogState extends State<CoachAssignmentDialog>
                   SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'Available Coaches (${unassignedCoaches.length})',
+                      'Available Coaches (${displayCoaches.length})',
                       style: GoogleFonts.poppins(
                         fontSize: isSmallScreen ? 16 : 18,
                         fontWeight: FontWeight.w600,
@@ -626,17 +712,19 @@ class _CoachAssignmentDialogState extends State<CoachAssignmentDialog>
                   ),
                 ],
               ),
-              SizedBox(height: 16),
+              SizedBox(height: isSmallScreen ? 8 : 16),
               Expanded(
-                child: unassignedCoaches.isEmpty
+                child: displayCoaches.isEmpty
                     ? _buildNoAvailableCoaches()
                     : ListView.separated(
-                        itemCount: unassignedCoaches.length,
+                        itemCount: displayCoaches.length,
                         separatorBuilder: (context, index) =>
-                            SizedBox(height: 12),
+                            SizedBox(height: isSmallScreen ? 8 : 12),
                         itemBuilder: (context, index) {
+                          final coach = displayCoaches[index];
+                          final isAlreadyAssigned = assignedCoachIds.contains(coach.id);
                           return _buildAvailableCoachCard(
-                              unassignedCoaches[index], isSmallScreen);
+                              coach, isSmallScreen, isAlreadyAssigned: isAlreadyAssigned);
                         },
                       ),
               ),
@@ -649,54 +737,64 @@ class _CoachAssignmentDialogState extends State<CoachAssignmentDialog>
 
   Widget _buildNoAvailableCoaches() {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.check_circle_outline_rounded,
-            size: 48,
-            color: Colors.grey.shade400,
-          ),
-          SizedBox(height: 16),
-          Text(
-            'All coaches are assigned',
-            style: GoogleFonts.poppins(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey.shade600,
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.info_outline_rounded,
+              size: 48,
+              color: Colors.grey.shade400,
             ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            'Create more coach accounts to assign them',
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              color: Colors.grey.shade500,
+            SizedBox(height: 10),
+            Text(
+              'No coaches available',
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey.shade600,
+              ),
             ),
-            textAlign: TextAlign.center,
-          ),
-        ],
+            SizedBox(height: 8),
+            Text(
+              'Create coach accounts from the Receptionist screen to assign them to teams',
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                color: Colors.grey.shade500,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildAvailableCoachCard(UserModel.User coach, bool isSmallScreen) {
+  Widget _buildAvailableCoachCard(UserModel.User coach, bool isSmallScreen, {bool isAlreadyAssigned = false}) {
     return Container(
       padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [Colors.blue.shade50, Colors.white],
+          colors: isAlreadyAssigned 
+              ? [Colors.orange.shade50, Colors.white]
+              : [Colors.blue.shade50, Colors.white],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blue.shade200),
+        border: Border.all(
+            color: isAlreadyAssigned 
+                ? Colors.orange.shade200 
+                : Colors.blue.shade200
+        ),
       ),
       child: Row(
         children: [
           CircleAvatar(
             radius: isSmallScreen ? 20 : 24,
-            backgroundColor: Colors.blue.shade100,
+            backgroundColor: isAlreadyAssigned 
+                ? Colors.orange.shade100
+                : Colors.blue.shade100,
             backgroundImage: coach.picture?.isNotEmpty == true
                 ? NetworkImage(coach.picture!)
                 : null,
@@ -705,7 +803,9 @@ class _CoachAssignmentDialogState extends State<CoachAssignmentDialog>
                     coach.initials,
                     style: GoogleFonts.poppins(
                       fontWeight: FontWeight.w600,
-                      color: Colors.blue.shade700,
+                      color: isAlreadyAssigned 
+                          ? Colors.orange.shade700
+                          : Colors.blue.shade700,
                       fontSize: isSmallScreen ? 14 : 16,
                     ),
                   )
@@ -736,6 +836,25 @@ class _CoachAssignmentDialogState extends State<CoachAssignmentDialog>
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
+                // Add visual indicator if already assigned
+                if (isAlreadyAssigned) ...[
+                  const SizedBox(height: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.shade100,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      'Already in this team',
+                      style: GoogleFonts.poppins(
+                        fontSize: 10,
+                        color: Colors.orange.shade800,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -751,12 +870,16 @@ class _CoachAssignmentDialogState extends State<CoachAssignmentDialog>
               padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Colors.blue.shade500, Colors.blue.shade600],
+                  colors: isAlreadyAssigned
+                      ? [Colors.green.shade500, Colors.green.shade600]
+                      : [Colors.blue.shade500, Colors.blue.shade600],
                 ),
                 borderRadius: BorderRadius.circular(8),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.blue.shade200,
+                    color: isAlreadyAssigned
+                        ? Colors.green.shade200
+                        : Colors.blue.shade200,
                     blurRadius: 4,
                     offset: Offset(0, 2),
                   ),
@@ -765,10 +888,14 @@ class _CoachAssignmentDialogState extends State<CoachAssignmentDialog>
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.add_rounded, color: Colors.white, size: 16),
+                  Icon(
+                    isAlreadyAssigned ? Icons.add_rounded : Icons.add_rounded, 
+                    color: Colors.white, 
+                    size: 16
+                  ),
                   SizedBox(width: 4),
                   Text(
-                    'Add',
+                    isAlreadyAssigned ? 'Add Role' : 'Add',
                     style: GoogleFonts.poppins(
                       color: Colors.white,
                       fontSize: 12,
@@ -828,17 +955,41 @@ class _CoachAssignmentDialogState extends State<CoachAssignmentDialog>
     HapticFeedback.mediumImpact();
 
     try {
+      print(
+          '🔄 CoachAssignmentDialog: Adding coach $coachId to team ${widget.teamId} with role $role');
+
       await _teamService.addCoachToTeam(
         teamId: widget.teamId,
         coachUserId: coachId,
         role: role,
       );
 
+      print('✅ CoachAssignmentDialog: Coach addition completed successfully');
       _showSuccess('Coach added successfully!');
+
+      // Add delay to allow Firestore to sync before refreshing
+      await Future.delayed(const Duration(milliseconds: 500));
       await _loadData(); // Refresh data
       widget.onChanged?.call(); // Notify parent
-    } catch (e) {
-      _showError('Failed to add coach: ${e.toString()}');
+    } catch (e, stackTrace) {
+      print('❌ CoachAssignmentDialog: Error adding coach: $e');
+      print('📍 Stack trace: $stackTrace');
+
+      // Check if this is a non-critical error (coach might still be added)
+      String errorMessage;
+      if (e.toString().contains('User teams array') ||
+          e.toString().contains('non-critical')) {
+        errorMessage =
+            'Coach was added but there was a sync issue. Please refresh to verify.';
+        _showSuccess(errorMessage);
+
+        // Still try to refresh data after delay
+        await Future.delayed(const Duration(milliseconds: 1000));
+        await _loadData();
+      } else {
+        errorMessage = 'Failed to add coach: ${e.toString()}';
+        _showError(errorMessage);
+      }
     } finally {
       if (mounted) {
         setState(() => isProcessing = false);
@@ -902,12 +1053,38 @@ class _CoachAssignmentDialogState extends State<CoachAssignmentDialog>
     HapticFeedback.heavyImpact();
 
     try {
+      print(
+          '🔄 CoachAssignmentDialog: Removing coach $coachId from team ${widget.teamId}');
+
       await _teamService.removeCoachFromTeam(widget.teamId, coachId);
+
+      print('✅ CoachAssignmentDialog: Coach removal completed successfully');
       _showSuccess('Coach removed successfully!');
+
+      // Add delay to allow Firestore to sync before refreshing
+      await Future.delayed(const Duration(milliseconds: 500));
       await _loadData(); // Refresh data
       widget.onChanged?.call(); // Notify parent
-    } catch (e) {
-      _showError('Failed to remove coach: ${e.toString()}');
+    } catch (e, stackTrace) {
+      print('❌ CoachAssignmentDialog: Error removing coach: $e');
+      print('📍 Stack trace: $stackTrace');
+
+      // Check if this is a non-critical error (coach might still be removed)
+      String errorMessage;
+      if (e.toString().contains('User teams array') ||
+          e.toString().contains('non-critical') ||
+          e.toString().contains('was not found')) {
+        errorMessage =
+            'Coach was removed but there was a sync issue. Please refresh to verify.';
+        _showSuccess(errorMessage);
+
+        // Still try to refresh data after delay
+        await Future.delayed(const Duration(milliseconds: 1000));
+        await _loadData();
+      } else {
+        errorMessage = 'Failed to remove coach: ${e.toString()}';
+        _showError(errorMessage);
+      }
     } finally {
       if (mounted) {
         setState(() => isProcessing = false);

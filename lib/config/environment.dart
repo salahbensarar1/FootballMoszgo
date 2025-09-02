@@ -61,6 +61,7 @@ MOCK_DATA=false
   static bool get debugMode => dotenv.get('DEBUG_MODE', fallback: 'false').toLowerCase() == 'true';
   static bool get enableLogging => dotenv.get('ENABLE_LOGGING', fallback: 'true').toLowerCase() == 'true';
   static bool get mockData => dotenv.get('MOCK_DATA', fallback: 'false').toLowerCase() == 'true';
+  static bool get isDemo => dotenv.get('IS_DEMO', fallback: 'false').toLowerCase() == 'true';
   
   // External Services (Optional)
   static String get emailServiceApiKey => dotenv.get('EMAIL_SERVICE_API_KEY', fallback: '');

@@ -350,7 +350,7 @@ class _PlayerReportScreenState extends State<PlayerReportScreen>
               pw.SizedBox(height: 24),
             ],
 
-            // Training Statistics Section
+            // Training Statistics Section - Fixed with pw.Wrap for large datasets
             pw.Container(
               width: double.infinity,
               padding: const pw.EdgeInsets.all(20),
@@ -372,25 +372,6 @@ class _PlayerReportScreenState extends State<PlayerReportScreen>
                   ),
                   pw.SizedBox(height: 16),
                   if (_trainingStats.isNotEmpty) ...[
-                    ..._trainingStats.entries
-                        .map(
-                          (entry) => pw.Padding(
-                            padding: const pw.EdgeInsets.only(bottom: 8),
-                            child: pw.Container(
-                              padding: const pw.EdgeInsets.all(12),
-                              decoration: pw.BoxDecoration(
-                                color: PdfColors.white,
-                                borderRadius: pw.BorderRadius.circular(8),
-                                border:
-                                    pw.Border.all(color: PdfColors.orange100),
-                              ),
-                              child: _buildPdfInfoRow(
-                                  entry.key, '${entry.value} minutes'),
-                            ),
-                          ),
-                        )
-                        .toList(),
-                    pw.SizedBox(height: 12),
                     pw.Container(
                       padding: const pw.EdgeInsets.all(16),
                       decoration: pw.BoxDecoration(
@@ -448,6 +429,26 @@ class _PlayerReportScreenState extends State<PlayerReportScreen>
                 ],
               ),
             ),
+
+            // Training Sessions Details - Using pw.Wrap for automatic pagination
+            if (_trainingStats.isNotEmpty) ...[
+              pw.SizedBox(height: 24),
+              pw.Text(
+                'Training Sessions Details',
+                style: pw.TextStyle(
+                  fontSize: 18,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColors.grey800,
+                ),
+              ),
+              pw.SizedBox(height: 12),
+              // Use pw.Wrap to handle many training sessions
+              pw.Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _buildTrainingSessionWidgets(),
+              ),
+            ],
           ],
         ),
       );
@@ -490,6 +491,91 @@ class _PlayerReportScreenState extends State<PlayerReportScreen>
         ),
       ],
     );
+  }
+
+  /// Build training session widgets for pw.Wrap - prevents TooManyPagesExceptions
+  List<pw.Widget> _buildTrainingSessionWidgets() {
+    final List<pw.Widget> children = <pw.Widget>[];
+
+    for (final entry in _trainingStats.entries) {
+      children.add(
+        pw.SizedBox(
+          width: double.infinity,
+          child: pw.Container(
+            margin: const pw.EdgeInsets.only(bottom: 8),
+            padding: const pw.EdgeInsets.all(12),
+            decoration: pw.BoxDecoration(
+              color: PdfColors.white,
+              borderRadius: pw.BorderRadius.circular(8),
+              border: pw.Border.all(color: PdfColors.orange200),
+            ),
+            child: pw.Row(
+              children: [
+                // Session icon
+                pw.Container(
+                  width: 32,
+                  height: 32,
+                  decoration: pw.BoxDecoration(
+                    color: PdfColors.orange100,
+                    borderRadius: pw.BorderRadius.circular(16),
+                  ),
+                  child: pw.Center(
+                    child: pw.Text(
+                      '⚽',
+                      style: pw.TextStyle(fontSize: 14),
+                    ),
+                  ),
+                ),
+                pw.SizedBox(width: 12),
+                // Session info
+                pw.Expanded(
+                  child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text(
+                        entry.key,
+                        style: pw.TextStyle(
+                          fontSize: 14,
+                          fontWeight: pw.FontWeight.bold,
+                          color: PdfColors.grey800,
+                        ),
+                      ),
+                      pw.SizedBox(height: 2),
+                      pw.Text(
+                        '${entry.value} minutes',
+                        style: pw.TextStyle(
+                          fontSize: 12,
+                          color: PdfColors.grey600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Duration badge
+                pw.Container(
+                  padding:
+                      const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: pw.BoxDecoration(
+                    color: PdfColors.green100,
+                    borderRadius: pw.BorderRadius.circular(4),
+                  ),
+                  child: pw.Text(
+                    '${entry.value}m',
+                    style: pw.TextStyle(
+                      fontSize: 10,
+                      fontWeight: pw.FontWeight.bold,
+                      color: PdfColors.green800,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return children;
   }
 
   @override
@@ -539,8 +625,8 @@ class _PlayerReportScreenState extends State<PlayerReportScreen>
                         _buildTabletLayout(
                             position, teamName, birthDate, attendanceData, l10n)
                       else
-                        _buildMobileLayout(
-                            position, teamName, birthDate, attendanceData, l10n),
+                        _buildMobileLayout(position, teamName, birthDate,
+                            attendanceData, l10n),
                       const SizedBox(height: 100),
                     ],
                   ),
@@ -746,8 +832,12 @@ class _PlayerReportScreenState extends State<PlayerReportScreen>
     );
   }
 
-  Widget _buildTabletLayout(String position, String teamName,
-      Timestamp? birthDate, Map<String, dynamic>? attendanceData, AppLocalizations l10n) {
+  Widget _buildTabletLayout(
+      String position,
+      String teamName,
+      Timestamp? birthDate,
+      Map<String, dynamic>? attendanceData,
+      AppLocalizations l10n) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -769,8 +859,12 @@ class _PlayerReportScreenState extends State<PlayerReportScreen>
     );
   }
 
-  Widget _buildMobileLayout(String position, String teamName,
-      Timestamp? birthDate, Map<String, dynamic>? attendanceData, AppLocalizations l10n) {
+  Widget _buildMobileLayout(
+      String position,
+      String teamName,
+      Timestamp? birthDate,
+      Map<String, dynamic>? attendanceData,
+      AppLocalizations l10n) {
     return Column(
       children: [
         _buildBasicInfoCard(position, teamName, birthDate, l10n),
@@ -784,8 +878,8 @@ class _PlayerReportScreenState extends State<PlayerReportScreen>
     );
   }
 
-  Widget _buildBasicInfoCard(
-      String position, String teamName, Timestamp? birthDate, AppLocalizations l10n) {
+  Widget _buildBasicInfoCard(String position, String teamName,
+      Timestamp? birthDate, AppLocalizations l10n) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -838,7 +932,8 @@ class _PlayerReportScreenState extends State<PlayerReportScreen>
     );
   }
 
-  Widget _buildAttendanceCard(Map<String, dynamic> attendanceData, AppLocalizations l10n) {
+  Widget _buildAttendanceCard(
+      Map<String, dynamic> attendanceData, AppLocalizations l10n) {
     final bool? presence = attendanceData['Presence'] as bool?;
     final Timestamp? startTraining =
         attendanceData['Start_training'] as Timestamp?;

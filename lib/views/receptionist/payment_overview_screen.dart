@@ -42,7 +42,8 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
 
   // Hungarian Forint formatter - const for performance
   static const String _currencySymbol = 'Ft';
-  static final NumberFormat _hungarianFormatter = NumberFormat('#,##0', 'hu_HU');
+  static final NumberFormat _hungarianFormatter =
+      NumberFormat('#,##0', 'hu_HU');
 
   @override
   void initState() {
@@ -76,7 +77,8 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
       end: 1.0,
     ).animate(CurvedAnimation(
       parent: _animationController,
-      curve: const Interval(0.0, 0.6, curve: Curves.easeOut), // Optimized timing
+      curve:
+          const Interval(0.0, 0.6, curve: Curves.easeOut), // Optimized timing
     ));
 
     _slideAnimation = Tween<Offset>(
@@ -84,7 +86,8 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
       end: Offset.zero,
     ).animate(CurvedAnimation(
       parent: _animationController,
-      curve: const Interval(0.2, 0.8, curve: Curves.easeOutCubic), // Better curve
+      curve:
+          const Interval(0.2, 0.8, curve: Curves.easeOutCubic), // Better curve
     ));
 
     _animationController.forward();
@@ -230,7 +233,8 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
     );
   }
 
-  Widget _buildTabBar(AppLocalizations l10n, bool isSmallScreen, bool isTablet) {
+  Widget _buildTabBar(
+      AppLocalizations l10n, bool isSmallScreen, bool isTablet) {
     const double height = 60; // Fixed height for better performance
     final double horizontalPadding = isSmallScreen ? 12 : (isTablet ? 14 : 16);
 
@@ -315,7 +319,8 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
     );
   }
 
-  Widget _buildFilters(AppLocalizations l10n, bool isSmallScreen, bool isTablet) {
+  Widget _buildFilters(
+      AppLocalizations l10n, bool isSmallScreen, bool isTablet) {
     final double horizontalPadding = isSmallScreen ? 12 : (isTablet ? 14 : 16);
 
     return Container(
@@ -633,8 +638,18 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
 
   Widget _buildSimpleChart(Map<int, double> monthlyData) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
     ];
 
     return LayoutBuilder(
@@ -845,7 +860,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
         }
 
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return _buildEmptyState(l10n.noEntityFound(l10n.players));
+          return _buildEmptyState('${l10n.noPlayersFound}');
         }
 
         return FutureBuilder<List<PlayerPaymentStatus>>(
@@ -947,7 +962,8 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: _getStatusColor(player.status).withValues(alpha: 0.1),
+                    color:
+                        _getStatusColor(player.status).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -1734,10 +1750,12 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
   }
 
   // Placeholder methods for functionality
-  void _sendReminderToPlayer(AppLocalizations l10n, PlayerPaymentStatus player) {
+  void _sendReminderToPlayer(
+      AppLocalizations l10n, PlayerPaymentStatus player) {
     final teamFee = _getTeamPaymentFee(player.team);
-    final amount = _formatHUF((player.totalMonths - player.paidMonths) * teamFee);
-    
+    final amount =
+        _formatHUF((player.totalMonths - player.paidMonths) * teamFee);
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(

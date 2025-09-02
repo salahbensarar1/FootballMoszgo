@@ -2,33 +2,36 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:footballtraining/services/organization_context.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class ReceptionistSettingsScreen extends StatefulWidget {
   const ReceptionistSettingsScreen({super.key});
 
   @override
-  State<ReceptionistSettingsScreen> createState() => _ReceptionistSettingsScreenState();
+  State<ReceptionistSettingsScreen> createState() =>
+      _ReceptionistSettingsScreenState();
 }
 
-class _ReceptionistSettingsScreenState extends State<ReceptionistSettingsScreen> with TickerProviderStateMixin {
+class _ReceptionistSettingsScreenState extends State<ReceptionistSettingsScreen>
+    with TickerProviderStateMixin {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  
+
   // Loading states
   bool _isLoading = false;
   bool _isUpdatingPassword = false;
-  
+
   // User data
   String? _userName;
   String? _userEmail;
   String? _profileImageUrl;
-  
+
   // Form controllers
   final _currentPasswordController = TextEditingController();
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  
+
   // Settings state
   String _selectedLanguage = 'en';
   bool _emailNotifications = true;
@@ -41,7 +44,7 @@ class _ReceptionistSettingsScreenState extends State<ReceptionistSettingsScreen>
   bool _autoBackup = true;
   String _dateFormat = 'dd/MM/yyyy';
   String _timeFormat = '24';
-  
+
   // Animation controllers
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
@@ -71,11 +74,16 @@ class _ReceptionistSettingsScreenState extends State<ReceptionistSettingsScreen>
 
   Future<void> _loadUserData() async {
     setState(() => _isLoading = true);
-    
+
     try {
       final user = _auth.currentUser;
       if (user != null) {
-        final doc = await _firestore.collection('users').doc(user.uid).get();
+        final doc = await _firestore
+            .collection('organizations')
+            .doc(OrganizationContext.currentOrgId)
+            .collection('users')
+            .doc(user.uid)
+            .get();
         if (doc.exists && mounted) {
           final data = doc.data()!;
           setState(() {
@@ -107,7 +115,12 @@ class _ReceptionistSettingsScreenState extends State<ReceptionistSettingsScreen>
     try {
       final user = _auth.currentUser;
       if (user != null) {
-        await _firestore.collection('users').doc(user.uid).update(updates);
+        await _firestore
+            .collection('organizations')
+            .doc(OrganizationContext.currentOrgId)
+            .collection('users')
+            .doc(user.uid)
+            .update(updates);
         _showSuccessSnackBar('Settings updated successfully!');
       }
     } catch (e) {
@@ -116,19 +129,18 @@ class _ReceptionistSettingsScreenState extends State<ReceptionistSettingsScreen>
   }
 
   Future<void> _changePassword() async {
-    
     if (_newPasswordController.text != _confirmPasswordController.text) {
       _showErrorSnackBar('Passwords do not match');
       return;
     }
-    
+
     if (_newPasswordController.text.length < 8) {
       _showErrorSnackBar('Password must be at least 8 characters');
       return;
     }
-    
+
     setState(() => _isUpdatingPassword = true);
-    
+
     try {
       final user = _auth.currentUser;
       if (user != null) {
@@ -136,14 +148,14 @@ class _ReceptionistSettingsScreenState extends State<ReceptionistSettingsScreen>
           email: user.email!,
           password: _currentPasswordController.text,
         );
-        
+
         await user.reauthenticateWithCredential(credential);
         await user.updatePassword(_newPasswordController.text);
-        
+
         _currentPasswordController.clear();
         _newPasswordController.clear();
         _confirmPasswordController.clear();
-        
+
         _showSuccessSnackBar('Password changed successfully!');
       }
     } catch (e) {
@@ -200,7 +212,7 @@ class _ReceptionistSettingsScreenState extends State<ReceptionistSettingsScreen>
     final l10n = AppLocalizations.of(context)!;
     final size = MediaQuery.of(context).size;
     final isTablet = size.width > 600;
-    
+
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: _buildAppBar(l10n),
@@ -213,7 +225,7 @@ class _ReceptionistSettingsScreenState extends State<ReceptionistSettingsScreen>
       elevation: 0,
       centerTitle: true,
       title: Text(
-l10n.settings,
+        l10n.settings,
         style: GoogleFonts.poppins(
           fontWeight: FontWeight.w600,
           fontSize: 20,
@@ -344,7 +356,8 @@ l10n.settings,
                 backgroundColor: Colors.transparent,
                 backgroundImage: _profileImageUrl?.isNotEmpty == true
                     ? NetworkImage(_profileImageUrl!)
-                    : AssetImage('assets/images/receptionist.jpeg') as ImageProvider,
+                    : AssetImage('assets/images/receptionist.jpeg')
+                        as ImageProvider,
               ),
             ),
           ),
@@ -838,10 +851,11 @@ l10n.settings,
                 ],
               ),
             ),
-            trailing ?? Icon(
-              Icons.chevron_right,
-              color: Colors.grey.shade400,
-            ),
+            trailing ??
+                Icon(
+                  Icons.chevron_right,
+                  color: Colors.grey.shade400,
+                ),
           ],
         ),
       ),
@@ -930,10 +944,12 @@ l10n.settings,
       trailing: DropdownButton<String>(
         value: _dateFormat,
         underline: SizedBox(),
-        items: formats.map((format) => DropdownMenuItem(
-          value: format,
-          child: Text(format, style: GoogleFonts.poppins(fontSize: 14)),
-        )).toList(),
+        items: formats
+            .map((format) => DropdownMenuItem(
+                  value: format,
+                  child: Text(format, style: GoogleFonts.poppins(fontSize: 14)),
+                ))
+            .toList(),
         onChanged: (value) {
           if (value != null) {
             setState(() => _dateFormat = value);
@@ -975,7 +991,7 @@ l10n.settings,
   Widget _buildReminderFrequencySelector(AppLocalizations l10n) {
     final frequencies = ['daily', 'weekly', 'monthly'];
     final frequencyLabels = ['Daily', 'Weekly', 'Monthly'];
-    
+
     return _buildSettingsItem(
       icon: Icons.schedule,
       title: 'Reminder Frequency',
@@ -983,10 +999,15 @@ l10n.settings,
       trailing: DropdownButton<String>(
         value: _reminderFrequency,
         underline: SizedBox(),
-        items: frequencies.asMap().entries.map((entry) => DropdownMenuItem(
-          value: entry.value,
-          child: Text(frequencyLabels[entry.key], style: GoogleFonts.poppins()),
-        )).toList(),
+        items: frequencies
+            .asMap()
+            .entries
+            .map((entry) => DropdownMenuItem(
+                  value: entry.value,
+                  child: Text(frequencyLabels[entry.key],
+                      style: GoogleFonts.poppins()),
+                ))
+            .toList(),
         onChanged: (value) {
           if (value != null) {
             setState(() => _reminderFrequency = value);
@@ -1015,7 +1036,8 @@ l10n.settings,
                 obscureText: true,
                 decoration: InputDecoration(
                   labelText: 'Current Password',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
                   prefixIcon: Icon(Icons.lock_outline),
                 ),
               ),
@@ -1025,7 +1047,8 @@ l10n.settings,
                 obscureText: true,
                 decoration: InputDecoration(
                   labelText: 'New Password',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
                   prefixIcon: Icon(Icons.lock),
                 ),
               ),
@@ -1035,7 +1058,8 @@ l10n.settings,
                 obscureText: true,
                 decoration: InputDecoration(
                   labelText: 'Confirm Password',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
                   prefixIcon: Icon(Icons.lock),
                 ),
               ),
@@ -1056,16 +1080,22 @@ l10n.settings,
             child: Text(l10n.cancel),
           ),
           ElevatedButton(
-            onPressed: _isUpdatingPassword ? null : () {
-              Navigator.pop(context);
-              _changePassword();
-            },
+            onPressed: _isUpdatingPassword
+                ? null
+                : () {
+                    Navigator.pop(context);
+                    _changePassword();
+                  },
             style: ElevatedButton.styleFrom(
               backgroundColor: Color(0xFFF27121),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
             ),
             child: _isUpdatingPassword
-                ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                ? SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2))
                 : Text(l10n.save),
           ),
         ],
@@ -1075,7 +1105,7 @@ l10n.settings,
 
   void _showEditProfileDialog(AppLocalizations l10n) {
     final nameController = TextEditingController(text: _userName);
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -1106,7 +1136,8 @@ l10n.settings,
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Color(0xFFF27121),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
             ),
             child: Text(l10n.save),
           ),
@@ -1146,7 +1177,8 @@ l10n.settings,
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red.shade600,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
             ),
             child: Text('Logout All'),
           ),
@@ -1186,7 +1218,8 @@ l10n.settings,
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red.shade600,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
             ),
             child: Text('Reset'),
           ),

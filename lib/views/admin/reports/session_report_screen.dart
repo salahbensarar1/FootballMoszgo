@@ -317,7 +317,7 @@ class _SessionReportScreenState extends State<SessionReportScreen>
             ),
             pw.SizedBox(height: 32),
 
-            // Session Details
+            // Session Details - using individual widgets instead of table
             pw.Container(
               width: double.infinity,
               padding: const pw.EdgeInsets.all(20),
@@ -337,23 +337,20 @@ class _SessionReportScreenState extends State<SessionReportScreen>
                     ),
                   ),
                   pw.SizedBox(height: 16),
-                  pw.Table(
-                    border: pw.TableBorder.all(color: PdfColors.grey300),
-                    columnWidths: {
-                      0: const pw.FlexColumnWidth(1),
-                      1: const pw.FlexColumnWidth(2),
-                    },
-                    children: [
-                      _buildPdfTableRow('Date:', _formatDateOnly(startTime)),
-                      _buildPdfTableRow('Time:',
-                          "${_formatTimeOnly(startTime)} - ${_formatTimeOnly(endTime)}"),
-                      _buildPdfTableRow('Training Type:', trainingType),
-                      _buildPdfTableRow('Coach:', coachName),
-                      _buildPdfTableRow('Location:', pitchLocation),
-                      if (sessionNote.isNotEmpty)
-                        _buildPdfTableRow('Session Notes:', sessionNote),
-                    ],
-                  ),
+                  _buildPdfInfoRow('Date:', _formatDateOnly(startTime)),
+                  pw.SizedBox(height: 8),
+                  _buildPdfInfoRow('Time:',
+                      "${_formatTimeOnly(startTime)} - ${_formatTimeOnly(endTime)}"),
+                  pw.SizedBox(height: 8),
+                  _buildPdfInfoRow('Training Type:', trainingType),
+                  pw.SizedBox(height: 8),
+                  _buildPdfInfoRow('Coach:', coachName),
+                  pw.SizedBox(height: 8),
+                  _buildPdfInfoRow('Location:', pitchLocation),
+                  if (sessionNote.isNotEmpty) ...[
+                    pw.SizedBox(height: 8),
+                    _buildPdfInfoRow('Session Notes:', sessionNote),
+                  ],
                 ],
               ),
             ),
@@ -398,7 +395,7 @@ class _SessionReportScreenState extends State<SessionReportScreen>
             ),
             pw.SizedBox(height: 24),
 
-            // Player Attendance
+            // Player Attendance Header
             pw.Container(
               width: double.infinity,
               padding: const pw.EdgeInsets.all(20),
@@ -407,103 +404,40 @@ class _SessionReportScreenState extends State<SessionReportScreen>
                 borderRadius: pw.BorderRadius.circular(12),
                 border: pw.Border.all(color: PdfColors.orange200),
               ),
-              child: pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: [
-                  pw.Text(
-                    'Player Attendance (${playerAttendanceList.length})',
-                    style: pw.TextStyle(
-                      fontSize: 18,
-                      fontWeight: pw.FontWeight.bold,
-                      color: PdfColors.orange800,
-                    ),
-                  ),
-                  pw.SizedBox(height: 16),
-                  if (playerAttendanceList.isEmpty)
-                    pw.Text(
-                      'No players recorded for this session.',
-                      style:
-                          pw.TextStyle(fontSize: 14, color: PdfColors.grey600),
-                    )
-                  else
-                    pw.Table(
-                      border: pw.TableBorder.all(color: PdfColors.orange300),
-                      columnWidths: {
-                        0: const pw.FlexColumnWidth(3),
-                        1: const pw.FlexColumnWidth(1),
-                        2: const pw.FlexColumnWidth(1),
-                      },
-                      children: [
-                        // Header
-                        pw.TableRow(
-                          decoration:
-                              pw.BoxDecoration(color: PdfColors.orange100),
-                          children: [
-                            pw.Padding(
-                              padding: const pw.EdgeInsets.all(8),
-                              child: pw.Text('Player Name',
-                                  style: pw.TextStyle(
-                                      fontWeight: pw.FontWeight.bold)),
-                            ),
-                            pw.Padding(
-                              padding: const pw.EdgeInsets.all(8),
-                              child: pw.Text('Status',
-                                  style: pw.TextStyle(
-                                      fontWeight: pw.FontWeight.bold),
-                                  textAlign: pw.TextAlign.center),
-                            ),
-                            pw.Padding(
-                              padding: const pw.EdgeInsets.all(8),
-                              child: pw.Text('Minutes',
-                                  style: pw.TextStyle(
-                                      fontWeight: pw.FontWeight.bold),
-                                  textAlign: pw.TextAlign.center),
-                            ),
-                          ],
-                        ),
-                        // Player rows
-                        ...playerAttendanceList.map((playerMap) {
-                          final String playerName =
-                              playerMap['name'] ?? 'Unknown';
-                          final bool isPresent = playerMap['present'] ?? false;
-                          final int minutes = int.tryParse(
-                                  playerMap['minutes']?.toString() ?? '0') ??
-                              0;
-
-                          return pw.TableRow(
-                            children: [
-                              pw.Padding(
-                                padding: const pw.EdgeInsets.all(8),
-                                child: pw.Text(playerName),
-                              ),
-                              pw.Padding(
-                                padding: const pw.EdgeInsets.all(8),
-                                child: pw.Text(
-                                  isPresent ? 'Present' : 'Absent',
-                                  textAlign: pw.TextAlign.center,
-                                  style: pw.TextStyle(
-                                    color: isPresent
-                                        ? PdfColors.green700
-                                        : PdfColors.red700,
-                                    fontWeight: pw.FontWeight.normal,
-                                  ),
-                                ),
-                              ),
-                              pw.Padding(
-                                padding: const pw.EdgeInsets.all(8),
-                                child: pw.Text(
-                                  isPresent ? minutes.toString() : '-',
-                                  textAlign: pw.TextAlign.center,
-                                ),
-                              ),
-                            ],
-                          );
-                        }).toList(),
-                      ],
-                    ),
-                ],
+              child: pw.Text(
+                'Player Attendance (${playerAttendanceList.length})',
+                style: pw.TextStyle(
+                  fontSize: 18,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColors.orange800,
+                ),
               ),
             ),
+            pw.SizedBox(height: 16),
+
+            // Player Attendance List - Using pw.Wrap for automatic pagination
+            if (playerAttendanceList.isEmpty)
+              pw.Container(
+                width: double.infinity,
+                padding: const pw.EdgeInsets.all(20),
+                decoration: pw.BoxDecoration(
+                  color: PdfColors.grey50,
+                  borderRadius: pw.BorderRadius.circular(12),
+                  border: pw.Border.all(color: PdfColors.grey200),
+                ),
+                child: pw.Text(
+                  'No players recorded for this session.',
+                  style: pw.TextStyle(fontSize: 14, color: PdfColors.grey600),
+                  textAlign: pw.TextAlign.center,
+                ),
+              )
+            else
+              // Use pw.Wrap to handle many players without TooManyPagesExceptions
+              pw.Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _buildPlayerAttendanceWidgets(),
+              ),
           ],
         ),
       );
@@ -543,22 +477,128 @@ class _SessionReportScreenState extends State<SessionReportScreen>
     );
   }
 
-  pw.TableRow _buildPdfTableRow(String label, String value) {
-    return pw.TableRow(
+  /// Build PDF info row for session details
+  pw.Widget _buildPdfInfoRow(String label, String value) {
+    return pw.Row(
+      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
       children: [
-        pw.Padding(
-          padding: const pw.EdgeInsets.all(8),
-          child: pw.Text(
-            label,
-            style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 12),
+        pw.Text(
+          label,
+          style: pw.TextStyle(
+            fontWeight: pw.FontWeight.bold,
+            fontSize: 14,
+            color: PdfColors.grey700,
           ),
         ),
-        pw.Padding(
-          padding: const pw.EdgeInsets.all(8),
-          child: pw.Text(value, style: const pw.TextStyle(fontSize: 12)),
+        pw.Expanded(
+          child: pw.Text(
+            value,
+            style: pw.TextStyle(fontSize: 14, color: PdfColors.grey600),
+            textAlign: pw.TextAlign.right,
+          ),
         ),
       ],
     );
+  }
+
+  /// Build player attendance widgets for pw.Wrap - prevents TooManyPagesExceptions
+  List<pw.Widget> _buildPlayerAttendanceWidgets() {
+    final List<pw.Widget> children = <pw.Widget>[];
+
+    for (final playerMap in playerAttendanceList) {
+      final String playerName = playerMap['name'] ?? 'Unknown';
+      final bool isPresent = playerMap['present'] ?? false;
+      final int minutes =
+          int.tryParse(playerMap['minutes']?.toString() ?? '0') ?? 0;
+
+      children.add(
+        pw.SizedBox(
+          width: double.infinity,
+          child: pw.Container(
+            margin: const pw.EdgeInsets.only(bottom: 8),
+            padding: const pw.EdgeInsets.all(12),
+            decoration: pw.BoxDecoration(
+              color: PdfColors.white,
+              borderRadius: pw.BorderRadius.circular(8),
+              border: pw.Border.all(
+                color: isPresent ? PdfColors.green200 : PdfColors.red200,
+              ),
+            ),
+            child: pw.Row(
+              children: [
+                // Status icon
+                pw.Container(
+                  width: 32,
+                  height: 32,
+                  decoration: pw.BoxDecoration(
+                    color: isPresent ? PdfColors.green100 : PdfColors.red100,
+                    borderRadius: pw.BorderRadius.circular(16),
+                  ),
+                  child: pw.Center(
+                    child: pw.Text(
+                      isPresent ? '✓' : '✗',
+                      style: pw.TextStyle(
+                        fontSize: 16,
+                        fontWeight: pw.FontWeight.bold,
+                        color:
+                            isPresent ? PdfColors.green800 : PdfColors.red800,
+                      ),
+                    ),
+                  ),
+                ),
+                pw.SizedBox(width: 12),
+                // Player info
+                pw.Expanded(
+                  child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text(
+                        playerName,
+                        style: pw.TextStyle(
+                          fontSize: 14,
+                          fontWeight: pw.FontWeight.bold,
+                          color: PdfColors.grey800,
+                        ),
+                      ),
+                      pw.SizedBox(height: 2),
+                      pw.Text(
+                        isPresent ? 'Present' : 'Absent',
+                        style: pw.TextStyle(
+                          fontSize: 12,
+                          color:
+                              isPresent ? PdfColors.green700 : PdfColors.red700,
+                          fontWeight: pw.FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Minutes badge
+                if (isPresent)
+                  pw.Container(
+                    padding: const pw.EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 4),
+                    decoration: pw.BoxDecoration(
+                      color: PdfColors.blue100,
+                      borderRadius: pw.BorderRadius.circular(4),
+                    ),
+                    child: pw.Text(
+                      '${minutes}m',
+                      style: pw.TextStyle(
+                        fontSize: 10,
+                        fontWeight: pw.FontWeight.bold,
+                        color: PdfColors.blue800,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return children;
   }
 
   Future<void> _navigateToPlayerDetails(String playerId) async {

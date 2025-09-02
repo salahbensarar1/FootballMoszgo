@@ -4,35 +4,35 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:footballtraining/config/firebase_config.dart';
 import 'package:footballtraining/config/environment.dart';
 import 'package:footballtraining/services/logging_service.dart';
+import 'package:footballtraining/services/global_messenger_service.dart';
 import 'package:footballtraining/views/login/login_page.dart';
-import 'package:footballtraining/views/setup/organization_setup_wizard.dart';
-import 'package:footballtraining/services/organization_setup_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   try {
     // Initialize environment configuration
     await Environment.initialize();
-    
+
     // Initialize logging service
     LoggingService.initialize();
-    LoggingService.info('🚀 Football Training App Starting - Environment: ${Environment.environment}');
-    
+    LoggingService.info(
+        '🚀 Football Training App Starting - Environment: ${Environment.environment}');
+
     // Initialize Firebase with environment-based configuration
     await FirebaseConfig.initializeFirebase();
-    
+
     // Load saved language preference
     final prefs = await SharedPreferences.getInstance();
     final savedLanguage = prefs.getString('language_code');
-    
+
     LoggingService.info('✅ App initialization completed successfully');
-    
+
     runApp(MyApp(initialLanguage: savedLanguage));
   } catch (error, stackTrace) {
     LoggingService.fatal('💥 App initialization failed', error, stackTrace);
-    
+
     // Run app with error handling even if initialization fails
     runApp(ErrorApp(error: error.toString()));
   }
@@ -41,9 +41,9 @@ void main() async {
 /// Error app shown when initialization fails
 class ErrorApp extends StatelessWidget {
   final String error;
-  
+
   const ErrorApp({super.key, required this.error});
-  
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -162,7 +162,12 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
+    // Initialize global messenger key
+    final messengerKey = GlobalKey<ScaffoldMessengerState>();
+    GlobalMessengerService.instance.initialize(messengerKey);
+
     return MaterialApp(
+      scaffoldMessengerKey: messengerKey,
       debugShowCheckedModeBanner: false,
       title: 'Football Training',
       theme: ThemeData(
@@ -196,56 +201,13 @@ class LanguageSelectionScreen extends StatefulWidget {
   const LanguageSelectionScreen({super.key});
 
   @override
-  State<LanguageSelectionScreen> createState() => _LanguageSelectionScreenState();
+  State<LanguageSelectionScreen> createState() =>
+      _LanguageSelectionScreenState();
 }
 
 class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
-  final OrganizationSetupService _setupService = OrganizationSetupService();
-  bool _isCheckingSetup = true;
-  bool _needsSetup = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _checkSetupNeeded();
-  }
-
-  Future<void> _checkSetupNeeded() async {
-    try {
-      final hasOrg = await _setupService.hasExistingOrganization();
-      setState(() {
-        _needsSetup = !hasOrg;
-        _isCheckingSetup = false;
-      });
-    } catch (e) {
-      LoggingService.error('Failed to check setup status', e);
-      setState(() {
-        _needsSetup = true; // Default to showing setup if we can't check
-        _isCheckingSetup = false;
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    if (_isCheckingSetup) {
-      return Scaffold(
-        body: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFFF27121), Color(0xFF654ea3), Color(0xFFeaafc8)],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
-          ),
-          child: const Center(
-            child: CircularProgressIndicator(
-              color: Colors.white,
-            ),
-          ),
-        ),
-      );
-    }
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -340,17 +302,10 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
     // Set the language in the app
     MyApp.setLocale(context, Locale(languageCode));
 
-    // Navigate based on setup status
-    if (_needsSetup) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const OrganizationSetupWizard()),
-      );
-    } else {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const Loginpage()),
-      );
-    }
+    // Always navigate to login page after language selection
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const Loginpage()),
+    );
   }
 }

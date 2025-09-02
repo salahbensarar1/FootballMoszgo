@@ -16,8 +16,19 @@ class TeamCoach {
   });
 
   factory TeamCoach.fromJson(Map<String, dynamic> json) {
+    // Handle all possible ID field variations
+    final userId = json['userId'] ??
+        json['user_id'] ??
+        json['coach_id'] ??
+        json['coachId'] ??
+        '';
+
+    // Debug log the coach data
+    print(
+        '💡 Parsing TeamCoach: userID=$userId, role=${json['role'] ?? 'coach'}, isActive=${json['isActive'] ?? json['is_active'] ?? true}');
+
     return TeamCoach(
-      userId: json['userId'] ?? json['user_id'] ?? '',
+      userId: userId,
       role: json['role'] ?? 'coach',
       assignedAt: json['assignedAt'] is Timestamp
           ? (json['assignedAt'] as Timestamp).toDate()
@@ -84,14 +95,16 @@ class Team {
   String? get singleCoachId {
     final activeCoaches = coaches.where((c) => c.isActive).toList();
     if (activeCoaches.isEmpty) return null;
-    
+
     // Priority: head_coach > assistant_coach > first active coach
-    final headCoach = activeCoaches.where((c) => c.role == 'head_coach').firstOrNull;
+    final headCoach =
+        activeCoaches.where((c) => c.role == 'head_coach').firstOrNull;
     if (headCoach != null) return headCoach.userId;
-    
-    final assistantCoach = activeCoaches.where((c) => c.role == 'assistant_coach').firstOrNull;
+
+    final assistantCoach =
+        activeCoaches.where((c) => c.role == 'assistant_coach').firstOrNull;
     if (assistantCoach != null) return assistantCoach.userId;
-    
+
     return activeCoaches.first.userId;
   }
 
@@ -115,13 +128,16 @@ class Team {
 
   // Check if a user is a coach of this team
   bool isCoach(String userId) {
-    return activeCoachIds.contains(userId);
+    return coaches.any((coach) => coach.userId == userId && coach.isActive);
   }
 
   // Get coach role for specific user
   String? getCoachRole(String userId) {
     try {
-      final coach = activeCoaches.firstWhere((c) => c.userId == userId);
+      final coach = coaches.firstWhere(
+        (c) => c.userId == userId && c.isActive,
+        orElse: () => throw Exception('Coach not found or not active'),
+      );
       return coach.role;
     } catch (e) {
       return null;
@@ -140,6 +156,15 @@ class Team {
           .map((coachData) {
             if (coachData is Map<String, dynamic>) {
               return TeamCoach.fromJson(coachData);
+            } else if (coachData is String) {
+              // Handle case where coaches are stored as plain user IDs
+              return TeamCoach(
+                userId: coachData,
+                role: 'coach',
+                assignedAt: data['created_at']?.toDate() ?? DateTime.now(),
+                assignedBy: 'system_migration',
+                isActive: true,
+              );
             }
             return null;
           })
@@ -229,13 +254,13 @@ class Team {
       'created_at': createdAt != null ? Timestamp.fromDate(createdAt!) : null,
       'updated_at': updatedAt != null ? Timestamp.fromDate(updatedAt!) : null,
     };
-    
+
     // Only add coach field if we have a primary coach
     final primaryCoach = singleCoachId;
     if (primaryCoach != null) {
       map['coach'] = primaryCoach;
     }
-    
+
     return map;
   }
 

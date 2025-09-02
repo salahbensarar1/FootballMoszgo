@@ -30,17 +30,17 @@ class _MarkPaymentDialogState extends State<MarkPaymentDialog>
   PaymentStatus selectedPaymentStatus = PaymentStatus.paid;
   bool isProcessing = false;
   final TextEditingController notesController = TextEditingController();
-  
+
   // Animation controllers for smooth UX
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
-  
+
   @override
   void initState() {
     super.initState();
     _setupAnimations();
   }
-  
+
   void _setupAnimations() {
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 300),
@@ -74,7 +74,7 @@ class _MarkPaymentDialogState extends State<MarkPaymentDialog>
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
     final isSmallScreen = screenWidth < 600;
-    
+
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Container(
@@ -104,7 +104,8 @@ class _MarkPaymentDialogState extends State<MarkPaymentDialog>
                       color: const Color(0xFF667eea).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(Icons.payment_rounded, color: Color(0xFF667eea), size: 20),
+                    child: const Icon(Icons.payment_rounded,
+                        color: Color(0xFF667eea), size: 20),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -133,7 +134,7 @@ class _MarkPaymentDialogState extends State<MarkPaymentDialog>
                 ],
               ),
             ),
-            
+
             // SCROLLABLE CONTENT
             Flexible(
               child: SingleChildScrollView(
@@ -165,7 +166,7 @@ class _MarkPaymentDialogState extends State<MarkPaymentDialog>
                 ),
               ),
             ),
-            
+
             // RESPONSIVE ACTIONS
             Container(
               padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
@@ -180,7 +181,8 @@ class _MarkPaymentDialogState extends State<MarkPaymentDialog>
                 children: [
                   Expanded(
                     child: TextButton(
-                      onPressed: isProcessing ? null : () => Navigator.pop(context),
+                      onPressed:
+                          isProcessing ? null : () => Navigator.pop(context),
                       child: Text(
                         AppLocalizations.of(context)!.cancel,
                         style: GoogleFonts.poppins(
@@ -194,11 +196,13 @@ class _MarkPaymentDialogState extends State<MarkPaymentDialog>
                   Expanded(
                     flex: 2,
                     child: ElevatedButton(
-                      onPressed: _canProcessPayment() ? _processPaymentMark : null,
+                      onPressed:
+                          _canProcessPayment() ? _processPaymentMark : null,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF667eea),
                         disabledBackgroundColor: Colors.grey.shade300,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
                         padding: EdgeInsets.symmetric(
                           vertical: isSmallScreen ? 12 : 14,
                           horizontal: isSmallScreen ? 16 : 20,
@@ -210,7 +214,8 @@ class _MarkPaymentDialogState extends State<MarkPaymentDialog>
                               height: 16,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(Colors.white),
                               ),
                             )
                           : Text(
@@ -264,13 +269,14 @@ class _MarkPaymentDialogState extends State<MarkPaymentDialog>
                 child: Row(
                   children: [
                     Icon(Icons.person_rounded,
-                        color: Colors.grey.shade600, size: isSmallScreen ? 18 : 20),
+                        color: Colors.grey.shade600,
+                        size: isSmallScreen ? 18 : 20),
                     SizedBox(width: isSmallScreen ? 6 : 8),
                     Expanded(
                       child: Text(
                         AppLocalizations.of(context)!.selectPlayer,
                         style: GoogleFonts.poppins(
-                          fontSize: isSmallScreen ? 13 : 14,
+                          fontSize: isSmallScreen ? 12 : 14,
                           fontWeight: FontWeight.w600,
                           color: Colors.grey.shade700,
                         ),
@@ -303,8 +309,10 @@ class _MarkPaymentDialogState extends State<MarkPaymentDialog>
                   ),
                   items: snapshot.data!.docs.map((doc) {
                     final data = doc.data() as Map<String, dynamic>;
-                    final playerName = data['name'] ?? AppLocalizations.of(context)!.unnamedPlayer;
-                    final teamName = data['team'] ?? AppLocalizations.of(context)!.unknownTeam;
+                    final playerName = data['name'] ??
+                        AppLocalizations.of(context)!.unnamedPlayer;
+                    final teamName = data['team'] ??
+                        AppLocalizations.of(context)!.unknownTeam;
 
                     return DropdownMenuItem<String>(
                       value: doc.id,
@@ -574,7 +582,8 @@ class _MarkPaymentDialogState extends State<MarkPaymentDialog>
       decoration: BoxDecoration(
         color: const Color(0xFF667eea).withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF667eea).withValues(alpha: 0.2)),
+        border:
+            Border.all(color: const Color(0xFF667eea).withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -707,7 +716,8 @@ class _MarkPaymentDialogState extends State<MarkPaymentDialog>
               child: Row(
                 children: [
                   Icon(Icons.account_balance_wallet_rounded,
-                      color: Colors.grey.shade600, size: isSmallScreen ? 18 : 20),
+                      color: Colors.grey.shade600,
+                      size: isSmallScreen ? 18 : 20),
                   SizedBox(width: isSmallScreen ? 6 : 8),
                   Expanded(
                     child: Text(
@@ -729,9 +739,12 @@ class _MarkPaymentDialogState extends State<MarkPaymentDialog>
               child: Column(
                 children: [
                   // RECEPTIONIST SCREEN: Only 3 Payment Status Options (Green, Red, Grey)
-                  _buildResponsivePaymentStatusOption(PaymentStatus.paid, isSmallScreen),       // GREEN - PAID
-                  _buildResponsivePaymentStatusOption(PaymentStatus.unpaid, isSmallScreen),     // RED - UNPAID
-                  _buildResponsivePaymentStatusOption(PaymentStatus.notActive, isSmallScreen),  // GREY - NOT ACTIVE
+                  _buildResponsivePaymentStatusOption(
+                      PaymentStatus.paid, isSmallScreen), // GREEN - PAID
+                  _buildResponsivePaymentStatusOption(
+                      PaymentStatus.unpaid, isSmallScreen), // RED - UNPAID
+                  _buildResponsivePaymentStatusOption(PaymentStatus.notActive,
+                      isSmallScreen), // GREY - NOT ACTIVE
                 ],
               ),
             ),
@@ -742,15 +755,18 @@ class _MarkPaymentDialogState extends State<MarkPaymentDialog>
   }
 
   /// ENTERPRISE-GRADE: Responsive Individual payment status option
-  Widget _buildResponsivePaymentStatusOption(PaymentStatus status, bool isSmallScreen) {
+  Widget _buildResponsivePaymentStatusOption(
+      PaymentStatus status, bool isSmallScreen) {
     final isSelected = selectedPaymentStatus == status;
     final statusColor = _getPaymentStatusColor(status);
-    
+
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       margin: EdgeInsets.symmetric(vertical: isSmallScreen ? 1 : 2),
       decoration: BoxDecoration(
-        color: isSelected ? statusColor.withValues(alpha: 0.1) : Colors.transparent,
+        color: isSelected
+            ? statusColor.withValues(alpha: 0.1)
+            : Colors.transparent,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: isSelected ? statusColor : Colors.transparent,
@@ -802,8 +818,10 @@ class _MarkPaymentDialogState extends State<MarkPaymentDialog>
                         _getLocalizedStatusName(status),
                         style: GoogleFonts.poppins(
                           fontSize: isSmallScreen ? 12 : 14,
-                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                          color: isSelected ? statusColor : Colors.grey.shade700,
+                          fontWeight:
+                              isSelected ? FontWeight.w600 : FontWeight.w500,
+                          color:
+                              isSelected ? statusColor : Colors.grey.shade700,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -906,7 +924,8 @@ class _MarkPaymentDialogState extends State<MarkPaymentDialog>
       decoration: BoxDecoration(
         color: const Color(0xFF667eea).withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF667eea).withValues(alpha: 0.2)),
+        border:
+            Border.all(color: const Color(0xFF667eea).withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -970,7 +989,9 @@ class _MarkPaymentDialogState extends State<MarkPaymentDialog>
                 ),
               ),
               Text(
-                selectedMonth != null ? _getLocalizedMonthName(selectedMonth!) : '-',
+                selectedMonth != null
+                    ? _getLocalizedMonthName(selectedMonth!)
+                    : '-',
                 style: GoogleFonts.poppins(
                   fontSize: isSmallScreen ? 11 : 12,
                   fontWeight: FontWeight.w600,
@@ -1013,30 +1034,45 @@ class _MarkPaymentDialogState extends State<MarkPaymentDialog>
   String _getLocalizedMonthName(String monthNumber) {
     final month = int.parse(monthNumber);
     final l10n = AppLocalizations.of(context)!;
-    
+
     switch (month) {
-      case 1: return l10n.monthJanuary;
-      case 2: return l10n.monthFebruary;
-      case 3: return l10n.monthMarch;
-      case 4: return l10n.monthApril;
-      case 5: return l10n.monthMayFull;
-      case 6: return l10n.monthJune;
-      case 7: return l10n.monthJuly;
-      case 8: return l10n.monthAugust;
-      case 9: return l10n.monthSeptember;
-      case 10: return l10n.monthOctober;
-      case 11: return l10n.monthNovember;
-      case 12: return l10n.monthDecember;
-      default: return DateFormat('MMMM').format(DateTime(2024, month));
+      case 1:
+        return l10n.monthJanuary;
+      case 2:
+        return l10n.monthFebruary;
+      case 3:
+        return l10n.monthMarch;
+      case 4:
+        return l10n.monthApril;
+      case 5:
+        return l10n.monthMayFull;
+      case 6:
+        return l10n.monthJune;
+      case 7:
+        return l10n.monthJuly;
+      case 8:
+        return l10n.monthAugust;
+      case 9:
+        return l10n.monthSeptember;
+      case 10:
+        return l10n.monthOctober;
+      case 11:
+        return l10n.monthNovember;
+      case 12:
+        return l10n.monthDecember;
+      default:
+        return DateFormat('MMMM').format(DateTime(2024, month));
     }
   }
 
   /// ENTERPRISE-GRADE: Helper to update player team
-  void _updatePlayerTeam(String? playerId, List<QueryDocumentSnapshot> players) {
+  void _updatePlayerTeam(
+      String? playerId, List<QueryDocumentSnapshot> players) {
     if (playerId != null) {
       final playerDoc = players.firstWhere((doc) => doc.id == playerId);
       final data = playerDoc.data() as Map<String, dynamic>;
-      selectedPlayerTeam = data['team'] ?? AppLocalizations.of(context)!.unknownTeam;
+      selectedPlayerTeam =
+          data['team'] ?? AppLocalizations.of(context)!.unknownTeam;
     }
   }
 
@@ -1067,7 +1103,7 @@ class _MarkPaymentDialogState extends State<MarkPaymentDialog>
         return AppLocalizations.of(context)!.playerInactiveSuspended;
     }
   }
-  
+
   /// PRODUCTION-READY: Localized status name
   String _getLocalizedStatusName(PaymentStatus status) {
     switch (status) {
@@ -1087,11 +1123,14 @@ class _MarkPaymentDialogState extends State<MarkPaymentDialog>
   (bool, bool) _convertPaymentStatusToLegacyFields(PaymentStatus status) {
     switch (status) {
       case PaymentStatus.paid:
-        return (true, true);   // Paid and Active
+        return (true, true); // Paid and Active
       case PaymentStatus.partial:
-        return (false, true);  // Not fully paid but Active (will be handled by amount logic)
+        return (
+          false,
+          true
+        ); // Not fully paid but Active (will be handled by amount logic)
       case PaymentStatus.unpaid:
-        return (false, true);  // Not paid but Active
+        return (false, true); // Not paid but Active
       case PaymentStatus.notActive:
         return (false, false); // Not paid and Not Active
     }
@@ -1119,8 +1158,9 @@ class _MarkPaymentDialogState extends State<MarkPaymentDialog>
 
     try {
       // ENTERPRISE-GRADE: Convert PaymentStatus to legacy boolean fields for backward compatibility
-      final (isPaid, isActive) = _convertPaymentStatusToLegacyFields(selectedPaymentStatus);
-      
+      final (isPaid, isActive) =
+          _convertPaymentStatusToLegacyFields(selectedPaymentStatus);
+
       // Create payment record with proper status handling
       final paymentRecord = PaymentRecord(
         id: '', // Will be set by Firestore
@@ -1129,7 +1169,9 @@ class _MarkPaymentDialogState extends State<MarkPaymentDialog>
         month: selectedMonth!,
         isPaid: isPaid,
         isActive: isActive,
-        amount: selectedPaymentStatus == PaymentStatus.notActive ? 0.0 : _getPaymentAmount,
+        amount: selectedPaymentStatus == PaymentStatus.notActive
+            ? 0.0
+            : _getPaymentAmount,
         updatedAt: DateTime.now(),
         notes: notesController.text.trim().isEmpty
             ? null

@@ -15,60 +15,60 @@ class OrganizationSetupWizard extends StatefulWidget {
   const OrganizationSetupWizard({super.key});
 
   @override
-  State<OrganizationSetupWizard> createState() => _OrganizationSetupWizardState();
+  State<OrganizationSetupWizard> createState() =>
+      _OrganizationSetupWizardState();
 }
 
 class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
     with TickerProviderStateMixin {
-  
   // Controllers and state
   final PageController _pageController = PageController();
   final OrganizationSetupService _setupService = OrganizationSetupService();
-  
+
   // Animation Controllers
   late AnimationController _animationController;
   late AnimationController _progressController;
   late Animation<double> _fadeAnimation;
-  
+
   // Current state
   int _currentStep = 0;
   bool _isLoading = false;
   String? _errorMessage;
-  
+
   // Setup data
   Organization? _organization;
   String? _adminEmail;
   String? _adminPassword;
-  
+
   // Form keys
   final _orgFormKey = GlobalKey<FormState>();
   final _adminFormKey = GlobalKey<FormState>();
   final _receptionistFormKey = GlobalKey<FormState>();
   final _teamFormKey = GlobalKey<FormState>();
-  
+
   // Organization controllers
   final _orgNameController = TextEditingController();
   final _orgAddressController = TextEditingController();
   final _orgPhoneController = TextEditingController();
   final _orgEmailController = TextEditingController();
   final _orgWebsiteController = TextEditingController();
-  
+
   // Admin controllers
   final _adminNameController = TextEditingController();
   final _adminEmailController = TextEditingController();
   final _adminPasswordController = TextEditingController();
   final _adminConfirmPasswordController = TextEditingController();
-  
+
   // Receptionist controllers
   final _receptionistNameController = TextEditingController();
   final _receptionistEmailController = TextEditingController();
   final _receptionistPasswordController = TextEditingController();
   final _receptionistConfirmPasswordController = TextEditingController();
-  
+
   // Team controllers
   final _teamNamesControllers = <TextEditingController>[];
   final _monthlyFeeController = TextEditingController(text: '10000');
-  
+
   // Selection state
   OrganizationType _selectedOrgType = OrganizationType.club;
   String _selectedCurrency = 'HUF';
@@ -76,7 +76,13 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
   bool _createSamplePlayers = true;
 
   static const List<String> _stepTitles = [
-    'Welcome', 'Organization', 'Admin', 'Receptionist', 'Teams', 'Payments', 'Complete'
+    'Welcome',
+    'Organization',
+    'Admin',
+    'Receptionist',
+    'Teams',
+    'Payments',
+    'Complete'
   ];
 
   @override
@@ -105,26 +111,26 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
 
   void _disposeControllers() {
     _pageController.dispose();
-    
+
     // Organization controllers
     _orgNameController.dispose();
     _orgAddressController.dispose();
     _orgPhoneController.dispose();
     _orgEmailController.dispose();
     _orgWebsiteController.dispose();
-    
+
     // Admin controllers
     _adminNameController.dispose();
     _adminEmailController.dispose();
     _adminPasswordController.dispose();
     _adminConfirmPasswordController.dispose();
-    
+
     // Receptionist controllers
     _receptionistNameController.dispose();
     _receptionistEmailController.dispose();
     _receptionistPasswordController.dispose();
     _receptionistConfirmPasswordController.dispose();
-    
+
     // Team controllers
     _monthlyFeeController.dispose();
     for (final controller in _teamNamesControllers) {
@@ -137,23 +143,23 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
       duration: const Duration(milliseconds: 600),
       vsync: this,
     );
-    
+
     _progressController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    
+
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
-    
+
     _animationController.forward();
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    
+
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       body: SafeArea(
@@ -248,7 +254,7 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
         children: List.generate(_stepTitles.length, (index) {
           final isActive = index == _currentStep;
           final isCompleted = index < _currentStep;
-          
+
           return Expanded(
             child: Row(
               children: [
@@ -256,14 +262,15 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
                   child: Container(
                     height: 4,
                     decoration: BoxDecoration(
-                      color: isCompleted || isActive 
+                      color: isCompleted || isActive
                           ? const Color(0xFFF27121)
                           : Colors.grey.shade300,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
                 ),
-                if (index < _stepTitles.length - 1) SizedBox(width: context.spacing(factor: 0.25)),
+                if (index < _stepTitles.length - 1)
+                  SizedBox(width: context.spacing(factor: 0.25)),
               ],
             ),
           );
@@ -360,21 +367,20 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
             _buildStepTitle('Organization Information'),
             _buildStepSubtitle('Tell us about your football organization'),
             SizedBox(height: context.spacing(factor: 2)),
-            
             _buildFormField(
               controller: _orgNameController,
               label: 'Organization Name *',
               hint: 'e.g., Manchester United FC',
               icon: Icons.business_rounded,
               validator: (value) {
-                if (value?.isEmpty ?? true) return 'Organization name is required';
-                if (value!.length < 2) return 'Name must be at least 2 characters';
+                if (value?.isEmpty ?? true)
+                  return 'Organization name is required';
+                if (value!.length < 2)
+                  return 'Name must be at least 2 characters';
                 return null;
               },
             ),
-            
             SizedBox(height: context.spacing()),
-            
             _buildFormField(
               controller: _orgAddressController,
               label: 'Address *',
@@ -383,13 +389,12 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
               maxLines: 2,
               validator: (value) {
                 if (value?.isEmpty ?? true) return 'Address is required';
-                if (value!.length < 10) return 'Please provide a complete address';
+                if (value!.length < 10)
+                  return 'Please provide a complete address';
                 return null;
               },
             ),
-            
             SizedBox(height: context.spacing()),
-            
             Text(
               'Organization Type *',
               style: GoogleFonts.poppins(
@@ -399,11 +404,8 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
               ),
             ),
             SizedBox(height: context.spacing(factor: 0.5)),
-            
             _buildOrganizationTypeSelector(),
-            
             SizedBox(height: context.spacing()),
-            
             _buildFormField(
               controller: _orgPhoneController,
               label: 'Phone Number',
@@ -423,9 +425,7 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
                 return null;
               },
             ),
-            
             SizedBox(height: context.spacing()),
-            
             _buildFormField(
               controller: _orgEmailController,
               label: 'Email Address',
@@ -434,7 +434,8 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
               keyboardType: TextInputType.emailAddress,
               validator: (value) {
                 if (value?.isNotEmpty == true) {
-                  final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                  final emailRegex =
+                      RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
                   if (!emailRegex.hasMatch(value!)) {
                     return 'Please enter a valid email address';
                   }
@@ -442,9 +443,7 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
                 return null;
               },
             ),
-            
             SizedBox(height: context.spacing()),
-            
             _buildFormField(
               controller: _orgWebsiteController,
               label: 'Website',
@@ -452,12 +451,10 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
               icon: Icons.language_rounded,
               keyboardType: TextInputType.url,
             ),
-            
             if (_errorMessage != null) ...[
               SizedBox(height: context.spacing()),
               _buildErrorMessage(_errorMessage!),
             ],
-            
             SizedBox(height: context.spacing(factor: 2)),
           ],
         ),
@@ -475,9 +472,9 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
           children: [
             SizedBox(height: context.spacing()),
             _buildStepTitle('Administrator Account'),
-            _buildStepSubtitle('Create your administrator account to manage the system'),
+            _buildStepSubtitle(
+                'Create your administrator account to manage the system'),
             SizedBox(height: context.spacing(factor: 2)),
-            
             _buildFormField(
               controller: _adminNameController,
               label: 'Full Name *',
@@ -485,13 +482,12 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
               icon: Icons.person_rounded,
               validator: (value) {
                 if (value?.isEmpty ?? true) return 'Name is required';
-                if (value!.length < 2) return 'Name must be at least 2 characters';
+                if (value!.length < 2)
+                  return 'Name must be at least 2 characters';
                 return null;
               },
             ),
-            
             SizedBox(height: context.spacing()),
-            
             _buildFormField(
               controller: _adminEmailController,
               label: 'Email Address *',
@@ -507,9 +503,7 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
                 return null;
               },
             ),
-            
             SizedBox(height: context.spacing()),
-            
             _buildFormField(
               controller: _adminPasswordController,
               label: 'Password *',
@@ -518,13 +512,12 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
               obscureText: true,
               validator: (value) {
                 if (value?.isEmpty ?? true) return 'Password is required';
-                if (value!.length < 6) return 'Password must be at least 6 characters';
+                if (value!.length < 6)
+                  return 'Password must be at least 6 characters';
                 return null;
               },
             ),
-            
             SizedBox(height: context.spacing()),
-            
             _buildFormField(
               controller: _adminConfirmPasswordController,
               label: 'Confirm Password *',
@@ -532,27 +525,26 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
               icon: Icons.lock_outline_rounded,
               obscureText: true,
               validator: (value) {
-                if (value?.isEmpty ?? true) return 'Please confirm your password';
+                if (value?.isEmpty ?? true)
+                  return 'Please confirm your password';
                 if (value != _adminPasswordController.text) {
                   return 'Passwords do not match';
                 }
                 return null;
               },
             ),
-            
             SizedBox(height: context.spacing(factor: 2)),
-            
             _buildInfoCard(
               icon: Icons.security_rounded,
               title: 'Security Notice',
-              subtitle: 'This account will have full administrative privileges. '
-                       'Keep your credentials secure!',
+              subtitle:
+                  'This account will have full administrative privileges. '
+                  'Keep your credentials secure!',
               color: Colors.amber.shade50,
               borderColor: Colors.amber.shade200,
               iconColor: Colors.amber.shade700,
               textColor: Colors.amber.shade800,
             ),
-            
             SizedBox(height: context.spacing(factor: 2)),
           ],
         ),
@@ -570,9 +562,9 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
           children: [
             SizedBox(height: context.spacing()),
             _buildStepTitle('Receptionist Account'),
-            _buildStepSubtitle('Create a receptionist account for daily operations (optional)'),
+            _buildStepSubtitle(
+                'Create a receptionist account for daily operations (optional)'),
             SizedBox(height: context.spacing(factor: 2)),
-            
             _buildFormField(
               controller: _receptionistNameController,
               label: 'Full Name',
@@ -585,9 +577,7 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
                 return null;
               },
             ),
-            
             SizedBox(height: context.spacing()),
-            
             _buildFormField(
               controller: _receptionistEmailController,
               label: 'Email Address',
@@ -596,7 +586,8 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
               keyboardType: TextInputType.emailAddress,
               validator: (value) {
                 if (value?.isNotEmpty == true) {
-                  final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                  final emailRegex =
+                      RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
                   if (!emailRegex.hasMatch(value!)) {
                     return 'Please enter a valid email address';
                   }
@@ -604,9 +595,7 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
                 return null;
               },
             ),
-            
             SizedBox(height: context.spacing()),
-            
             _buildFormField(
               controller: _receptionistPasswordController,
               label: 'Password',
@@ -620,9 +609,7 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
                 return null;
               },
             ),
-            
             SizedBox(height: context.spacing()),
-            
             _buildFormField(
               controller: _receptionistConfirmPasswordController,
               label: 'Confirm Password',
@@ -641,19 +628,17 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
                 return null;
               },
             ),
-            
             SizedBox(height: context.spacing(factor: 2)),
-            
             _buildInfoCard(
               icon: Icons.info_outline_rounded,
               title: 'Optional Step',
-              subtitle: 'This account will handle day-to-day operations like attendance tracking and player management. You can skip this step and create it later.',
+              subtitle:
+                  'This account will handle day-to-day operations like attendance tracking and player management. You can skip this step and create it later.',
               color: Colors.blue.shade50,
               borderColor: Colors.blue.shade200,
               iconColor: Colors.blue.shade600,
               textColor: Colors.blue.shade800,
             ),
-            
             SizedBox(height: context.spacing(factor: 2)),
           ],
         ),
@@ -673,7 +658,6 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
             _buildStepTitle('Teams Setup'),
             _buildStepSubtitle('Configure your teams and initial settings'),
             SizedBox(height: context.spacing(factor: 2)),
-            
             Text(
               'Number of Teams *',
               style: GoogleFonts.poppins(
@@ -683,11 +667,8 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
               ),
             ),
             SizedBox(height: context.spacing(factor: 0.5)),
-            
             _buildTeamCountSelector(),
-            
             SizedBox(height: context.spacing(factor: 2)),
-            
             Text(
               'Team Names *',
               style: GoogleFonts.poppins(
@@ -697,7 +678,6 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
               ),
             ),
             SizedBox(height: context.spacing()),
-            
             ...List.generate(_teamCount, (index) {
               return Padding(
                 padding: EdgeInsets.only(bottom: context.spacing()),
@@ -713,11 +693,8 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
                 ),
               );
             }),
-            
             SizedBox(height: context.spacing()),
-            
             _buildSamplePlayersToggle(),
-            
             SizedBox(height: context.spacing(factor: 2)),
           ],
         ),
@@ -733,9 +710,9 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
         children: [
           SizedBox(height: context.spacing()),
           _buildStepTitle('Payment Settings'),
-          _buildStepSubtitle('Configure default payment settings for your organization'),
+          _buildStepSubtitle(
+              'Configure default payment settings for your organization'),
           SizedBox(height: context.spacing(factor: 2)),
-          
           Text(
             'Monthly Training Fee *',
             style: GoogleFonts.poppins(
@@ -745,7 +722,6 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
             ),
           ),
           SizedBox(height: context.spacing()),
-          
           LayoutBuilder(
             builder: (context, constraints) {
               final isVerySmall = constraints.maxWidth < 320;
@@ -811,19 +787,17 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
               }
             },
           ),
-          
           SizedBox(height: context.spacing(factor: 2)),
-          
           _buildInfoCard(
             icon: Icons.info_outline_rounded,
             title: 'Payment Configuration',
-            subtitle: 'You can modify these settings later from the admin panel. This is just the default fee structure.',
+            subtitle:
+                'You can modify these settings later from the admin panel. This is just the default fee structure.',
             color: Colors.blue.shade50,
             borderColor: Colors.blue.shade200,
             iconColor: Colors.blue.shade600,
             textColor: Colors.blue.shade700,
           ),
-          
           SizedBox(height: context.spacing(factor: 2)),
         ],
       ),
@@ -884,7 +858,8 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
   Widget _buildNavigationButtons(AppLocalizations l10n) {
     return Container(
       padding: context.responsivePadding.copyWith(
-        bottom: context.responsivePadding.bottom + MediaQuery.of(context).padding.bottom,
+        bottom: context.responsivePadding.bottom +
+            MediaQuery.of(context).padding.bottom,
       ),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -921,7 +896,6 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
             ),
             SizedBox(width: context.spacing()),
           ],
-          
           Expanded(
             child: ElevatedButton(
               onPressed: _isLoading ? null : _nextStep,
@@ -1054,7 +1028,7 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(
-            icon, 
+            icon,
             color: iconColor ?? Colors.blue.shade600,
             size: context.iconSize,
           ),
@@ -1104,7 +1078,8 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
               color: isSelected ? const Color(0xFFF27121) : Colors.white,
               borderRadius: BorderRadius.circular(context.borderRadius),
               border: Border.all(
-                color: isSelected ? const Color(0xFFF27121) : Colors.grey.shade300,
+                color:
+                    isSelected ? const Color(0xFFF27121) : Colors.grey.shade300,
               ),
             ),
             child: Text(
@@ -1136,7 +1111,8 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
               color: isSelected ? const Color(0xFFF27121) : Colors.white,
               borderRadius: BorderRadius.circular(context.borderRadius),
               border: Border.all(
-                color: isSelected ? const Color(0xFFF27121) : Colors.grey.shade300,
+                color:
+                    isSelected ? const Color(0xFFF27121) : Colors.grey.shade300,
               ),
             ),
             child: Center(
@@ -1209,17 +1185,19 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
         fontSize: context.bodyFontSize * 0.9,
         color: Colors.grey.shade700,
       ),
-      items: currencies.map((currency) => DropdownMenuItem(
-        value: currency,
-        child: Text(
-          currency,
-          style: TextStyle(
-            fontSize: context.bodyFontSize * 0.9,
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-      )).toList(),
+      items: currencies
+          .map((currency) => DropdownMenuItem(
+                value: currency,
+                child: Text(
+                  currency,
+                  style: TextStyle(
+                    fontSize: context.bodyFontSize * 0.9,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ))
+          .toList(),
       onChanged: (value) => setState(() => _selectedCurrency = value!),
       isExpanded: true, // This prevents overflow in dropdown items
     );
@@ -1250,7 +1228,8 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
           if (_receptionistEmailController.text.isNotEmpty)
             _buildSummaryRow('Receptionist', _receptionistEmailController.text),
           _buildSummaryRow('Teams', '$_teamCount teams configured'),
-          _buildSummaryRow('Monthly Fee', '${_monthlyFeeController.text} $_selectedCurrency'),
+          _buildSummaryRow('Monthly Fee',
+              '${_monthlyFeeController.text} $_selectedCurrency'),
         ],
       ),
     );
@@ -1335,39 +1314,44 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
 
     try {
       bool canProceed = false;
-      
+
       switch (_currentStep) {
         case 0:
           canProceed = true;
           break;
         case 1:
           canProceed = _orgFormKey.currentState?.validate() ?? false;
-          if (canProceed) {
-            _organization = await _setupService.createOrganization(
-              name: _orgNameController.text.trim(),
-              address: _orgAddressController.text.trim(),
-              type: _selectedOrgType,
-              phoneNumber: _orgPhoneController.text.trim().isEmpty 
-                  ? null : _orgPhoneController.text.trim(),
-              email: _orgEmailController.text.trim().isEmpty 
-                  ? null : _orgEmailController.text.trim(),
-              website: _orgWebsiteController.text.trim().isEmpty 
-                  ? null : _orgWebsiteController.text.trim(),
-            );
-          }
+          // Don't create organization yet - wait for admin info
           break;
         case 2:
           canProceed = _adminFormKey.currentState?.validate() ?? false;
-          if (canProceed && _organization != null) {
-            _adminEmail = _adminEmailController.text.trim();
-            _adminPassword = _adminPasswordController.text.trim();
-            
-            await _setupService.createAdminUser(
-              organizationId: _organization!.id,
-              name: _adminNameController.text.trim(),
-              email: _adminEmail!,
-              password: _adminPassword!,
+          if (canProceed) {
+            // Create complete organization setup with admin authentication
+            final result = await _setupService.createCompleteOrganizationSetup(
+              organizationName: _orgNameController.text.trim(),
+              organizationAddress: _orgAddressController.text.trim(),
+              organizationType: _selectedOrgType,
+              adminName: _adminNameController.text.trim(),
+              adminEmail: _adminEmailController.text.trim(),
+              adminPassword: _adminPasswordController.text.trim(),
+              organizationPhone: _orgPhoneController.text.trim().isEmpty
+                  ? null
+                  : _orgPhoneController.text.trim(),
+              organizationEmailContact: _orgEmailController.text.trim().isEmpty
+                  ? null
+                  : _orgEmailController.text.trim(),
+              organizationWebsite: _orgWebsiteController.text.trim().isEmpty
+                  ? null
+                  : _orgWebsiteController.text.trim(),
             );
+
+            if (result.success) {
+              _organization = result.organization;
+              _adminEmail = _adminEmailController.text.trim();
+              _adminPassword = _adminPasswordController.text.trim();
+            } else {
+              throw Exception(result.error ?? 'Organization setup failed');
+            }
           }
           break;
         case 3:
@@ -1391,13 +1375,13 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
                 .map((controller) => controller.text.trim())
                 .where((name) => name.isNotEmpty)
                 .toList();
-            
+
             await _setupService.createInitialTeams(
               organizationId: _organization!.id,
               teamNames: teamNames,
               defaultMonthlyFee: double.parse(_monthlyFeeController.text),
             );
-            
+
             if (_createSamplePlayers) {
               for (final teamName in teamNames) {
                 await _setupService.createSamplePlayers(
@@ -1422,24 +1406,26 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
         case 6:
           if (_organization != null) {
             await _setupService.completeSetup(_organization!.id);
-            
+
             if (_adminEmail != null && _adminPassword != null) {
               try {
                 await FirebaseAuth.instance.signInWithEmailAndPassword(
                   email: _adminEmail!,
                   password: _adminPassword!,
                 );
-                
+
                 LoggingService.info('Admin user auto-logged in successfully');
-                
+
                 if (mounted) {
                   Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(builder: (context) => const DashboardScreen()),
+                    MaterialPageRoute(
+                        builder: (context) => const DashboardScreen()),
                   );
                 }
               } catch (e) {
-                LoggingService.error('Auto-login failed, redirecting to login', e);
-                
+                LoggingService.error(
+                    'Auto-login failed, redirecting to login', e);
+
                 if (mounted) {
                   Navigator.of(context).pushReplacement(
                     MaterialPageRoute(builder: (context) => const Loginpage()),
@@ -1461,24 +1447,157 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
         setState(() {
           _currentStep++;
         });
-        
+
         _pageController.nextPage(
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOut,
         );
-        
+
         _progressController.animateTo(_currentStep / 6);
       }
     } catch (e, stackTrace) {
       LoggingService.error('Setup step failed', e, stackTrace);
-      setState(() {
-        _errorMessage = e.toString();
-      });
+
+      // Handle specific Firebase Auth error
+      if (e.toString().contains('admin-restricted-operation')) {
+        setState(() {
+          _errorMessage =
+              'Account creation is restricted. Please enable Email/Password authentication in Firebase Console, or contact your administrator.';
+        });
+
+        // Show helpful dialog
+        if (mounted) {
+          _showAuthRestrictedDialog();
+        }
+      } else {
+        setState(() {
+          _errorMessage = e.toString();
+        });
+      }
     } finally {
       setState(() {
         _isLoading = false;
       });
     }
+  }
+
+  /// Show dialog explaining Firebase Auth restriction
+  void _showAuthRestrictedDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Container(
+          constraints: BoxConstraints(
+            maxWidth: MediaQuery.of(context).size.width * 0.9,
+            maxHeight: MediaQuery.of(context).size.height * 0.7,
+          ),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Title
+              Row(
+                children: [
+                  Icon(Icons.warning_amber_rounded,
+                      color: Colors.orange.shade700, size: 24),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      'Authentication Restricted',
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // Content - Make scrollable
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Firebase Authentication is configured to restrict account creation. To fix this:',
+                        style: TextStyle(fontSize: 14),
+                      ),
+                      const SizedBox(height: 12),
+                      const Text('1. Go to Firebase Console',
+                          style: TextStyle(
+                              fontWeight: FontWeight.w600, fontSize: 14)),
+                      const Text(
+                          '2. Navigate to Authentication > Sign-in method',
+                          style: TextStyle(fontSize: 14)),
+                      const Text('3. Enable "Email/Password" authentication',
+                          style: TextStyle(fontSize: 14)),
+                      const Text('4. Make sure both toggles are enabled',
+                          style: TextStyle(fontSize: 14)),
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.blue.shade200),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.info_outline,
+                                color: Colors.blue.shade700, size: 16),
+                            const SizedBox(width: 8),
+                            const Expanded(
+                              child: Text(
+                                'This is a one-time setup requirement for your Firebase project.',
+                                style: TextStyle(fontSize: 12),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Actions
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Got it'),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      if (_currentStep > 0) {
+                        setState(() {
+                          _currentStep--;
+                          _errorMessage = null;
+                        });
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFF27121),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: const Text('Try Again',
+                        style: TextStyle(color: Colors.white, fontSize: 14)),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   void _previousStep() {
@@ -1487,12 +1606,12 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
         _currentStep--;
         _errorMessage = null;
       });
-      
+
       _pageController.previousPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
       );
-      
+
       _progressController.animateTo(_currentStep / 6);
     }
   }

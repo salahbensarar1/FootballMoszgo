@@ -11,8 +11,16 @@
       "Bash(flutter build:*)",
       "Bash(timeout 30 flutter run:*)",
       "Bash(/dev/null)",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "Bash(touch:*)",
+      "Bash(firebase projects:list:*)",
+      "Bash(firebase apps:create:*)",
+      "Bash(firebase appdistribution:distribute:*)",
+      "Bash(firebase appdistribution:releases:list:*)",
+      "Bash(firebase appdistribution:*)",
+      "Bash(firebase apps:sdkconfig:*)"
     ],
-    "deny": []
+    "deny": [],
+    "defaultMode": "acceptEdits"
   }
 }
