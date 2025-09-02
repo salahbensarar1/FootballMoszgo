@@ -31,13 +31,11 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
 
   // Animation Controllers
   late AnimationController _animationController;
-  late AnimationController _pulseController;
 
   // Animations
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
   late Animation<double> _scaleAnimation;
-  late Animation<double> _pulseAnimation;
 
   // State
   bool isLoading = false;
@@ -54,7 +52,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   @override
   void dispose() {
     _animationController.dispose();
-    _pulseController.dispose();
     emailController.dispose();
     passwordController.dispose();
     super.dispose();
@@ -63,11 +60,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   void _setupAnimations() {
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 1200),
-      vsync: this,
-    );
-
-    _pulseController = AnimationController(
-      duration: const Duration(milliseconds: 2000),
       vsync: this,
     );
 
@@ -93,12 +85,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       ),
     );
 
-    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.05).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
-
     _animationController.forward();
-    _pulseController.repeat(reverse: true);
   }
 
   Future<void> _loginUser() async {
@@ -321,34 +308,63 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   Widget _buildHeader(bool isSmallScreen, AppLocalizations l10n) {
     return Column(
       children: [
-        // Animated Logo
-        AnimatedBuilder(
-          animation: _pulseAnimation,
-          builder: (context, child) {
-            return Transform.scale(
-              scale: _pulseAnimation.value,
-              child: Container(
-                width: isSmallScreen ? 80 : 100,
-                height: isSmallScreen ? 80 : 100,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.white.withOpacity(0.3),
-                      blurRadius: 20,
-                      spreadRadius: 5,
+        // MozGo Club Logo
+        Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: isSmallScreen ? 20 : 30,
+            vertical: isSmallScreen ? 15 : 20,
+          ),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(isSmallScreen ? 16 : 20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.15),
+                blurRadius: 15,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              // MozGo Text
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Moz',
+                    style: TextStyle(
+                      fontSize: isSmallScreen ? 24 : 30,
+                      fontWeight: FontWeight.w900,
+                      color: const Color(0xFF1a1a1a), // Deep black
+                      letterSpacing: -0.5,
                     ),
-                  ],
-                ),
-                child: Icon(
-                  Icons.sports_soccer,
-                  size: isSmallScreen ? 40 : 50,
-                  color: Colors.white,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Go',
+                    style: TextStyle(
+                      fontSize: isSmallScreen ? 24 : 30,
+                      fontWeight: FontWeight.w900,
+                      color: const Color(0xFFE53E3E), // Vibrant red
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              // Club Location
+              Text(
+                'NAGYKŐRÖS',
+                style: TextStyle(
+                  fontSize: isSmallScreen ? 10 : 12,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF666666),
+                  letterSpacing: 1.5,
                 ),
               ),
-            );
-          },
+            ],
+          ),
         ),
         SizedBox(height: isSmallScreen ? 20 : 30),
 
