@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 
 // Import your payment models
 import '../../../data/models/payment_model.dart';
+import '../../../services/organization_context.dart';
 
 class MarkPaymentDialog extends StatefulWidget {
   final int selectedYear;
@@ -241,7 +242,11 @@ class _MarkPaymentDialogState extends State<MarkPaymentDialog>
   /// ENTERPRISE-GRADE: Responsive Player Dropdown
   Widget _buildResponsivePlayerDropdown(bool isSmallScreen) {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('players').snapshots(),
+      stream: FirebaseFirestore.instance
+          .collection('organizations')
+          .doc(OrganizationContext.currentOrgId)
+          .collection('players')
+          .snapshots(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return Container(
@@ -435,7 +440,11 @@ class _MarkPaymentDialogState extends State<MarkPaymentDialog>
 
   Widget _buildPlayerDropdown() {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('players').snapshots(),
+      stream: FirebaseFirestore.instance
+          .collection('organizations')
+          .doc(OrganizationContext.currentOrgId)
+          .collection('players')
+          .snapshots(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return Container(
@@ -1181,6 +1190,8 @@ class _MarkPaymentDialogState extends State<MarkPaymentDialog>
 
       // Save to Firestore
       await FirebaseFirestore.instance
+          .collection('organizations')
+          .doc(OrganizationContext.currentOrgId)
           .collection('players')
           .doc(selectedPlayer!)
           .collection('payments')

@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 // Import your payment models
 import '../../../data/models/payment_model.dart';
+import '../../../services/organization_context.dart';
 
 class PlayerDetailsDialog extends StatefulWidget {
   final PlayerPaymentStatus player;
@@ -840,6 +841,8 @@ class _PlayerDetailsDialogState extends State<PlayerDetailsDialog>
   Future<void> _loadPaymentData() async {
     try {
       final paymentsSnapshot = await FirebaseFirestore.instance
+          .collection('organizations')
+          .doc(OrganizationContext.currentOrgId)
           .collection('players')
           .doc(widget.player.playerId)
           .collection('payments')

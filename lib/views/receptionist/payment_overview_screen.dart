@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 
 // Import your updated payment models
 import '../../data/models/payment_model.dart';
+import '../../services/organization_context.dart';
 
 // Import dialogs
 import 'dialogs/mark_payment_dialog.dart';
@@ -430,7 +431,11 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
 
   Widget _buildOverviewTab(AppLocalizations l10n) {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('players').snapshots(),
+      stream: FirebaseFirestore.instance
+          .collection('organizations')
+          .doc(OrganizationContext.currentOrgId)
+          .collection('players')
+          .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return _buildLoadingState(l10n);
@@ -853,7 +858,11 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
 
   Widget _buildPlayersTab(AppLocalizations l10n) {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('players').snapshots(),
+      stream: FirebaseFirestore.instance
+          .collection('organizations')
+          .doc(OrganizationContext.currentOrgId)
+          .collection('players')
+          .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return _buildLoadingState(l10n);
@@ -1331,6 +1340,8 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
 
       // Get payment data for this player
       final paymentsSnapshot = await FirebaseFirestore.instance
+          .collection('organizations')
+          .doc(OrganizationContext.currentOrgId)
           .collection('players')
           .doc(playerId)
           .collection('payments')
@@ -1410,6 +1421,8 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
 
       // Get payment data for selected year
       final paymentsSnapshot = await FirebaseFirestore.instance
+          .collection('organizations')
+          .doc(OrganizationContext.currentOrgId)
           .collection('players')
           .doc(playerId)
           .collection('payments')
