@@ -17,6 +17,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:footballtraining/views/shared/widgets/payment_month_indicator.dart';
 import 'package:footballtraining/data/repositories/coach_management_service.dart';
 import 'package:footballtraining/services/organization_context.dart';
+import 'package:footballtraining/services/receptionist_data_service.dart';
+import 'package:footballtraining/views/receptionist/widgets/player_card.dart';
+import 'package:footballtraining/views/receptionist/widgets/standard_card.dart';
 import 'package:footballtraining/utils/responsive_utils.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -43,9 +46,11 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
   int currentTab = 0;
   String searchQuery = "";
   final TextEditingController _searchController = TextEditingController();
-  late TabController _tabController; // Services\n
-  final CoachManagementService _coachManagementService =
-      CoachManagementService();
+  late TabController _tabController;
+  
+  // Services - simplified
+  final CoachManagementService _coachManagementService = CoachManagementService();
+  late ReceptionistDataService _dataService;
 
   // User data
   String? userName;
@@ -93,6 +98,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
   @override
   void initState() {
     super.initState();
+    _dataService = ReceptionistDataService();
     _tabController = TabController(length: 3, vsync: this);
     _tabController.addListener(_handleTabChange);
     _setupAnimations();
@@ -863,9 +869,20 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
       itemBuilder: (context, index) {
         final item = items[index];
         if (currentTab == 1) {
-          return _buildPlayerCard(item, l10n);
+          return PlayerCard(
+            item: item,
+            onEdit: () => _editUser(item),
+            onDelete: () => _deleteUser(item),
+          );
         } else {
-          return _buildStandardCard(item, l10n);
+          return StandardCard(
+            item: item,
+            currentTab: currentTab,
+            gradient: tabConfigs[currentTab].gradient,
+            activeIcon: tabConfigs[currentTab].activeIcon,
+            onEdit: () => _editUser(item),
+            onDelete: () => _deleteUser(item),
+          );
         }
       },
     );
