@@ -4,7 +4,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import '../../../services/organization_context.dart';
 
 class DataCleanupUtility {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -314,8 +313,6 @@ class DataCleanupUtility {
 
       // 3. Delete related data (players, training sessions)
       final playersQuery = await _firestore
-          .collection('organizations')
-          .doc(OrganizationContext.currentOrgId)
           .collection('players')
           .where('team', isEqualTo: teamName)
           .get();
