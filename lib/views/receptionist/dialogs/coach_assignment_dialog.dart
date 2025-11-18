@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:footballtraining/data/repositories/team_service.dart';
@@ -668,10 +667,10 @@ class _CoachAssignmentDialogState extends State<CoachAssignmentDialog>
 
     // ✅ FIXED: Show ALL coaches, allowing multi-team assignments
     // Coaches can be assigned to multiple teams with different roles
-    
+
     // Show ALL available coaches regardless of current assignment
     final displayCoaches = availableCoaches;
-    
+
     print('🔍 Available coaches to display: ${displayCoaches.length}');
     print('📋 Already assigned coach IDs: $assignedCoachIds');
 
@@ -722,9 +721,10 @@ class _CoachAssignmentDialogState extends State<CoachAssignmentDialog>
                             SizedBox(height: isSmallScreen ? 8 : 12),
                         itemBuilder: (context, index) {
                           final coach = displayCoaches[index];
-                          final isAlreadyAssigned = assignedCoachIds.contains(coach.id);
-                          return _buildAvailableCoachCard(
-                              coach, isSmallScreen, isAlreadyAssigned: isAlreadyAssigned);
+                          final isAlreadyAssigned =
+                              assignedCoachIds.contains(coach.id);
+                          return _buildAvailableCoachCard(coach, isSmallScreen,
+                              isAlreadyAssigned: isAlreadyAssigned);
                         },
                       ),
               ),
@@ -770,12 +770,13 @@ class _CoachAssignmentDialogState extends State<CoachAssignmentDialog>
     );
   }
 
-  Widget _buildAvailableCoachCard(UserModel.User coach, bool isSmallScreen, {bool isAlreadyAssigned = false}) {
+  Widget _buildAvailableCoachCard(UserModel.User coach, bool isSmallScreen,
+      {bool isAlreadyAssigned = false}) {
     return Container(
       padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: isAlreadyAssigned 
+          colors: isAlreadyAssigned
               ? [Colors.orange.shade50, Colors.white]
               : [Colors.blue.shade50, Colors.white],
           begin: Alignment.topLeft,
@@ -783,16 +784,15 @@ class _CoachAssignmentDialogState extends State<CoachAssignmentDialog>
         ),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-            color: isAlreadyAssigned 
-                ? Colors.orange.shade200 
-                : Colors.blue.shade200
-        ),
+            color: isAlreadyAssigned
+                ? Colors.orange.shade200
+                : Colors.blue.shade200),
       ),
       child: Row(
         children: [
           CircleAvatar(
             radius: isSmallScreen ? 20 : 24,
-            backgroundColor: isAlreadyAssigned 
+            backgroundColor: isAlreadyAssigned
                 ? Colors.orange.shade100
                 : Colors.blue.shade100,
             backgroundImage: coach.picture?.isNotEmpty == true
@@ -803,7 +803,7 @@ class _CoachAssignmentDialogState extends State<CoachAssignmentDialog>
                     coach.initials,
                     style: GoogleFonts.poppins(
                       fontWeight: FontWeight.w600,
-                      color: isAlreadyAssigned 
+                      color: isAlreadyAssigned
                           ? Colors.orange.shade700
                           : Colors.blue.shade700,
                       fontSize: isSmallScreen ? 14 : 16,
@@ -840,7 +840,8 @@ class _CoachAssignmentDialogState extends State<CoachAssignmentDialog>
                 if (isAlreadyAssigned) ...[
                   const SizedBox(height: 4),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
                       color: Colors.orange.shade100,
                       borderRadius: BorderRadius.circular(4),
@@ -889,10 +890,9 @@ class _CoachAssignmentDialogState extends State<CoachAssignmentDialog>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    isAlreadyAssigned ? Icons.add_rounded : Icons.add_rounded, 
-                    color: Colors.white, 
-                    size: 16
-                  ),
+                      isAlreadyAssigned ? Icons.add_rounded : Icons.add_rounded,
+                      color: Colors.white,
+                      size: 16),
                   SizedBox(width: 4),
                   Text(
                     isAlreadyAssigned ? 'Add Role' : 'Add',

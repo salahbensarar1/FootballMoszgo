@@ -18,7 +18,9 @@
       "Bash(firebase appdistribution:distribute:*)",
       "Bash(firebase appdistribution:releases:list:*)",
       "Bash(firebase appdistribution:*)",
-      "Bash(firebase apps:sdkconfig:*)"
+      "Bash(firebase apps:sdkconfig:*)",
+      "Bash(tree:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

@@ -656,9 +656,4 @@ class _PaymentMonthIndicatorState extends State<PaymentMonthIndicator>
   }
 
   // Legacy method for backward compatibility
-  Future<void> _togglePayment(
-      String playerId, String year, String month, bool isPaid) async {
-    final status = isPaid ? PaymentStatus.paid : PaymentStatus.unpaid;
-    await _updatePaymentStatus(month, status, year);
-  }
 }

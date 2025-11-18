@@ -23,7 +23,6 @@ class ErrorBoundary extends StatefulWidget {
 
 class _ErrorBoundaryState extends State<ErrorBoundary> {
   Object? _error;
-  StackTrace? _stackTrace;
 
   @override
   void initState() {
@@ -36,7 +35,6 @@ class _ErrorBoundaryState extends State<ErrorBoundary> {
       if (mounted) {
         setState(() {
           _error = details.exception;
-          _stackTrace = details.stack;
         });
       }
       
@@ -56,7 +54,6 @@ class _ErrorBoundaryState extends State<ErrorBoundary> {
   void _retry() {
     setState(() {
       _error = null;
-      _stackTrace = null;
     });
   }
 

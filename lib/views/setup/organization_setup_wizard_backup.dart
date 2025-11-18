@@ -13,57 +13,55 @@ class OrganizationSetupWizard extends StatefulWidget {
   const OrganizationSetupWizard({super.key});
 
   @override
-  State<OrganizationSetupWizard> createState() => _OrganizationSetupWizardState();
+  State<OrganizationSetupWizard> createState() =>
+      _OrganizationSetupWizardState();
 }
 
 class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
     with TickerProviderStateMixin {
-  
   final PageController _pageController = PageController();
   final OrganizationSetupService _setupService = OrganizationSetupService();
-  
+
   // Animation Controllers
   late AnimationController _animationController;
   late AnimationController _progressController;
   late Animation<double> _fadeAnimation;
-  late Animation<double> _progressAnimation;
-  
+
   // Current state
   int _currentStep = 0;
   bool _isLoading = false;
   String? _errorMessage;
-  
+
   // Setup data
   Organization? _organization;
   String? _adminEmail;
   String? _adminPassword;
-  final Map<String, dynamic> _setupData = {};
-  
+
   // Form controllers
   final _orgFormKey = GlobalKey<FormState>();
   final _adminFormKey = GlobalKey<FormState>();
   final _receptionistFormKey = GlobalKey<FormState>();
   final _teamFormKey = GlobalKey<FormState>();
-  
+
   final _orgNameController = TextEditingController();
   final _orgAddressController = TextEditingController();
   final _orgPhoneController = TextEditingController();
   final _orgEmailController = TextEditingController();
   final _orgWebsiteController = TextEditingController();
-  
+
   final _adminNameController = TextEditingController();
   final _adminEmailController = TextEditingController();
   final _adminPasswordController = TextEditingController();
   final _adminConfirmPasswordController = TextEditingController();
-  
+
   final _receptionistNameController = TextEditingController();
   final _receptionistEmailController = TextEditingController();
   final _receptionistPasswordController = TextEditingController();
   final _receptionistConfirmPasswordController = TextEditingController();
-  
+
   final _teamNamesControllers = <TextEditingController>[];
   final _monthlyFeeController = TextEditingController(text: '10000');
-  
+
   OrganizationType _selectedOrgType = OrganizationType.club;
   String _selectedCurrency = 'HUF';
   int _teamCount = 3;
@@ -119,20 +117,16 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
       duration: const Duration(milliseconds: 600),
       vsync: this,
     );
-    
+
     _progressController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    
+
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
-    
-    _progressAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _progressController, curve: Curves.easeInOut),
-    );
-    
+
     _animationController.forward();
   }
 
@@ -141,7 +135,7 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
     final l10n = AppLocalizations.of(context)!;
     final size = MediaQuery.of(context).size;
     final isTablet = size.width > 768;
-    
+
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       body: SafeArea(
@@ -233,15 +227,23 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
   }
 
   Widget _buildProgressIndicator(bool isTablet) {
-    final steps = ['Welcome', 'Organization', 'Admin', 'Receptionist', 'Teams', 'Payments', 'Complete'];
-    
+    final steps = [
+      'Welcome',
+      'Organization',
+      'Admin',
+      'Receptionist',
+      'Teams',
+      'Payments',
+      'Complete'
+    ];
+
     return Container(
       padding: EdgeInsets.all(isTablet ? 24 : 16),
       child: Row(
         children: List.generate(steps.length, (index) {
           final isActive = index == _currentStep;
           final isCompleted = index < _currentStep;
-          
+
           return Expanded(
             child: Row(
               children: [
@@ -249,7 +251,7 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
                   child: Container(
                     height: 4,
                     decoration: BoxDecoration(
-                      color: isCompleted || isActive 
+                      color: isCompleted || isActive
                           ? const Color(0xFFF27121)
                           : Colors.grey.shade300,
                       borderRadius: BorderRadius.circular(2),
@@ -329,15 +331,15 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
                   '• Add your teams and players',
                   '• Configure payment settings',
                 ].map((item) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Text(
-                    item,
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      color: Colors.blue.shade700,
-                    ),
-                  ),
-                )),
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Text(
+                        item,
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          color: Colors.blue.shade700,
+                        ),
+                      ),
+                    )),
               ],
             ),
           ),
@@ -372,7 +374,7 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
               ),
             ),
             const SizedBox(height: 32),
-            
+
             // Organization Name
             _buildFormField(
               controller: _orgNameController,
@@ -380,15 +382,17 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
               hint: 'e.g., Chelsea Football Club',
               icon: Icons.business_rounded,
               validator: (value) {
-                if (value?.isEmpty ?? true) return 'Organization name is required';
-                if (value!.length < 3) return 'Name must be at least 3 characters';
+                if (value?.isEmpty ?? true)
+                  return 'Organization name is required';
+                if (value!.length < 3)
+                  return 'Name must be at least 3 characters';
                 return null;
               },
               isTablet: isTablet,
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Organization Type
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -415,10 +419,12 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
                           vertical: 12,
                         ),
                         decoration: BoxDecoration(
-                          color: isSelected ? const Color(0xFFF27121) : Colors.white,
+                          color: isSelected
+                              ? const Color(0xFFF27121)
+                              : Colors.white,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: isSelected 
+                            color: isSelected
                                 ? const Color(0xFFF27121)
                                 : Colors.grey.shade300,
                           ),
@@ -428,7 +434,9 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
                           style: GoogleFonts.poppins(
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
-                            color: isSelected ? Colors.white : Colors.grey.shade700,
+                            color: isSelected
+                                ? Colors.white
+                                : Colors.grey.shade700,
                           ),
                         ),
                       ),
@@ -437,9 +445,9 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Address
             _buildFormField(
               controller: _orgAddressController,
@@ -449,14 +457,15 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
               maxLines: 2,
               validator: (value) {
                 if (value?.isEmpty ?? true) return 'Address is required';
-                if (value!.length < 5) return 'Address must be at least 5 characters';
+                if (value!.length < 5)
+                  return 'Address must be at least 5 characters';
                 return null;
               },
               isTablet: isTablet,
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Phone Number
             _buildFormField(
               controller: _orgPhoneController,
@@ -475,9 +484,9 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
               },
               isTablet: isTablet,
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Email
             _buildFormField(
               controller: _orgEmailController,
@@ -487,7 +496,8 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
               keyboardType: TextInputType.emailAddress,
               validator: (value) {
                 if (value?.isNotEmpty == true) {
-                  final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                  final emailRegex =
+                      RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
                   if (!emailRegex.hasMatch(value!)) {
                     return 'Please enter a valid email address';
                   }
@@ -496,9 +506,9 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
               },
               isTablet: isTablet,
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Website
             _buildFormField(
               controller: _orgWebsiteController,
@@ -508,7 +518,7 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
               keyboardType: TextInputType.url,
               isTablet: isTablet,
             ),
-            
+
             if (_errorMessage != null) ...[
               const SizedBox(height: 24),
               Container(
@@ -624,7 +634,7 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
               ),
             ),
             const SizedBox(height: 32),
-            
+
             // Name
             _buildFormField(
               controller: _adminNameController,
@@ -633,14 +643,15 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
               icon: Icons.person_rounded,
               validator: (value) {
                 if (value?.isEmpty ?? true) return 'Name is required';
-                if (value!.length < 2) return 'Name must be at least 2 characters';
+                if (value!.length < 2)
+                  return 'Name must be at least 2 characters';
                 return null;
               },
               isTablet: isTablet,
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Email
             _buildFormField(
               controller: _adminEmailController,
@@ -658,9 +669,9 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
               },
               isTablet: isTablet,
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Password
             _buildFormField(
               controller: _adminPasswordController,
@@ -669,14 +680,15 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
               icon: Icons.lock_rounded,
               validator: (value) {
                 if (value?.isEmpty ?? true) return 'Password is required';
-                if (value!.length < 6) return 'Password must be at least 6 characters';
+                if (value!.length < 6)
+                  return 'Password must be at least 6 characters';
                 return null;
               },
               isTablet: isTablet,
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Confirm Password
             _buildFormField(
               controller: _adminConfirmPasswordController,
@@ -684,7 +696,8 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
               hint: 'Confirm your password',
               icon: Icons.lock_outline_rounded,
               validator: (value) {
-                if (value?.isEmpty ?? true) return 'Please confirm your password';
+                if (value?.isEmpty ?? true)
+                  return 'Please confirm your password';
                 if (value != _adminPasswordController.text) {
                   return 'Passwords do not match';
                 }
@@ -692,9 +705,9 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
               },
               isTablet: isTablet,
             ),
-            
+
             const SizedBox(height: 32),
-            
+
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -750,7 +763,7 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
               ),
             ),
             const SizedBox(height: 32),
-            
+
             // Name
             _buildFormField(
               controller: _receptionistNameController,
@@ -765,9 +778,9 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
               },
               isTablet: isTablet,
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Email
             _buildFormField(
               controller: _receptionistEmailController,
@@ -777,7 +790,8 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
               keyboardType: TextInputType.emailAddress,
               validator: (value) {
                 if (value?.isNotEmpty == true) {
-                  final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                  final emailRegex =
+                      RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
                   if (!emailRegex.hasMatch(value!)) {
                     return 'Please enter a valid email address';
                   }
@@ -786,9 +800,9 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
               },
               isTablet: isTablet,
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Password
             _buildFormField(
               controller: _receptionistPasswordController,
@@ -803,9 +817,9 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
               },
               isTablet: isTablet,
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Confirm Password
             _buildFormField(
               controller: _receptionistConfirmPasswordController,
@@ -825,9 +839,9 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
               },
               isTablet: isTablet,
             ),
-            
+
             const SizedBox(height: 32),
-            
+
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -882,7 +896,7 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
               ),
             ),
             const SizedBox(height: 32),
-            
+
             // Number of teams
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -907,10 +921,12 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
                         width: 50,
                         height: 50,
                         decoration: BoxDecoration(
-                          color: isSelected ? const Color(0xFFF27121) : Colors.white,
+                          color: isSelected
+                              ? const Color(0xFFF27121)
+                              : Colors.white,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: isSelected 
+                            color: isSelected
                                 ? const Color(0xFFF27121)
                                 : Colors.grey.shade300,
                           ),
@@ -921,7 +937,9 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
                             style: GoogleFonts.poppins(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: isSelected ? Colors.white : Colors.grey.shade700,
+                              color: isSelected
+                                  ? Colors.white
+                                  : Colors.grey.shade700,
                             ),
                           ),
                         ),
@@ -931,9 +949,9 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 32),
-            
+
             // Team names
             Text(
               'Team Names',
@@ -944,7 +962,7 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
               ),
             ),
             const SizedBox(height: 16),
-            
+
             ...List.generate(_teamCount, (index) {
               return Padding(
                 padding: const EdgeInsets.only(bottom: 16),
@@ -953,7 +971,8 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
                   style: GoogleFonts.poppins(fontSize: isTablet ? 16 : 14),
                   decoration: InputDecoration(
                     labelText: 'Team ${index + 1} Name',
-                    prefixIcon: const Icon(Icons.groups_rounded, color: Color(0xFFF27121)),
+                    prefixIcon: const Icon(Icons.groups_rounded,
+                        color: Color(0xFFF27121)),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -967,9 +986,9 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
                 ),
               );
             }),
-            
+
             const SizedBox(height: 24),
-            
+
             // Sample players option
             Container(
               padding: const EdgeInsets.all(20),
@@ -982,7 +1001,8 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
                 children: [
                   Checkbox(
                     value: _createSamplePlayers,
-                    onChanged: (value) => setState(() => _createSamplePlayers = value ?? false),
+                    onChanged: (value) =>
+                        setState(() => _createSamplePlayers = value ?? false),
                     activeColor: const Color(0xFFF27121),
                   ),
                   Expanded(
@@ -1040,7 +1060,7 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
             ),
           ),
           const SizedBox(height: 32),
-          
+
           // Currency selection
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1057,7 +1077,8 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
               DropdownButtonFormField<String>(
                 value: _selectedCurrency,
                 decoration: InputDecoration(
-                  prefixIcon: const Icon(Icons.attach_money_rounded, color: Color(0xFFF27121)),
+                  prefixIcon: const Icon(Icons.attach_money_rounded,
+                      color: Color(0xFFF27121)),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -1065,17 +1086,20 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
                   fillColor: Colors.white,
                 ),
                 items: const [
-                  DropdownMenuItem(value: 'HUF', child: Text('Hungarian Forint (HUF)')),
+                  DropdownMenuItem(
+                      value: 'HUF', child: Text('Hungarian Forint (HUF)')),
                   DropdownMenuItem(value: 'EUR', child: Text('Euro (EUR)')),
-                  DropdownMenuItem(value: 'USD', child: Text('US Dollar (USD)')),
+                  DropdownMenuItem(
+                      value: 'USD', child: Text('US Dollar (USD)')),
                 ],
-                onChanged: (value) => setState(() => _selectedCurrency = value!),
+                onChanged: (value) =>
+                    setState(() => _selectedCurrency = value!),
               ),
             ],
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // Monthly fee
           _buildFormField(
             controller: _monthlyFeeController,
@@ -1091,9 +1115,9 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
             },
             isTablet: isTablet,
           ),
-          
+
           const SizedBox(height: 32),
-          
+
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
@@ -1103,7 +1127,8 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
             ),
             child: Column(
               children: [
-                Icon(Icons.info_outline_rounded, color: Colors.blue.shade600, size: 32),
+                Icon(Icons.info_outline_rounded,
+                    color: Colors.blue.shade600, size: 32),
                 const SizedBox(height: 16),
                 Text(
                   'Payment Information',
@@ -1172,7 +1197,7 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
             textAlign: TextAlign.center,
           ),
           SizedBox(height: isTablet ? 48 : 32),
-          
+
           // Summary
           Container(
             width: double.infinity,
@@ -1198,7 +1223,8 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
                 _buildSummaryItem('Admin', _adminNameController.text),
                 _buildSummaryItem('Teams', _teamCount.toString()),
                 _buildSummaryItem('Currency', _selectedCurrency),
-                _buildSummaryItem('Monthly Fee', '${_monthlyFeeController.text} $_selectedCurrency'),
+                _buildSummaryItem('Monthly Fee',
+                    '${_monthlyFeeController.text} $_selectedCurrency'),
               ],
             ),
           ),
@@ -1265,9 +1291,7 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
                 ),
               ),
             ),
-          
           if (_currentStep > 0) const SizedBox(width: 16),
-          
           Expanded(
             flex: _currentStep == 0 ? 1 : 1,
             child: ElevatedButton(
@@ -1323,7 +1347,7 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
     try {
       // Validate current step
       bool canProceed = false;
-      
+
       switch (_currentStep) {
         case 0:
           canProceed = true; // Welcome step
@@ -1336,12 +1360,15 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
               name: _orgNameController.text.trim(),
               address: _orgAddressController.text.trim(),
               type: _selectedOrgType,
-              phoneNumber: _orgPhoneController.text.trim().isEmpty 
-                  ? null : _orgPhoneController.text.trim(),
-              email: _orgEmailController.text.trim().isEmpty 
-                  ? null : _orgEmailController.text.trim(),
-              website: _orgWebsiteController.text.trim().isEmpty 
-                  ? null : _orgWebsiteController.text.trim(),
+              phoneNumber: _orgPhoneController.text.trim().isEmpty
+                  ? null
+                  : _orgPhoneController.text.trim(),
+              email: _orgEmailController.text.trim().isEmpty
+                  ? null
+                  : _orgEmailController.text.trim(),
+              website: _orgWebsiteController.text.trim().isEmpty
+                  ? null
+                  : _orgWebsiteController.text.trim(),
             );
           }
           break;
@@ -1351,7 +1378,7 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
             // Store admin credentials for auto-login
             _adminEmail = _adminEmailController.text.trim();
             _adminPassword = _adminPasswordController.text.trim();
-            
+
             // Create admin user
             await _setupService.createAdminUser(
               organizationId: _organization!.id,
@@ -1384,13 +1411,13 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
                 .map((controller) => controller.text.trim())
                 .where((name) => name.isNotEmpty)
                 .toList();
-            
+
             await _setupService.createInitialTeams(
               organizationId: _organization!.id,
               teamNames: teamNames,
               defaultMonthlyFee: double.parse(_monthlyFeeController.text),
             );
-            
+
             // Create sample players if requested
             if (_createSamplePlayers) {
               for (final teamName in teamNames) {
@@ -1418,7 +1445,7 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
           // Complete setup and auto-login admin user
           if (_organization != null) {
             await _setupService.completeSetup(_organization!.id);
-            
+
             // Auto-login the admin user
             if (_adminEmail != null && _adminPassword != null) {
               try {
@@ -1426,18 +1453,20 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
                   email: _adminEmail!,
                   password: _adminPassword!,
                 );
-                
+
                 LoggingService.info('Admin user auto-logged in successfully');
-                
+
                 if (mounted) {
                   // Navigate directly to dashboard
                   Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(builder: (context) => const DashboardScreen()),
+                    MaterialPageRoute(
+                        builder: (context) => const DashboardScreen()),
                   );
                 }
               } catch (e) {
-                LoggingService.error('Auto-login failed, redirecting to login', e);
-                
+                LoggingService.error(
+                    'Auto-login failed, redirecting to login', e);
+
                 if (mounted) {
                   // Fallback to login screen
                   Navigator.of(context).pushReplacement(
@@ -1461,12 +1490,12 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
         setState(() {
           _currentStep++;
         });
-        
+
         _pageController.nextPage(
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOut,
         );
-        
+
         // Update progress animation
         _progressController.animateTo(_currentStep / 6);
       }
@@ -1488,12 +1517,12 @@ class _OrganizationSetupWizardState extends State<OrganizationSetupWizard>
         _currentStep--;
         _errorMessage = null;
       });
-      
+
       _pageController.previousPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
       );
-      
+
       // Update progress animation
       _progressController.animateTo(_currentStep / 6);
     }
