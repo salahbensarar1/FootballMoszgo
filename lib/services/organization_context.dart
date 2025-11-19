@@ -62,8 +62,11 @@ class OrganizationContext {
         orgId = await _getUserPrimaryOrganization(user.uid);
       }
       
-      await setCurrentOrganization(orgId);
-      await _loadUserPermissions(user.uid, orgId);
+      // OPTIMIZED: Run organization setup and user permissions loading in parallel
+      await Future.wait([
+        setCurrentOrganization(orgId),
+        _loadUserPermissions(user.uid, orgId),
+      ]);
       
       _logger.i('✅ Organization context initialized: ${_currentOrg?.name}');
       
@@ -78,17 +81,20 @@ class OrganizationContext {
     try {
       _logger.i('📋 Setting current organization: $orgId');
       
-      // Load organization data
-      final orgDoc = await _firestore.collection('organizations').doc(orgId).get();
+      // OPTIMIZED: Load organization and subscription data in parallel
+      final futures = await Future.wait([
+        _firestore.collection('organizations').doc(orgId).get(),
+        _loadSubscriptionDataAsync(orgId),
+      ]);
+
+      final orgDoc = futures[0] as DocumentSnapshot<Map<String, dynamic>>;
       if (!orgDoc.exists) {
         throw Exception('Organization not found: $orgId');
       }
-      
+
       _currentOrgId = orgId;
       _currentOrg = Organization.fromFirestore(orgDoc);
-      
-      // Load subscription data
-      await _loadSubscriptionData(orgId);
+      // Subscription is already loaded by _loadSubscriptionDataAsync
       
       _logger.i('✅ Organization context set: ${_currentOrg?.name}');
       
@@ -126,7 +132,7 @@ class OrganizationContext {
           .where('status', isEqualTo: 'active')
           .limit(1)
           .get();
-      
+
       if (subscriptionQuery.docs.isNotEmpty) {
         _currentSubscription = Subscription.fromFirestore(subscriptionQuery.docs.first);
         _logger.i('📊 Subscription loaded: ${_currentSubscription?.planId}');
@@ -138,6 +144,11 @@ class OrganizationContext {
       _logger.w('⚠️ Failed to load subscription data: $e');
       _currentSubscription = null;
     }
+  }
+
+  /// Async version of subscription loading that returns Future for parallel execution
+  static Future<void> _loadSubscriptionDataAsync(String orgId) async {
+    return _loadSubscriptionData(orgId);
   }
   
   /// Load user permissions for current organization
