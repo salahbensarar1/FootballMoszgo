@@ -17,22 +17,27 @@ class AuthService {
       String? userRole;
       String? organizationId;
 
-      // OPTIMIZED: Use collectionGroup query instead of N+1 queries
-      // This replaces 1 + N queries with a single indexed query
-      final userQuery = await FirebaseFirestore.instance
-          .collectionGroup('users')
-          .where('email', isEqualTo: user.email)
-          .where('is_active', isEqualTo: true)
-          .limit(1)
+      // FIXED: Use more reliable query approach
+      // First, try to find organizations and then check for user
+      final organizations = await FirebaseFirestore.instance
+          .collection('organizations')
+          .limit(10)  // Reasonable limit for organization check
           .get();
 
-      if (userQuery.docs.isNotEmpty) {
-        final userData = userQuery.docs.first.data();
-        userRole = userData['role'];
+      for (final org in organizations.docs) {
+        final userDoc = await org.reference
+            .collection('users')
+            .where('email', isEqualTo: user.email)
+            .where('is_active', isEqualTo: true)
+            .limit(1)
+            .get();
 
-        // Extract organization ID from document path: organizations/{orgId}/users/{userId}
-        final pathSegments = userQuery.docs.first.reference.path.split('/');
-        organizationId = pathSegments[1];
+        if (userDoc.docs.isNotEmpty) {
+          final userData = userDoc.docs.first.data();
+          userRole = userData['role'];
+          organizationId = org.id;
+          break; // Found user, exit loop
+        }
       }
 
       if (userRole == null || organizationId == null) {
