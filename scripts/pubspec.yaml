@@ -1,0 +1,11 @@
+name: migration_scripts
+description: Migration scripts for Football Training app
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  cloud_firestore: ^4.14.0
+  firebase_core: ^2.24.2
+
+dev_dependencies: {}
