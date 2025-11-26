@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 // Import your payment models
 import '../../../data/models/payment_model.dart';
 import '../../../services/organization_context.dart';
+import '../../../utils/batch_size_constants.dart';
 
 class BulkReminderDialog extends StatefulWidget {
   final int selectedYear;
@@ -209,8 +210,13 @@ class _BulkReminderDialogState extends State<BulkReminderDialog> {
   }
 
   Widget _buildTeamFilter() {
+    // MEMORY-SAFE: Added limit to prevent crashes with thousands of teams
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('teams').snapshots(),
+      stream: FirebaseFirestore.instance
+          .collection('teams')
+          .limit(BatchSizeConstants.dropdownMaxItems)
+          .orderBy('team_name')
+          .snapshots(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return const SizedBox.shrink();

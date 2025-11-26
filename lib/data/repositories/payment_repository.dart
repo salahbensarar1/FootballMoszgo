@@ -1,12 +1,19 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/payment_model.dart';
+import '../../utils/batch_size_constants.dart';
 
 class PaymentRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   // Deprecated: Use getDetailedPaymentStats instead.
+  // MEMORY-SAFE: Added limit to prevent crashes with 10K+ payment records
   Stream<PaymentStats> getBasicPaymentStats() {
-    return _firestore.collection('payments').snapshots().map((snapshot) {
+    return _firestore
+        .collection('payments')
+        .limit(BatchSizeConstants.streamListenerLimit)
+        .orderBy('paymentDate', descending: true)
+        .snapshots()
+        .map((snapshot) {
       double totalCollected = 0;
       double totalOutstanding = 0;
       int fullyPaidPlayers = 0;
@@ -42,16 +49,28 @@ class PaymentRepository {
     });
   }
 
+  // MEMORY-SAFE: Added limit to prevent crashes with large payment histories
   Stream<List<PaymentRecord>> getPlayerPayments() {
-    return _firestore.collection('payments').snapshots().map((snapshot) {
+    return _firestore
+        .collection('payments')
+        .limit(BatchSizeConstants.streamListenerLimit)
+        .orderBy('paymentDate', descending: true)
+        .snapshots()
+        .map((snapshot) {
       return snapshot.docs
           .map((doc) => PaymentRecord.fromFirestore(doc))
           .toList();
     });
   }
 
+  // MEMORY-SAFE: Added limit to prevent crashes with large payment datasets
   Stream<PaymentStats> getPaymentStats() {
-    return _firestore.collection('payments').snapshots().map((snapshot) {
+    return _firestore
+        .collection('payments')
+        .limit(BatchSizeConstants.streamListenerLimit)
+        .orderBy('paymentDate', descending: true)
+        .snapshots()
+        .map((snapshot) {
       double totalCollected = 0;
       double totalOutstanding = 0;
       int fullyPaidPlayers = 0;
