@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import 'package:footballtraining/services/organization_context.dart';
 
 class PlayerReportScreen extends StatefulWidget {
   final DocumentSnapshot playerDoc;
@@ -1372,7 +1373,13 @@ class _PlayerReportScreenState extends State<PlayerReportScreen>
   Future<Map<String, int>> calculateMinutesByTrainingType(
       String playerId) async {
     try {
+      if (!OrganizationContext.isInitialized) {
+        return {};
+      }
+
       final querySnapshot = await FirebaseFirestore.instance
+          .collection('organizations')
+          .doc(OrganizationContext.currentOrgId)
           .collection('training_sessions')
           .get();
 

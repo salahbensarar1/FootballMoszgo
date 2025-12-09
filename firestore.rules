@@ -137,6 +137,14 @@ service cloud.firestore {
       allow create: if hasAnyRole(orgId, ['admin', 'super_admin', 'receptionist', 'coach']) && canAccessOrg(orgId);
       allow update: if hasAnyRole(orgId, ['admin', 'super_admin', 'receptionist', 'coach']) && canAccessOrg(orgId);
       allow delete: if isAdmin(orgId) && canAccessOrg(orgId);
+
+      // Player payments nested collection
+      match /payments/{paymentId} {
+        allow read: if canAccessOrg(orgId);
+        allow create: if hasAnyRole(orgId, ['admin', 'super_admin', 'receptionist']) && canAccessOrg(orgId);
+        allow update: if hasAnyRole(orgId, ['admin', 'super_admin', 'receptionist']) && canAccessOrg(orgId);
+        allow delete: if isAdmin(orgId) && canAccessOrg(orgId);
+      }
     }
     
     // Training sessions

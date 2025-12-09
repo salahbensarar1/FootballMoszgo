@@ -146,6 +146,8 @@ class _AdminScreenState extends State<AdminScreen>
     switch (currentTab) {
       case 0: // Training Sessions
         query = _firestore
+            .collection('organizations')
+            .doc(OrganizationContext.currentOrgId)
             .collection('training_sessions')
             .orderBy('start_time', descending: true);
         if (searchQuery.isNotEmpty) {

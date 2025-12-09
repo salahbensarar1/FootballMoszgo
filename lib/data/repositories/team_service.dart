@@ -10,10 +10,8 @@ class TeamService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // Get current user ID for audit trail
   String get _currentUserId => _auth.currentUser?.uid ?? 'unknown';
 
-  // 🔥 FIXED: Get teams for coach - uses organization-scoped collections
   Stream<List<Team>> getTeamsForCoach(String coachUserId) {
     return _firestore
         .collection('organizations')
@@ -43,8 +41,6 @@ class TeamService {
       return coachTeams;
     });
   }
-
-
 
   /// Helper method to check if coach is assigned to team (handles all data structures)
   bool _isCoachAssignedToTeam(
@@ -190,7 +186,6 @@ class TeamService {
     }
   }
 
-
   // COACH MANAGEMENT METHODS
 
   /// Add a coach to a team with specified role
@@ -331,13 +326,22 @@ class TeamService {
     }
   }
 
-  // TEAM QUERY METHODS
-
-  /// Get teams where user is an active coach (BACKWARDS COMPATIBLE)
   Stream<QuerySnapshot> getTeamsForCoachCompatible(String coachUserId) {
-    // This returns QuerySnapshot for compatibility with existing code
+    // Validate organization context before accessing data
+    if (!OrganizationContext.isInitialized) {
+      throw Exception(
+          'Organization context not initialized. Please select an organization first.');
+    }
+
+    final orgId = OrganizationContext.currentOrgId;
+    if (orgId == null || orgId.isEmpty) {
+      throw Exception('Invalid organization ID. Cannot access team data.');
+    }
+
     return _firestore
-        .collection('teams')
+        .collection('organizations')
+        .doc(orgId)
+        .collection('teams') // ✅ ORGANIZATION-SCOPED
         .where('coach', isEqualTo: coachUserId)
         .snapshots();
   }

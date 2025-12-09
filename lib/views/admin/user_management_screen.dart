@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:footballtraining/services/organization_context.dart';
 import 'package:footballtraining/views/admin/components/user_card.dart';
 import 'package:footballtraining/views/admin/components/user_filters.dart';
 import 'package:footballtraining/views/shared/widgets/empty_state_widget.dart';
@@ -94,13 +95,24 @@ class _UserManagementScreenState extends State<UserManagementScreen>
   }
 
   Stream<QuerySnapshot> _getUsersStream() {
-    Query query = _firestore.collection('users').orderBy('name');
+    Query query = _firestore
+        .collection('organizations')
+        .doc(OrganizationContext.currentOrgId)
+        .collection('users')
+        .orderBy('name');
 
     // Filter by role if selected
     if (selectedRoleFilter != null &&
         selectedRoleFilter!.isNotEmpty &&
         selectedRoleFilter != 'all') {
-      query = query.where('role', isEqualTo: selectedRoleFilter);
+      // Try multiple case variations
+      final List<String> roleVariations = [
+        selectedRoleFilter!.toLowerCase(),
+        selectedRoleFilter!.toUpperCase(),
+        '${selectedRoleFilter![0].toUpperCase()}${selectedRoleFilter!.substring(1).toLowerCase()}',
+      ];
+
+      query = query.where('role', whereIn: roleVariations);
     }
 
     // Apply search query
@@ -181,7 +193,7 @@ class _UserManagementScreenState extends State<UserManagementScreen>
     final size = MediaQuery.of(context).size;
     final isTablet = size.width > 768;
     final isMobile = size.width < 480;
-    
+
     return StreamBuilder<QuerySnapshot>(
       stream: _getUsersStream(),
       builder: (context, snapshot) {
@@ -242,7 +254,8 @@ class _UserManagementScreenState extends State<UserManagementScreen>
         return ListView.separated(
           padding: EdgeInsets.all(isMobile ? 12 : 16),
           itemCount: users.length,
-          separatorBuilder: (context, index) => SizedBox(height: isMobile ? 8 : 12),
+          separatorBuilder: (context, index) =>
+              SizedBox(height: isMobile ? 8 : 12),
           itemBuilder: (context, index) {
             return UserCard(
               userDoc: users[index],
@@ -258,7 +271,7 @@ class _UserManagementScreenState extends State<UserManagementScreen>
   Widget _buildAddUserFab(AppLocalizations l10n) {
     final size = MediaQuery.of(context).size;
     final isMobile = size.width < 480;
-    
+
     if (isMobile) {
       return FloatingActionButton(
         onPressed: () => _addUser(l10n),
@@ -270,7 +283,7 @@ class _UserManagementScreenState extends State<UserManagementScreen>
         tooltip: l10n.add,
       );
     }
-    
+
     return FloatingActionButton.extended(
       onPressed: () => _addUser(l10n),
       backgroundColor: const Color(0xFFF27121),

@@ -242,11 +242,13 @@ class _MarkPaymentDialogState extends State<MarkPaymentDialog>
   /// ENTERPRISE-GRADE: Responsive Player Dropdown
   Widget _buildResponsivePlayerDropdown(bool isSmallScreen) {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('organizations')
-          .doc(OrganizationContext.currentOrgId)
-          .collection('players')
-          .snapshots(),
+      stream: OrganizationContext.isInitialized
+          ? FirebaseFirestore.instance
+              .collection('organizations')
+              .doc(OrganizationContext.currentOrgId)
+              .collection('players')
+              .snapshots()
+          : Stream.error('Organization context not initialized'),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return Container(
@@ -1166,6 +1168,12 @@ class _MarkPaymentDialogState extends State<MarkPaymentDialog>
     setState(() => isProcessing = true);
 
     try {
+      // Validate organization context before saving
+      if (!OrganizationContext.isInitialized) {
+        _showErrorSnackBar('Organization context not initialized. Please restart the app.');
+        return;
+      }
+
       // ENTERPRISE-GRADE: Convert PaymentStatus to legacy boolean fields for backward compatibility
       final (isPaid, isActive) =
           _convertPaymentStatusToLegacyFields(selectedPaymentStatus);
@@ -1198,8 +1206,10 @@ class _MarkPaymentDialogState extends State<MarkPaymentDialog>
           .doc('${widget.selectedYear}-$selectedMonth')
           .set(paymentRecord.toMap(), SetOptions(merge: true));
 
-      Navigator.pop(context);
-      _showSuccessSnackBar(_getSuccessMessage());
+      if (mounted) {
+        Navigator.pop(context);
+        _showSuccessSnackBar(_getSuccessMessage());
+      }
     } catch (e) {
       _showErrorSnackBar('Error marking payment: $e');
     } finally {

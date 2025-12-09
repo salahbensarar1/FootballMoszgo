@@ -13,6 +13,7 @@ import 'package:footballtraining/views/login/login_page.dart';
 import 'package:footballtraining/views/receptionist/receptionist_screen.dart';
 
 import 'package:footballtraining/utils/responsive_design.dart';
+import 'package:footballtraining/services/organization_context.dart';
 import 'package:intl/intl.dart';
 import 'dart:math' as math;
 
@@ -130,7 +131,14 @@ class _DashboardScreenState extends State<DashboardScreen>
             .where('role', isEqualTo: 'coach')
             .count()
             .get(),
-        _firestore.collection('training_sessions').count().get(),
+        OrganizationContext.isInitialized
+            ? _firestore
+                .collection('organizations')
+                .doc(OrganizationContext.currentOrgId)
+                .collection('training_sessions')
+                .count()
+                .get()
+            : Future.error('Organization context not initialized'),
         _calculateAttendanceRate(),
       ]);
 
@@ -159,7 +167,13 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   Future<double> _calculateAttendanceRate() async {
     try {
+      if (!OrganizationContext.isInitialized) {
+        return 0.0;
+      }
+
       final sessionsSnapshot = await _firestore
+          .collection('organizations')
+          .doc(OrganizationContext.currentOrgId)
           .collection('training_sessions')
           .orderBy('start_time', descending: true)
           .limit(10)
@@ -1006,11 +1020,15 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   Widget _buildSessionsList(bool isSmallScreen) {
     return StreamBuilder<QuerySnapshot>(
-      stream: _firestore
-          .collection('training_sessions')
-          .orderBy('start_time', descending: true)
-          .limit(5)
-          .snapshots(),
+      stream: OrganizationContext.isInitialized
+          ? _firestore
+              .collection('organizations')
+              .doc(OrganizationContext.currentOrgId)
+              .collection('training_sessions')
+              .orderBy('start_time', descending: true)
+              .limit(5)
+              .snapshots()
+          : Stream.error('Organization context not initialized'),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return _buildLoadingSessions();

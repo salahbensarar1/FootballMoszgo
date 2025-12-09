@@ -240,16 +240,29 @@ class _CoachScreenState extends State<CoachScreen>
         }).toList(),
       };
 
+      // Validate organization context before saving
+      if (!OrganizationContext.isInitialized) {
+        _showErrorMessage("Organization context not initialized. Please restart the app.");
+        return;
+      }
+
+      final organizationId = OrganizationContext.currentOrgId;
+
       if (isEdit && currentSessionId != null) {
         await _firestore
-            .collection("training_sessions")
+            .collection('organizations')
+            .doc(organizationId)
+            .collection('training_sessions')
             .doc(currentSessionId)
             .update(sessionData);
         _resetSession();
         _showSuccessMessage(l10n.successfullyUpdated);
       } else {
-        final docRef =
-            await _firestore.collection("training_sessions").add(sessionData);
+        final docRef = await _firestore
+            .collection('organizations')
+            .doc(organizationId)
+            .collection('training_sessions')
+            .add(sessionData);
         setState(() => currentSessionId = docRef.id);
         _showSuccessMessage("Edzés elmentve! Még egyszer szerkesztheti.");
       }
