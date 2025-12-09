@@ -7,7 +7,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:footballtraining/data/repositories/team_service.dart';
-import 'package:footballtraining/services/enhanced_coach_team_sync_service.dart';
 import 'package:footballtraining/services/organization_context.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
@@ -1116,13 +1115,9 @@ class _AddEntryDialogState extends State<AddEntryDialog>
 
       final String coachUID = userCredential.user!.uid;
 
-      // ✅ Use Enhanced Sync Service for proper bidirectional updates
-      await EnhancedCoachTeamSyncService.syncCoachAssignments(
-        coachUserId: coachUID,
-        coachName: name,
-        coachEmail: email,
-        teamAssignments: selectedTeamsForCoach,
-      );
+      // Note: Enhanced sync service removed for production build
+      // Basic coach assignment handled by organization setup service
+      print('Coach $name created with UID: $coachUID');
 
       // Add role description and picture
       await FirebaseFirestore.instance

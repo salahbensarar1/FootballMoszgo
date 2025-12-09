@@ -5,7 +5,9 @@ import 'package:google_fonts/google_fonts.dart';
 // Import your payment models
 import '../../../data/models/payment_model.dart';
 import '../../../services/organization_context.dart';
-import '../../../utils/batch_size_constants.dart';
+// Batch processing constants
+const int kMaxBatchSize = 450;
+const int kDropdownMaxItems = 100;
 
 class BulkReminderDialog extends StatefulWidget {
   final int selectedYear;
@@ -214,7 +216,7 @@ class _BulkReminderDialogState extends State<BulkReminderDialog> {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('teams')
-          .limit(BatchSizeConstants.dropdownMaxItems)
+          .limit(kDropdownMaxItems)
           .orderBy('team_name')
           .snapshots(),
       builder: (context, snapshot) {

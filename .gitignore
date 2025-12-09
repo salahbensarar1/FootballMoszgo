@@ -46,7 +46,11 @@ app.*.map.json
 
 # Environment variables and secrets
 .env
+# Local configuration and Claude/AI IDE settings
+.claude/
+.claude/**
 .env.local
+.env.*.local
 .env.production
 .env.staging
 *.env

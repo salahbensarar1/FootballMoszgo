@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:footballtraining/views/setup/organization_setup_wizard.dart';
-import 'package:footballtraining/views/setup/data_migration_screen.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class LoginButton extends StatelessWidget {
@@ -124,10 +123,10 @@ class MigrationButton extends StatelessWidget {
     return TextButton.icon(
       onPressed: () {
         HapticFeedback.lightImpact();
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const DataMigrationScreen(),
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Data migration tools not available in production'),
+            backgroundColor: Colors.orange,
           ),
         );
       },

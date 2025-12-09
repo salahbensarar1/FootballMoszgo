@@ -3,7 +3,6 @@ import 'package:footballtraining/services/organization_setup_service.dart';
 import 'package:footballtraining/services/logging_service.dart';
 import 'package:footballtraining/views/login/login_page.dart';
 import 'package:footballtraining/views/setup/organization_setup_wizard.dart';
-import 'package:footballtraining/views/debug/sample_data_generator_screen.dart';
 
 /// Smart onboarding screen that determines whether to show login or setup
 class OrganizationOnboardingScreen extends StatefulWidget {
@@ -439,10 +438,12 @@ class _OrganizationOnboardingScreenState
   }
 
   void _navigateToSampleDataGenerator() {
-    LoggingService.info('🧪 User chose to generate sample data');
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const SampleDataGeneratorScreen()),
+    LoggingService.info('🧪 Sample data generator not available in production build');
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Sample data generation not available in production'),
+        backgroundColor: Colors.orange,
+      ),
     );
   }
 }

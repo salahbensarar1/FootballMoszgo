@@ -4,10 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:footballtraining/main.dart'; // For language switching
-import 'package:footballtraining/services/team_data_fixer_service.dart';
 import 'package:footballtraining/views/admin/widgets/emergency_data_fix_button.dart';
-import 'package:footballtraining/views/admin/widgets/coach_count_fix_button.dart';
-import 'package:footballtraining/views/admin/widgets/coach_debug_button.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -441,18 +438,6 @@ class _SettingsScreenState extends State<SettingsScreen>
       icon: Icons.developer_mode,
       children: [
         _buildSettingCard(
-          icon: Icons.build_rounded,
-          title: "Team Data Fixer",
-          subtitle: "Fix team coach assignment issues",
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => TeamDataFixerWidget(),
-            ),
-          ),
-        ),
-        SizedBox(height: 12),
-        _buildSettingCard(
           icon: Icons.bug_report_outlined,
           title: "Debug Information",
           subtitle: "View app and database diagnostics",
@@ -469,8 +454,6 @@ class _SettingsScreenState extends State<SettingsScreen>
       title: '🚨 EMERGENCY DATA FIX',
       children: [
         const EmergencyDataFixButton(),
-        const CoachCountFixButton(),
-        const CoachDebugButton(),
         const SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.all(12),

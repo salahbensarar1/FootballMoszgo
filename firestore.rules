@@ -185,9 +185,38 @@ service cloud.firestore {
     }
     
     // ===========================================
+    // DEPRECATED GLOBAL COLLECTIONS (SECURITY FIX)
+    // ===========================================
+
+    // These collections should now be organization-scoped
+    // Block access to prevent data leakage during migration
+
+    match /users/{userId} {
+      allow read, write: if false; // Data migrated to organizations/{orgId}/users/
+    }
+
+    match /teams/{teamId} {
+      allow read, write: if false; // Data migrated to organizations/{orgId}/teams/
+    }
+
+    match /players/{playerId} {
+      allow read, write: if false; // Data migrated to organizations/{orgId}/players/
+    }
+
+    match /training_sessions/{sessionId} {
+      allow read, write: if false; // Data migrated to organizations/{orgId}/training_sessions/
+    }
+
+    // MLSZ configuration (organization-scoped)
+    match /organizations/{orgId}/mlsz_config/{configId} {
+      allow read: if canAccessOrg(orgId);
+      allow write: if hasAnyRole(orgId, ['admin', 'super_admin']) && canAccessOrg(orgId);
+    }
+
+    // ===========================================
     // FALLBACK RULES
     // ===========================================
-    
+
     // Deny all other access
     match /{document=**} {
       allow read, write: if false;

@@ -236,11 +236,8 @@ class OrganizationSetupService {
         createdAt: DateTime.now(),
       );
 
-      // Store in global users collection
-      await _firestore
-          .collection('users')
-          .doc(firebaseUser.uid)
-          .set(user.toFirestore());
+      // NOTE: User will be created in organization-scoped collection later
+      // Global user collection removed for security - no cross-org access
 
       LoggingService.info('Admin user created and authenticated: $email');
       return user;
@@ -451,7 +448,7 @@ class OrganizationSetupService {
         throw Exception('Failed to create Firebase user');
       }
 
-      // Create user document in global users collection
+      // Create user model (for scoped collection only)
       final user = app_user.User(
         id: firebaseUser.uid,
         name: name,
@@ -462,10 +459,8 @@ class OrganizationSetupService {
         createdAt: DateTime.now(),
       );
 
-      await _firestore
-          .collection('users')
-          .doc(firebaseUser.uid)
-          .set(user.toFirestore());
+      // NOTE: Global user collection removed for security
+      // User will only exist in organization-scoped collection
 
       // Create organization-scoped user document (required by Firestore rules)
       await _firestore
@@ -532,7 +527,7 @@ class OrganizationSetupService {
         throw Exception('Failed to create Firebase user');
       }
 
-      // Create user document in global users collection
+      // Create user model (for scoped collection only)
       final user = app_user.User(
         id: firebaseUser.uid,
         name: name,
@@ -543,10 +538,8 @@ class OrganizationSetupService {
         createdAt: DateTime.now(),
       );
 
-      await _firestore
-          .collection('users')
-          .doc(firebaseUser.uid)
-          .set(user.toFirestore());
+      // NOTE: Global user collection removed for security
+      // User will only exist in organization-scoped collection
 
       // Create organization-scoped user document (required by Firestore rules)
       await _firestore

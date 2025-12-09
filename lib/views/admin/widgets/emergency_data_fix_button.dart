@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:footballtraining/services/coach_data_consistency_fixer.dart';
 
 /// 🚨 EMERGENCY BUTTON: Fix coach assignment data inconsistencies
 class EmergencyDataFixButton extends StatefulWidget {
@@ -77,7 +76,8 @@ class _EmergencyDataFixButtonState extends State<EmergencyDataFixButton> {
     });
 
     try {
-      final results = await CoachDataConsistencyFixer.fixAllCoachAssignments();
+      // Emergency fix service removed for production build
+      final results = {'message': 'Data consistency tool not available in production build', 'totalFixed': 0};
       
       final fixedAssignments = results['fixed_assignments'] as List<Map<String, dynamic>>;
       final teamsProcessed = results['teams_processed'];

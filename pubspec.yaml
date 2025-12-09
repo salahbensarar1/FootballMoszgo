@@ -27,11 +27,11 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   flutter_launcher_icons: ^0.14.3
-  firebase_core: ^3.12.0
+  firebase_core: ^3.15.2
   firebase_auth: ^5.5.0
   cloud_firestore: ^5.6.4
   google_fonts: ^6.2.1
-  http: ^1.3.0
+  http: ^1.6.0
   image_picker: ^1.1.2
   intl: ^0.19.0
   emailjs: ^4.0.0
@@ -58,6 +58,7 @@ dependencies:
   logger: ^2.4.0
   firebase_crashlytics: ^4.1.3
   firebase_analytics: ^11.3.3
+  html: ^0.15.6
   
   # Enhanced UX & Animations (Optional - comment out if build issues)
   # flutter_animate: ^4.5.0

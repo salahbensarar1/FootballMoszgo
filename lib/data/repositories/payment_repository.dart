@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/payment_model.dart';
-import '../../utils/batch_size_constants.dart';
+// Batch processing constants
+const int kStreamListenerLimit = 1000;
 
 class PaymentRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -10,7 +11,7 @@ class PaymentRepository {
   Stream<PaymentStats> getBasicPaymentStats() {
     return _firestore
         .collection('payments')
-        .limit(BatchSizeConstants.streamListenerLimit)
+        .limit(kStreamListenerLimit)
         .orderBy('paymentDate', descending: true)
         .snapshots()
         .map((snapshot) {
@@ -53,7 +54,7 @@ class PaymentRepository {
   Stream<List<PaymentRecord>> getPlayerPayments() {
     return _firestore
         .collection('payments')
-        .limit(BatchSizeConstants.streamListenerLimit)
+        .limit(kStreamListenerLimit)
         .orderBy('paymentDate', descending: true)
         .snapshots()
         .map((snapshot) {
@@ -67,7 +68,7 @@ class PaymentRepository {
   Stream<PaymentStats> getPaymentStats() {
     return _firestore
         .collection('payments')
-        .limit(BatchSizeConstants.streamListenerLimit)
+        .limit(kStreamListenerLimit)
         .orderBy('paymentDate', descending: true)
         .snapshots()
         .map((snapshot) {

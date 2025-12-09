@@ -5,37 +5,25 @@ import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:logger/logger.dart';
 import 'environment.dart';
 
-/// Production-grade Firebase configuration with proper error handling,
-/// logging, and environment-based setup
 class FirebaseConfig {
   static final Logger _logger = Logger();
   static FirebaseApp? _app;
   static FirebaseAnalytics? _analytics;
   static FirebaseCrashlytics? _crashlytics;
 
-  /// Initialize Firebase with environment-based configuration
   static Future<FirebaseApp> initializeFirebase() async {
     try {
       _logger.i(
           '🔥 Initializing Firebase for ${Environment.environment} environment');
 
-      // Use default Firebase initialization (google-services.json)
       if (Firebase.apps.isEmpty) {
-        _app = await Firebase.initializeApp(
-            options: const FirebaseOptions(
-          apiKey: 'AIzaSyA0ld4bnw5JlxBhHShltnH32jR6M3X8Gns',
-          appId: '1:388672883836:android:ee63ec68ad71e4d97e0df9',
-          messagingSenderId: '388672883836',
-          projectId: 'foottraining-4051b',
-          storageBucket: 'foottraining-4051b.firebasestorage.app',
-        ));
+        _app = await Firebase.initializeApp();
       } else {
         _app = Firebase.app();
       }
 
       _logger.i('✅ Firebase app initialized using google-services.json');
 
-      // Initialize additional Firebase services
       await _initializeFirebaseServices();
 
       return _app!;
@@ -46,23 +34,18 @@ class FirebaseConfig {
     }
   }
 
-  /// Initialize additional Firebase services
   static Future<void> _initializeFirebaseServices() async {
     try {
-      // Initialize Crashlytics (always available in this setup)
       try {
         _crashlytics = FirebaseCrashlytics.instance;
 
-        // Check environment safely for production features
         bool isProduction = false;
         try {
           isProduction = Environment.isProduction || Environment.isStaging;
         } catch (e) {
-          // If environment check fails, assume development
           isProduction = false;
         }
 
-        // Enable crash collection in production
         await _crashlytics!.setCrashlyticsCollectionEnabled(isProduction);
 
         // Set up automatic crash reporting

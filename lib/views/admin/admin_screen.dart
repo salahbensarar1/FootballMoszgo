@@ -11,6 +11,9 @@ import 'package:footballtraining/services/organization_context.dart';
 
 import 'package:footballtraining/views/admin/user_management_screen.dart';
 import 'package:footballtraining/views/admin/settings_screen.dart';
+import 'package:footballtraining/views/admin/widgets/data_migration_button.dart';
+import 'package:footballtraining/views/mlsz/mlsz_dashboard_screen.dart';
+import 'package:footballtraining/views/mlsz/mlsz_matches_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
@@ -269,14 +272,25 @@ class _AdminScreenState extends State<AdminScreen>
                     title: l10n.notifications,
                     onTap: () => _showComingSoon(context, l10n),
                   ),
+                  _buildDrawerItem(
+                    icon: Icons.sports_soccer,
+                    title: "League Information",
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const MLSZDashboardScreen()),
+                      );
+                    },
+                  ),
                 ],
               ),
             ),
-            Divider(height: 1),
+            const Divider(height: 1),
             _buildDrawerItem(
               icon: Icons.settings_rounded,
               title: l10n.settings,
-              onTap: () => _navigateToScreen(context, SettingsScreen()),
+              onTap: () => _navigateToScreen(context, const SettingsScreen()),
             ),
             _buildDrawerItem(
               icon: Icons.logout_rounded,
@@ -285,7 +299,7 @@ class _AdminScreenState extends State<AdminScreen>
               iconColor: Colors.red.shade600,
               onTap: () => _showLogoutDialog(context, l10n),
             ),
-            SizedBox(height: 20), // Add padding at bottom
+            const SizedBox(height: 20), // Add padding at bottom
           ],
         ),
       ),
@@ -297,7 +311,7 @@ class _AdminScreenState extends State<AdminScreen>
     final isTablet = size.width > 768;
 
     return Container(
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [Color(0xFFF27121), Color(0xFFFF8A50)],
           begin: Alignment.topLeft,
@@ -306,7 +320,7 @@ class _AdminScreenState extends State<AdminScreen>
       ),
       child: SafeArea(
         child: Padding(
-          padding: EdgeInsets.fromLTRB(20, 20, 20, 20),
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -320,9 +334,10 @@ class _AdminScreenState extends State<AdminScreen>
                     border: Border.all(color: Colors.white, width: 3),
                     boxShadow: [
                       BoxShadow(
+                        // ignore: deprecated_member_use
                         color: Colors.black.withOpacity(0.2),
                         blurRadius: 10,
-                        offset: Offset(0, 5),
+                        offset: const Offset(0, 5),
                       ),
                     ],
                   ),
@@ -331,12 +346,12 @@ class _AdminScreenState extends State<AdminScreen>
                     backgroundColor: Colors.white,
                     backgroundImage: profileImageUrl?.isNotEmpty == true
                         ? NetworkImage(profileImageUrl!)
-                        : AssetImage('assets/images/admin.jpeg')
+                        : const AssetImage('assets/images/admin.jpeg')
                             as ImageProvider,
                   ),
                 ),
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               Text(
                 userName ?? l10n.adminScreen,
                 style: GoogleFonts.poppins(
@@ -346,7 +361,7 @@ class _AdminScreenState extends State<AdminScreen>
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
-              SizedBox(height: 4),
+              const SizedBox(height: 4),
               Text(
                 email ?? "admin@example.com",
                 style: GoogleFonts.poppins(
@@ -374,12 +389,12 @@ class _AdminScreenState extends State<AdminScreen>
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: (iconColor ?? Color(0xFFF27121)).withOpacity(0.1),
+          color: (iconColor ?? const Color(0xFFF27121)).withOpacity(0.1),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Icon(
           icon,
-          color: iconColor ?? Color(0xFFF27121),
+          color: iconColor ?? const Color(0xFFF27121),
           size: 22,
         ),
       ),
@@ -1594,6 +1609,18 @@ class _AdminScreenState extends State<AdminScreen>
           ],
         );
       },
+    );
+  }
+
+  void _showDataMigrationDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 600),
+          child: const DataMigrationButton(),
+        ),
+      ),
     );
   }
 

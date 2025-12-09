@@ -3,6 +3,16 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:footballtraining/services/organization_context.dart';
 import 'package:footballtraining/services/logging_service.dart';
 
+/// Exception thrown when organization context is not properly initialized
+class OrganizationContextException implements Exception {
+  final String message;
+
+  const OrganizationContextException(this.message);
+
+  @override
+  String toString() => 'OrganizationContextException: $message';
+}
+
 /// Centralized Firestore service that enforces organization-scoped access
 /// This ensures complete data isolation between different clubs/organizations
 class ScopedFirestoreService {
@@ -12,7 +22,9 @@ class ScopedFirestoreService {
   /// Get organization-scoped collection reference
   /// All club data is accessed through: organizations/{orgId}/{collection}
   static CollectionReference getCollection(String collectionName) {
-    final orgId = OrganizationContext.currentOrgId;
+    _validateOrganizationContext();
+
+    final orgId = OrganizationContext.currentOrgId; // Safe after validation
     LoggingService.info(
         '🏢 Accessing scoped collection: organizations/$orgId/$collectionName');
 
@@ -20,6 +32,32 @@ class ScopedFirestoreService {
         .collection('organizations')
         .doc(orgId)
         .collection(collectionName);
+  }
+
+  /// Validate that organization context is properly initialized
+  /// This prevents accidental cross-organization data access
+  static void _validateOrganizationContext() {
+    if (!OrganizationContext.isInitialized) {
+      LoggingService.error(
+          '❌ SECURITY VIOLATION: Organization context not initialized!');
+      throw const OrganizationContextException(
+          'Organization context must be initialized before accessing scoped data. '
+          'Call OrganizationContext.setCurrentOrganization(orgId) first.');
+    }
+
+    final orgId = OrganizationContext.currentOrgId;
+    if (orgId == null || orgId.isEmpty) {
+      LoggingService.error('❌ SECURITY VIOLATION: Invalid organization ID!');
+      throw const OrganizationContextException(
+          'Invalid organization ID. Cannot access scoped data without valid organization context.');
+    }
+
+    LoggingService.debug('✅ Organization context validated: $orgId');
+  }
+
+  /// Public method to validate context (for use in other services)
+  static void validateContext() {
+    _validateOrganizationContext();
   }
 
   /// Get global collection reference (for system-level data only)
@@ -240,11 +278,6 @@ class ScopedFirestoreService {
     }
   }
 
-  /// Validate organization context before operations
-  static void validateContext() {
-    if (!OrganizationContext.isInitialized) {
-      throw OrganizationContextException(
-          'Organization context must be initialized before accessing scoped data');
-    }
-  }
+  // Duplicate validateContext removed: use the existing validateContext() above
+  // which calls _validateOrganizationContext().
 }
