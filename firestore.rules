@@ -11,11 +11,6 @@ service cloud.firestore {
       return request.auth != null;
     }
     
-    // Get user's organization membership
-    function getUserOrgs() {
-      return get(/databases/$(database)/documents/user_organizations/$(request.auth.uid)).data.organizations;
-    }
-    
     // Check if user is member of specific organization
     function isOrgMember(orgId) {
       return isAuthenticated() && 
@@ -233,11 +228,9 @@ service cloud.firestore {
     // ===========================================
     // HELPER FUNCTION FOR USER ORGANIZATIONS
     // ===========================================
-    
+
     function getUserOrganizations() {
-      // This would typically come from a user_organizations document
-      // For now, we'll use a simpler approach by checking organization membership
-      return [];
+      return get(/databases/$(database)/documents/user_organizations/$(request.auth.uid)).data.organizations;
     }
   }
 }

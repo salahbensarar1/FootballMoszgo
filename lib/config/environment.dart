@@ -11,29 +11,18 @@ class Environment {
     try {
       await dotenv.load(fileName: ".env");
     } catch (e) {
-      // Fallback for development - try without file extension or create default
-      try {
-        await dotenv.load(fileName: "env");  
-      } catch (e2) {
-        // If no .env file exists, initialize with defaults for development
-        if (!dotenv.isInitialized) {
-          dotenv.testLoad(fileInput: '''
-# Default Development Environment
+      // If no .env file exists, initialize with non-sensitive defaults.
+      // Firebase credentials are provided by google-services.json /
+      // GoogleService-Info.plist and should never be hard-coded here.
+      if (!dotenv.isInitialized) {
+        dotenv.testLoad(fileInput: '''
 APP_NAME=Football Training Manager
 APP_VERSION=1.0.0
 ENVIRONMENT=development
-FIREBASE_PROJECT_ID=foottraining-4051b
-FIREBASE_API_KEY_ANDROID=AIzaSyBPwPSHkw1rupR_PCwaaKeFknpSqoBeUfM
-FIREBASE_API_KEY_IOS=AIzaSyBPwPSHkw1rupR_PCwaaKeFknpSqoBeUfM
-FIREBASE_APP_ID_ANDROID=1:388672883836:android:924ffce1dc97af7d7e0df9
-FIREBASE_APP_ID_IOS=1:388672883836:ios:5d90d92b8467e1407e0df9
-FIREBASE_MESSAGING_SENDER_ID=388672883836
-FIREBASE_STORAGE_BUCKET=foottraining-4051b.appspot.com
 DEBUG_MODE=true
 ENABLE_LOGGING=true
 MOCK_DATA=false
 ''');
-        }
       }
     }
   }

@@ -7,6 +7,22 @@ plugins {
     id "com.google.gms.google-services"
 }
 
+// Load signing credentials from android/key.properties (not committed to VCS).
+// To create a release keystore, run:
+//   keytool -genkey -v -keystore android/app/release-keystore.jks \
+//     -alias upload -keyalg RSA -keysize 2048 -validity 10000
+// Then create android/key.properties with:
+//   storePassword=<your-store-password>
+//   keyPassword=<your-key-password>
+//   keyAlias=upload
+//   storeFile=release-keystore.jks
+def keystorePropertiesFile = rootProject.file("key.properties")
+def keystoreProperties = new Properties()
+def hasReleaseKey = keystorePropertiesFile.exists()
+if (hasReleaseKey) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
 android {
     namespace = "com.salah.footballtraining"
     compileSdk = 35
@@ -40,11 +56,12 @@ android {
 
     signingConfigs {
         release {
-            // For production, you'll need to create a keystore
-            // keyAlias = keystoreProperties['keyAlias']
-            // keyPassword = keystoreProperties['keyPassword']
-            // storeFile = keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
-            // storePassword = keystoreProperties['storePassword']
+            if (hasReleaseKey) {
+                keyAlias = keystoreProperties['keyAlias']
+                keyPassword = keystoreProperties['keyPassword']
+                storeFile = file(keystoreProperties['storeFile'])
+                storePassword = keystoreProperties['storePassword']
+            }
         }
     }
 
@@ -56,7 +73,9 @@ android {
         }
         
         release {
-            signingConfig = signingConfigs.debug // Change to signingConfigs.release for production
+            // Use the release keystore when key.properties is present;
+            // fall back to the debug keystore for local/CI builds without signing.
+            signingConfig = hasReleaseKey ? signingConfigs.release : signingConfigs.debug
             minifyEnabled = true
             shrinkResources = true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
