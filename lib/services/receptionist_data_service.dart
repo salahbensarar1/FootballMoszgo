@@ -65,18 +65,21 @@ class ReceptionistDataService {
             .doc(orgId)
             .collection('users')
             .where('role', isEqualTo: 'coach')
+            .limit(200)
             .snapshots();
       case 1: // Players
         return FirebaseFirestore.instance
             .collection('organizations')
             .doc(orgId)
             .collection('players')
+            .limit(500)
             .snapshots();
       case 2: // Teams
         return FirebaseFirestore.instance
             .collection('organizations')
             .doc(orgId)
             .collection('teams')
+            .limit(100)
             .snapshots();
       default:
         return const Stream.empty();

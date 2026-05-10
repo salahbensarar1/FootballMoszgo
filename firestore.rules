@@ -230,7 +230,9 @@ service cloud.firestore {
     // ===========================================
 
     function getUserOrganizations() {
-      return get(/databases/$(database)/documents/user_organizations/$(request.auth.uid)).data.organizations;
+      return exists(/databases/$(database)/documents/user_organizations/$(request.auth.uid))
+        ? get(/databases/$(database)/documents/user_organizations/$(request.auth.uid)).data.organizations
+        : [];
     }
   }
 }

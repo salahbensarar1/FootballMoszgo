@@ -240,18 +240,21 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
           .doc(OrganizationContext.currentOrgId)
           .collection('users')
           .where('role', isEqualTo: 'coach')
+          .limit(200)
           .snapshots();
     } else if (currentTab == 1) {
       return FirebaseFirestore.instance
           .collection('organizations')
           .doc(OrganizationContext.currentOrgId)
           .collection('players')
+          .limit(500)
           .snapshots();
     } else {
       return FirebaseFirestore.instance
           .collection('organizations')
           .doc(OrganizationContext.currentOrgId)
           .collection('teams')
+          .limit(100)
           .snapshots();
     }
   }

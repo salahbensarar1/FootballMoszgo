@@ -94,6 +94,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       Widget destination;
       switch (result.userRole) {
         case 'admin':
+        case 'super_admin':
           destination = const AdminScreen();
           break;
         case 'receptionist':
@@ -103,7 +104,13 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
           destination = const CoachScreen();
           break;
         default:
-          throw Exception("Unauthorized role: ${result.userRole}");
+          if (mounted) {
+            final l10n = AppLocalizations.of(context)!;
+            _showErrorMessage(
+                AuthService.getErrorMessage('Unauthorized role: ${result.userRole}', l10n));
+          }
+          if (mounted) setState(() => isLoading = false);
+          return;
       }
 
       if (mounted) {

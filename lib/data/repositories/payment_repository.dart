@@ -1,16 +1,25 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:footballtraining/services/organization_context.dart';
 import '../models/payment_model.dart';
+
 // Batch processing constants
 const int kStreamListenerLimit = 1000;
 
 class PaymentRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  /// Returns the org-scoped payments collection reference.
+  CollectionReference get _paymentsCollection =>
+      OrganizationContext.getCollection('payments');
+
+  /// Returns the org-scoped players collection reference.
+  CollectionReference get _playersCollection =>
+      OrganizationContext.getCollection('players');
+
   // Deprecated: Use getDetailedPaymentStats instead.
   // MEMORY-SAFE: Added limit to prevent crashes with 10K+ payment records
   Stream<PaymentStats> getBasicPaymentStats() {
-    return _firestore
-        .collection('payments')
+    return _paymentsCollection
         .limit(kStreamListenerLimit)
         .orderBy('paymentDate', descending: true)
         .snapshots()
@@ -22,7 +31,7 @@ class PaymentRepository {
       Map<int, double> monthlyData = {};
 
       for (var doc in snapshot.docs) {
-        final data = doc.data();
+        final data = doc.data() as Map<String, dynamic>;
         totalCollected += data['amount'] ?? 0;
         totalPlayers++;
 
@@ -45,29 +54,28 @@ class PaymentRepository {
         thisMonthCollected: monthlyData[DateTime.now().month] ?? 0,
         monthlyData: monthlyData,
         collectionRate: totalPlayers > 0 ? fullyPaidPlayers / totalPlayers : 0,
-        thisMonthProgress: 0, // Calculate based on your business logic
+        thisMonthProgress: 0,
       );
     });
   }
 
   // MEMORY-SAFE: Added limit to prevent crashes with large payment histories
   Stream<List<PaymentRecord>> getPlayerPayments() {
-    return _firestore
-        .collection('payments')
+    return _paymentsCollection
         .limit(kStreamListenerLimit)
         .orderBy('paymentDate', descending: true)
         .snapshots()
         .map((snapshot) {
       return snapshot.docs
-          .map((doc) => PaymentRecord.fromFirestore(doc))
+          .map((doc) => PaymentRecord.fromFirestore(
+              doc as DocumentSnapshot<Map<String, dynamic>>))
           .toList();
     });
   }
 
   // MEMORY-SAFE: Added limit to prevent crashes with large payment datasets
   Stream<PaymentStats> getPaymentStats() {
-    return _firestore
-        .collection('payments')
+    return _paymentsCollection
         .limit(kStreamListenerLimit)
         .orderBy('paymentDate', descending: true)
         .snapshots()
@@ -80,7 +88,8 @@ class PaymentRepository {
       Set<String> playerIds = {};
 
       for (var doc in snapshot.docs) {
-        final payment = PaymentRecord.fromFirestore(doc);
+        final payment = PaymentRecord.fromFirestore(
+            doc as DocumentSnapshot<Map<String, dynamic>>);
         if (!payment.isActive) continue;
 
         if (!playerIds.contains(payment.playerId)) {
@@ -105,12 +114,11 @@ class PaymentRepository {
         totalOutstanding: totalOutstanding,
         fullyPaidPlayers: fullyPaidPlayers,
         totalPlayers: totalPlayers,
-        inactivePlayers: 0, // This would need to be calculated separately
+        inactivePlayers: 0,
         thisMonthCollected: monthlyData[DateTime.now().month] ?? 0,
         monthlyData: monthlyData,
         collectionRate: totalPlayers > 0 ? fullyPaidPlayers / totalPlayers : 0,
-        thisMonthProgress:
-            0, // This needs to be calculated based on your business logic
+        thisMonthProgress: 0,
       );
     });
   }
@@ -120,14 +128,14 @@ class PaymentRepository {
     required double amount,
     required DateTime date,
   }) async {
-    await _firestore.collection('payments').add({
+    await _paymentsCollection.add({
       'playerId': playerId,
       'amount': amount,
       'paymentDate': Timestamp.fromDate(date),
       'createdAt': FieldValue.serverTimestamp(),
     });
 
-    await _firestore.collection('players').doc(playerId).update({
+    await _playersCollection.doc(playerId).update({
       'lastPaymentDate': Timestamp.fromDate(date),
       'amountPaid': FieldValue.increment(amount),
     });
