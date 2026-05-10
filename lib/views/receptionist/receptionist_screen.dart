@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:footballtraining/config/constants.dart';
 import 'package:footballtraining/utils/responsive_utils.dart';
 import 'package:footballtraining/views/login/login_page.dart';
 import 'package:footballtraining/views/receptionist/dialogs/add_entry_dialog.dart';
@@ -240,21 +241,21 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
           .doc(OrganizationContext.currentOrgId)
           .collection('users')
           .where('role', isEqualTo: 'coach')
-          .limit(200)
+          .limit(FirestoreLimits.maxCoaches)
           .snapshots();
     } else if (currentTab == 1) {
       return FirebaseFirestore.instance
           .collection('organizations')
           .doc(OrganizationContext.currentOrgId)
           .collection('players')
-          .limit(500)
+          .limit(FirestoreLimits.maxPlayers)
           .snapshots();
     } else {
       return FirebaseFirestore.instance
           .collection('organizations')
           .doc(OrganizationContext.currentOrgId)
           .collection('teams')
-          .limit(100)
+          .limit(FirestoreLimits.maxTeams)
           .snapshots();
     }
   }

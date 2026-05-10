@@ -73,8 +73,10 @@ android {
         }
         
         release {
-            // Use the release keystore when key.properties is present;
-            // fall back to the debug keystore for local/CI builds without signing.
+            // Production store uploads MUST have key.properties present.
+            // CI build-verification jobs intentionally use the debug key so the
+            // app can be compiled and tested without exposing keystore secrets.
+            // Never upload a debug-signed APK/AAB to a public distribution channel.
             signingConfig = hasReleaseKey ? signingConfigs.release : signingConfigs.debug
             minifyEnabled = true
             shrinkResources = true

@@ -27,3 +27,17 @@ class AppTextStyles {
   static const TextStyle headerText =
       TextStyle(fontSize: 20, fontWeight: FontWeight.w600);
 }
+
+/// Firestore query limits used across the app to prevent memory exhaustion
+/// with large datasets.  Increase if an organisation legitimately exceeds these
+/// numbers, or implement cursor-based pagination for unbounded growth.
+class FirestoreLimits {
+  /// Maximum number of coaches loaded in a single stream listener.
+  static const int maxCoaches = 200;
+
+  /// Maximum number of players loaded in a single stream listener.
+  static const int maxPlayers = 500;
+
+  /// Maximum number of teams loaded in a single stream listener.
+  static const int maxTeams = 100;
+}

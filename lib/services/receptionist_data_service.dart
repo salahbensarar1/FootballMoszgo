@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:footballtraining/config/constants.dart';
 import 'package:footballtraining/services/organization_context.dart';
 import 'package:footballtraining/data/repositories/coach_management_service.dart';
 import 'package:http/http.dart' as http;
@@ -65,21 +66,21 @@ class ReceptionistDataService {
             .doc(orgId)
             .collection('users')
             .where('role', isEqualTo: 'coach')
-            .limit(200)
+            .limit(FirestoreLimits.maxCoaches)
             .snapshots();
       case 1: // Players
         return FirebaseFirestore.instance
             .collection('organizations')
             .doc(orgId)
             .collection('players')
-            .limit(500)
+            .limit(FirestoreLimits.maxPlayers)
             .snapshots();
       case 2: // Teams
         return FirebaseFirestore.instance
             .collection('organizations')
             .doc(orgId)
             .collection('teams')
-            .limit(100)
+            .limit(FirestoreLimits.maxTeams)
             .snapshots();
       default:
         return const Stream.empty();
