@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
+bool isValidEmailAddress(String value) {
+  return RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(value.trim());
+}
+
 class EmailField extends StatefulWidget {
   final TextEditingController controller;
   final VoidCallback? onFieldSubmitted;
@@ -55,7 +59,7 @@ class _EmailFieldState extends State<EmailField> {
         onEditingComplete: () => setState(() => _focused = false),
         validator: (value) {
           if (value?.isEmpty ?? true) return l10n.pleaseEnterEmail;
-          if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value!)) {
+          if (!isValidEmailAddress(value!)) {
             return l10n.pleaseEnterValidEmail;
           }
           return null;

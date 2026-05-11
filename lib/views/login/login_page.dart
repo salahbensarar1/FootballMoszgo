@@ -212,8 +212,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                         if (value?.isEmpty ?? true) {
                           return l10n.pleaseEnterEmail;
                         }
-                        if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
-                            .hasMatch(value!.trim())) {
+                        if (!isValidEmailAddress(value!.trim())) {
                           return l10n.pleaseEnterValidEmail;
                         }
                         return null;
