@@ -6,6 +6,19 @@
   "email": "Email",
   "password": "Password",
   "loginButton": "Login",
+  "forgotPassword": "Forgot password?",
+  "resetPasswordTitle": "Reset password",
+  "resetPasswordMessage": "Enter your email to receive a password reset link.",
+  "sendResetLink": "Send reset link",
+  "passwordResetEmailSent": "Password reset email sent to {email}",
+  "@passwordResetEmailSent": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "passwordResetFailed": "Couldn't send password reset email. Please try again.",
   "adminManagement": "Admin Management",
   "createNewOrganization": "Create New Organization",
   

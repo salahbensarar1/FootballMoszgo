@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:footballtraining/views/admin/admin_screen.dart';
 import 'package:footballtraining/views/coach/coach_screen.dart';
 import 'package:footballtraining/views/receptionist/receptionist_screen.dart';
@@ -146,6 +147,151 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         margin: const EdgeInsets.all(16),
       ),
     );
+  }
+
+  void _showSuccessMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle_outline, color: Colors.white),
+            const SizedBox(width: 8),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: Colors.green.shade600,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
+      ),
+    );
+  }
+
+  String _getPasswordResetErrorMessage(
+      FirebaseAuthException exception, AppLocalizations l10n) {
+    switch (exception.code) {
+      case 'invalid-email':
+        return l10n.invalidEmail;
+      case 'user-not-found':
+        return l10n.userNotFound;
+      case 'network-request-failed':
+        return l10n.networkError;
+      default:
+        return l10n.passwordResetFailed;
+    }
+  }
+
+  Future<void> _showPasswordResetDialog(AppLocalizations l10n) async {
+    final dialogController =
+        TextEditingController(text: emailController.text.trim());
+    final formKey = GlobalKey<FormState>();
+    String? errorMessage;
+    bool isSending = false;
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (dialogContext, setState) {
+            return AlertDialog(
+              title: Text(l10n.resetPasswordTitle),
+              content: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(l10n.resetPasswordMessage),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: dialogController,
+                      keyboardType: TextInputType.emailAddress,
+                      textInputAction: TextInputAction.done,
+                      autofillHints: const [AutofillHints.email],
+                      validator: (value) {
+                        if (value?.isEmpty ?? true) {
+                          return l10n.pleaseEnterEmail;
+                        }
+                        if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                            .hasMatch(value!.trim())) {
+                          return l10n.pleaseEnterValidEmail;
+                        }
+                        return null;
+                      },
+                      decoration: InputDecoration(
+                        hintText: l10n.email,
+                        prefixIcon: const Icon(Icons.email_outlined),
+                      ),
+                    ),
+                    if (errorMessage != null) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        errorMessage!,
+                        style: TextStyle(color: Colors.red.shade600),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isSending
+                      ? null
+                      : () => Navigator.of(dialogContext).pop(),
+                  child: Text(l10n.cancel),
+                ),
+                ElevatedButton(
+                  onPressed: isSending
+                      ? null
+                      : () async {
+                          if (!(formKey.currentState?.validate() ?? false)) {
+                            return;
+                          }
+                          final email = dialogController.text.trim();
+                          setState(() {
+                            isSending = true;
+                            errorMessage = null;
+                          });
+                          try {
+                            await FirebaseAuth.instance
+                                .sendPasswordResetEmail(email: email);
+                            if (!dialogContext.mounted) return;
+                            Navigator.of(dialogContext).pop();
+                            if (!mounted) return;
+                            _showSuccessMessage(
+                              l10n.passwordResetEmailSent(email),
+                            );
+                          } on FirebaseAuthException catch (exception) {
+                            if (!dialogContext.mounted) return;
+                            setState(() {
+                              isSending = false;
+                              errorMessage =
+                                  _getPasswordResetErrorMessage(exception, l10n);
+                            });
+                          } catch (_) {
+                            if (!dialogContext.mounted) return;
+                            setState(() {
+                              isSending = false;
+                              errorMessage = l10n.passwordResetFailed;
+                            });
+                          }
+                        },
+                  child: isSending
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Text(l10n.sendResetLink),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    dialogController.dispose();
   }
 
   @override
@@ -316,6 +462,21 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
               PasswordField(
                 controller: passwordController,
                 onFieldSubmitted: _loginUser,
+              ),
+              SizedBox(height: isSmallScreen ? 8 : 12),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => _showPasswordResetDialog(l10n),
+                  style: TextButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: Text(
+                    l10n.forgotPassword,
+                    style: const TextStyle(color: Color(0xFF667eea)),
+                  ),
+                ),
               ),
               SizedBox(height: isSmallScreen ? 30 : 40),
               LoginButton(

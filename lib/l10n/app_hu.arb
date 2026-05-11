@@ -6,6 +6,19 @@
   "email": "E-mail",
   "password": "Jelszó",
   "loginButton": "Bejelentkezés",
+  "forgotPassword": "Elfelejtett jelszó?",
+  "resetPasswordTitle": "Jelszó visszaállítása",
+  "resetPasswordMessage": "Adja meg az e-mail címét a jelszó-visszaállító linkhez.",
+  "sendResetLink": "Visszaállító link küldése",
+  "passwordResetEmailSent": "Jelszó-visszaállító e-mail elküldve ide: {email}",
+  "@passwordResetEmailSent": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "passwordResetFailed": "Nem sikerült elküldeni a jelszó-visszaállító e-mailt. Kérjük, próbálja újra.",
   "adminManagement": "Admin kezelés",
   "createNewOrganization": "Új szervezet létrehozása",
   
