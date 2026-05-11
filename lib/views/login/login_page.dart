@@ -212,7 +212,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                         if (value?.isEmpty ?? true) {
                           return l10n.pleaseEnterEmail;
                         }
-                        if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                        if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
                             .hasMatch(value!.trim())) {
                           return l10n.pleaseEnterValidEmail;
                         }
@@ -223,10 +223,11 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                         prefixIcon: const Icon(Icons.email_outlined),
                       ),
                     ),
-                    if (errorMessage != null) ...[
+                    final currentError = errorMessage;
+                    if (currentError != null) ...[
                       const SizedBox(height: 12),
                       Text(
-                        errorMessage!,
+                        currentError,
                         style: TextStyle(color: Colors.red.shade600),
                       ),
                     ],
