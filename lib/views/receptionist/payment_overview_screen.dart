@@ -96,8 +96,11 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
 
   Future<void> _loadTeamPaymentFees() async {
     try {
-      final teamsSnapshot =
-          await FirebaseFirestore.instance.collection('teams').get();
+      final teamsSnapshot = await FirebaseFirestore.instance
+          .collection('organizations')
+          .doc(OrganizationContext.currentOrgId)
+          .collection('teams')
+          .get();
 
       final Map<String, double> fees = {};
 

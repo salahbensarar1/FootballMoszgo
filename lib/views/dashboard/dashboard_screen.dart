@@ -91,8 +91,12 @@ class _DashboardScreenState extends State<DashboardScreen>
     final user = _auth.currentUser;
     if (user != null) {
       try {
-        final userDoc =
-            await _firestore.collection('users').doc(user.uid).get();
+        final userDoc = await _firestore
+            .collection('organizations')
+            .doc(OrganizationContext.currentOrgId)
+            .collection('users')
+            .doc(user.uid)
+            .get();
         if (userDoc.exists && mounted) {
           setState(() {
             final data = userDoc.data()!;
@@ -124,9 +128,21 @@ class _DashboardScreenState extends State<DashboardScreen>
     try {
       // Load all stats in parallel for better performance
       final results = await Future.wait([
-        _firestore.collection('players').count().get(),
-        _firestore.collection('teams').count().get(),
         _firestore
+            .collection('organizations')
+            .doc(OrganizationContext.currentOrgId)
+            .collection('players')
+            .count()
+            .get(),
+        _firestore
+            .collection('organizations')
+            .doc(OrganizationContext.currentOrgId)
+            .collection('teams')
+            .count()
+            .get(),
+        _firestore
+            .collection('organizations')
+            .doc(OrganizationContext.currentOrgId)
             .collection('users')
             .where('role', isEqualTo: 'coach')
             .count()

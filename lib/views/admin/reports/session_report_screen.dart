@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import 'package:footballtraining/services/organization_context.dart';
 
 class SessionReportScreen extends StatefulWidget {
   final DocumentSnapshot sessionDoc;
@@ -142,8 +143,12 @@ class _SessionReportScreenState extends State<SessionReportScreen>
     final String? coachId = sessionData['coach_uid'] as String?;
     if (coachId != null && coachId.isNotEmpty) {
       try {
-        final coachDoc =
-            await _firestore.collection('users').doc(coachId).get();
+        final coachDoc = await _firestore
+            .collection('organizations')
+            .doc(OrganizationContext.currentOrgId)
+            .collection('users')
+            .doc(coachId)
+            .get();
         if (mounted) {
           setState(() {
             coachName = coachDoc.exists
