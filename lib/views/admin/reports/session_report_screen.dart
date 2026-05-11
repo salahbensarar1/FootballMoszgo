@@ -7,7 +7,6 @@ import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
-import 'package:footballtraining/services/organization_context.dart';
 
 class SessionReportScreen extends StatefulWidget {
   final DocumentSnapshot sessionDoc;
@@ -141,41 +140,11 @@ class _SessionReportScreenState extends State<SessionReportScreen>
       return;
     }
 
-<<<<<<< HEAD
     final String fallbackName = (sessionData['coach_name'] ?? 'N/A').toString();
     final String? coachIdRaw = sessionData['coach_uid'] as String?;
 
     // If no coach UID stored, fallback immediately
     if (coachIdRaw == null || coachIdRaw.trim().isEmpty) {
-=======
-    final String? coachId = sessionData['coach_uid'] as String?;
-    if (coachId != null && coachId.isNotEmpty) {
-      try {
-        final coachDoc = await _firestore
-            .collection('organizations')
-            .doc(OrganizationContext.currentOrgId)
-            .collection('users')
-            .doc(coachId)
-            .get();
-        if (mounted) {
-          setState(() {
-            coachName = coachDoc.exists
-                ? (coachDoc.data() as Map<String, dynamic>)['name'] ?? 'N/A'
-                : 'Coach Not Found';
-            isLoadingCoach = false;
-          });
-        }
-      } catch (e) {
-        print("Error fetching coach name: $e");
-        if (mounted) {
-          setState(() {
-            coachName = 'Error Loading Coach';
-            isLoadingCoach = false;
-          });
-        }
-      }
-    } else {
->>>>>>> f99ecf0a8caea14d1ff027ad10a641105403505b
       if (mounted) {
         setState(() {
           coachName = fallbackName;
