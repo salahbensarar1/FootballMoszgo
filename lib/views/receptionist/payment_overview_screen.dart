@@ -50,7 +50,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
   void initState() {
     super.initState();
     _setupAnimations();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
     _loadTeamPaymentFees();
   }
 
@@ -96,8 +96,11 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
 
   Future<void> _loadTeamPaymentFees() async {
     try {
-      final teamsSnapshot =
-          await FirebaseFirestore.instance.collection('teams').get();
+      final teamsSnapshot = await FirebaseFirestore.instance
+          .collection('organizations')
+          .doc(OrganizationContext.currentOrgId)
+          .collection('teams')
+          .get();
 
       final Map<String, double> fees = {};
 
@@ -218,16 +221,6 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
                 ],
               ),
             ),
-            PopupMenuItem(
-              value: 'download_center',
-              child: Row(
-                children: [
-                  const Icon(Icons.download_rounded, size: 20),
-                  const SizedBox(width: 8),
-                  Text(l10n.downloadCenter),
-                ],
-              ),
-            ),
           ],
         ),
       ],
@@ -278,7 +271,6 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
           tabs: [
             _buildTab(l10n.overview, Icons.dashboard_rounded, 0, isSmallScreen),
             _buildTab(l10n.players, Icons.people_rounded, 1, isSmallScreen),
-            _buildTab(l10n.reports, Icons.analytics_rounded, 2, isSmallScreen),
           ],
         ),
       ),
@@ -424,7 +416,6 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
       children: [
         _buildOverviewTab(l10n),
         _buildPlayersTab(l10n),
-        _buildReportsTab(l10n),
       ],
     );
   }
@@ -1050,26 +1041,11 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
                     ],
                   ),
                   const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildPlayerActionButton(
-                          l10n.viewDetails,
-                          Icons.visibility_rounded,
-                          const Color(0xFF667eea),
-                          () => _showPlayerDetailsDialog(player),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _buildPlayerActionButton(
-                          l10n.sendReminder,
-                          Icons.email_rounded,
-                          const Color(0xFFF59E0B),
-                          () => _sendReminderToPlayer(l10n, player),
-                        ),
-                      ),
-                    ],
+                  _buildPlayerActionButton(
+                    l10n.viewDetails,
+                    Icons.visibility_rounded,
+                    const Color(0xFF667eea),
+                    () => _showPlayerDetailsDialog(player),
                   ),
                 ],
               ),
@@ -1109,115 +1085,6 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildReportsTab(AppLocalizations l10n) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final padding = screenWidth < 600 ? 12.0 : 16.0;
-
-    return SingleChildScrollView(
-      padding: EdgeInsets.all(padding),
-      child: Column(
-        children: [
-          _buildReportCard(
-            l10n.monthlyReport,
-            l10n.detailedBreakdownByMonth,
-            Icons.calendar_view_month_rounded,
-            const Color(0xFF667eea),
-            () => _generateMonthlyReport(l10n),
-          ),
-          const SizedBox(height: 12),
-          _buildReportCard(
-            l10n.teamReport,
-            l10n.paymentStatusByTeam,
-            Icons.groups_rounded,
-            const Color(0xFF10B981),
-            () => _generateTeamReport(l10n),
-          ),
-          const SizedBox(height: 12),
-          _buildReportCard(
-            l10n.overdueReport,
-            l10n.playersWithOutstandingPayments,
-            Icons.warning_rounded,
-            const Color(0xFFF59E0B),
-            () => _generateOverdueReport(l10n),
-          ),
-          const SizedBox(height: 12),
-          _buildReportCard(
-            l10n.annualSummary,
-            l10n.completeYearOverview,
-            Icons.summarize_rounded,
-            const Color(0xFFEC4899),
-            () => _generateAnnualReport(l10n),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildReportCard(String title, String description, IconData icon,
-      Color color, VoidCallback onTap) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, color: color, size: 24),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.grey.shade800,
-                      ),
-                    ),
-                    Text(
-                      description,
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(
-                Icons.arrow_forward_ios_rounded,
-                color: Colors.grey.shade400,
-                size: 16,
-              ),
-            ],
-          ),
         ),
       ),
     );
@@ -1324,6 +1191,12 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
   // Helper methods and data processing
   Future<PaymentStats> _calculatePaymentStats(
       List<DocumentSnapshot> players) async {
+    // Only include players who require monthly payment
+    final payingPlayers = players.where((p) {
+      final data = p.data() as Map<String, dynamic>;
+      return data['payment_required'] as bool? ?? true;
+    }).toList();
+
     double totalCollected = 0;
     double totalOutstanding = 0;
     int fullyPaidPlayers = 0;
@@ -1332,7 +1205,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
 
     final currentMonth = DateTime.now().month;
 
-    for (final player in players) {
+    for (final player in payingPlayers) {
       final playerId = player.id;
       final playerData = player.data() as Map<String, dynamic>;
       final playerTeam = playerData['team'] ?? '';
@@ -1385,9 +1258,9 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
     final collectionRate =
         totalExpected > 0 ? (totalCollected / totalExpected) * 100 : 0.0;
 
-    // Calculate this month's progress more accurately
+    // Calculate this month's progress accurately (paying players only)
     double totalExpectedThisMonth = 0;
-    for (final player in players) {
+    for (final player in payingPlayers) {
       final playerData = player.data() as Map<String, dynamic>;
       final playerTeam = playerData['team'] ?? '';
       final monthlyFee = _getTeamPaymentFee(playerTeam);
@@ -1402,7 +1275,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
       totalCollected: totalCollected,
       totalOutstanding: totalOutstanding,
       fullyPaidPlayers: fullyPaidPlayers,
-      totalPlayers: players.length,
+      totalPlayers: payingPlayers.length,
       thisMonthCollected: thisMonthCollected,
       monthlyData: monthlyData,
       collectionRate: collectionRate,
@@ -1416,6 +1289,11 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
 
     for (final player in players) {
       final data = player.data() as Map<String, dynamic>;
+
+      // Skip exempt players
+      final paymentRequired = data['payment_required'] as bool? ?? true;
+      if (!paymentRequired) continue;
+
       final playerId = player.id;
       final playerTeam = data['team'] ?? '';
 
@@ -1534,9 +1412,6 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
         break;
       case 'bulk_reminder':
         _showBulkReminderDialog();
-        break;
-      case 'download_center':
-        _showDownloadCenter();
         break;
     }
   }
@@ -1663,164 +1538,9 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
       builder: (context) => PlayerDetailsDialog(
         player: player,
         selectedYear: selectedYear,
+        teamFee: teamPaymentFees[player.team] ?? 0.0,
       ),
     );
   }
 
-  void _showDownloadCenter() {
-    final l10n = AppLocalizations.of(context)!;
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: const Color(0xFF10B981).withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child:
-                  const Icon(Icons.download_rounded, color: Color(0xFF10B981)),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              l10n.downloadCenter,
-              style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.blue.shade50,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.blue.shade200),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.info_rounded,
-                      color: Colors.blue.shade600, size: 20),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      l10n.exportedReportsAvailable,
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        color: Colors.blue.shade800,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              l10n.recentDownloads,
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade50,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.folder_open_rounded, color: Colors.grey.shade500),
-                  const SizedBox(width: 12),
-                  Text(
-                    l10n.noRecentDownloads,
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      color: Colors.grey.shade600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              l10n.close,
-              style: GoogleFonts.poppins(color: Colors.grey.shade600),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Placeholder methods for functionality
-  void _sendReminderToPlayer(
-      AppLocalizations l10n, PlayerPaymentStatus player) {
-    final teamFee = _getTeamPaymentFee(player.team);
-    final amount =
-        _formatHUF((player.totalMonths - player.paidMonths) * teamFee);
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.check_circle_rounded, color: Colors.white),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                l10n.paymentReminderSent(player.name, amount),
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: const Color(0xFF10B981),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: const EdgeInsets.all(16),
-      ),
-    );
-  }
-
-  void _generateMonthlyReport(AppLocalizations l10n) {
-    _showSuccessSnackBar(l10n.monthlyReportGenerated);
-  }
-
-  void _generateTeamReport(AppLocalizations l10n) {
-    _showSuccessSnackBar(l10n.teamReportGenerated);
-  }
-
-  void _generateOverdueReport(AppLocalizations l10n) {
-    _showSuccessSnackBar(l10n.overdueReportGenerated);
-  }
-
-  void _generateAnnualReport(AppLocalizations l10n) {
-    _showSuccessSnackBar(l10n.annualReportGenerated);
-  }
-
-  void _showSuccessSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.check_circle_rounded, color: Colors.white),
-            const SizedBox(width: 8),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        backgroundColor: const Color(0xFF10B981),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: const EdgeInsets.all(16),
-      ),
-    );
-  }
 }

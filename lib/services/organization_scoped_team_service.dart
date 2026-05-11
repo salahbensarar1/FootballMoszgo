@@ -249,7 +249,8 @@ class OrganizationScopedTeamService {
     ScopedFirestoreService.validateContext();
 
     try {
-      LoggingService.info('🔄 Starting bidirectional coach assignment: $coachUserId -> $teamId with role: $role');
+      LoggingService.info(
+          '🔄 Starting bidirectional coach assignment: $coachUserId -> $teamId with role: $role');
 
       // STEP 1: Get team data and validate
       final teamDoc = await ScopedFirestoreService.teams.doc(teamId).get();
@@ -258,7 +259,8 @@ class OrganizationScopedTeamService {
       }
 
       final teamData = teamDoc.data() as Map<String, dynamic>;
-      final teamName = teamData['team_name'] ?? teamData['name'] ?? 'Unknown Team';
+      final teamName =
+          teamData['team_name'] ?? teamData['name'] ?? 'Unknown Team';
 
       // STEP 2: Update team's coaches array
       final coaches = List<dynamic>.from(teamData['coaches'] ?? []);
@@ -319,7 +321,8 @@ class OrganizationScopedTeamService {
 
       // STEP 4: BIDIRECTIONAL SYNC - Update user's teams array
       try {
-        final userDoc = await ScopedFirestoreService.users.doc(coachUserId).get();
+        final userDoc =
+            await ScopedFirestoreService.users.doc(coachUserId).get();
         if (userDoc.exists) {
           final userData = userDoc.data() as Map<String, dynamic>;
           final userTeams = List<dynamic>.from(userData['teams'] ?? []);
@@ -364,14 +367,17 @@ class OrganizationScopedTeamService {
             'updated_at': FieldValue.serverTimestamp(),
           });
 
-          LoggingService.info('✅ Updated user teams array for coach: $coachUserId');
+          LoggingService.info(
+              '✅ Updated user teams array for coach: $coachUserId');
         }
       } catch (e) {
-        LoggingService.error('⚠️ Failed to update user teams array (non-critical)', e);
+        LoggingService.error(
+            '⚠️ Failed to update user teams array (non-critical)', e);
         // Don't throw - team assignment succeeded, user sync is secondary
       }
 
-      LoggingService.info('✅ Bidirectional coach assignment completed: $coachUserId -> $teamId');
+      LoggingService.info(
+          '✅ Bidirectional coach assignment completed: $coachUserId -> $teamId');
     } catch (e, stackTrace) {
       LoggingService.error('❌ Failed to assign coach to team', e, stackTrace);
       rethrow;
@@ -383,7 +389,8 @@ class OrganizationScopedTeamService {
     ScopedFirestoreService.validateContext();
 
     try {
-      LoggingService.info('🔄 Starting bidirectional coach removal: $coachUserId from $teamId');
+      LoggingService.info(
+          '🔄 Starting bidirectional coach removal: $coachUserId from $teamId');
 
       // STEP 1: Get team data and validate
       final teamDoc = await ScopedFirestoreService.teams.doc(teamId).get();
@@ -396,15 +403,18 @@ class OrganizationScopedTeamService {
       // STEP 2: Remove from team's coaches array with detailed logging
       final coaches = List<Map<String, dynamic>>.from(data['coaches'] ?? []);
       final initialCoachCount = coaches.length;
-      
-      LoggingService.info('📋 Team has ${coaches.length} coaches before removal');
+
+      LoggingService.info(
+          '📋 Team has ${coaches.length} coaches before removal');
       for (var coach in coaches) {
-        LoggingService.info('  - Coach: ${coach['userId']} (role: ${coach['role']})');
+        LoggingService.info(
+            '  - Coach: ${coach['userId']} (role: ${coach['role']})');
       }
 
       // Use more flexible removal logic to handle different field name variations
       coaches.removeWhere((coach) {
-        final coachId = coach['userId'] ?? coach['user_id'] ?? coach['coach_id'] ?? '';
+        final coachId =
+            coach['userId'] ?? coach['user_id'] ?? coach['coach_id'] ?? '';
         final matches = coachId == coachUserId;
         if (matches) {
           LoggingService.info('🎯 Found coach to remove: $coachId');
@@ -413,10 +423,12 @@ class OrganizationScopedTeamService {
       });
 
       final finalCoachCount = coaches.length;
-      LoggingService.info('📋 Team has ${coaches.length} coaches after removal (removed ${initialCoachCount - finalCoachCount})');
+      LoggingService.info(
+          '📋 Team has ${coaches.length} coaches after removal (removed ${initialCoachCount - finalCoachCount})');
 
       if (initialCoachCount == finalCoachCount) {
-        LoggingService.warning('⚠️ Coach $coachUserId was not found in team $teamId coaches array');
+        LoggingService.warning(
+            '⚠️ Coach $coachUserId was not found in team $teamId coaches array');
         // Don't throw exception - maybe coach was already removed or data is inconsistent
       }
 
@@ -424,7 +436,8 @@ class OrganizationScopedTeamService {
       final coachIds = List<String>.from(data['coach_ids'] ?? []);
       final initialIdCount = coachIds.length;
       coachIds.remove(coachUserId);
-      LoggingService.info('📋 Removed from coach_ids: ${initialIdCount} -> ${coachIds.length}');
+      LoggingService.info(
+          '📋 Removed from coach_ids: ${initialIdCount} -> ${coachIds.length}');
 
       // STEP 4: Update team document
       await updateTeam(teamId, {
@@ -435,13 +448,15 @@ class OrganizationScopedTeamService {
 
       // STEP 5: BIDIRECTIONAL SYNC - Remove team from user's teams array
       try {
-        final userDoc = await ScopedFirestoreService.users.doc(coachUserId).get();
+        final userDoc =
+            await ScopedFirestoreService.users.doc(coachUserId).get();
         if (userDoc.exists) {
           final userData = userDoc.data() as Map<String, dynamic>;
           final userTeams = List<dynamic>.from(userData['teams'] ?? []);
           final initialTeamCount = userTeams.length;
 
-          LoggingService.info('👤 User has ${userTeams.length} teams before removal');
+          LoggingService.info(
+              '👤 User has ${userTeams.length} teams before removal');
 
           // Remove team from user's teams array
           userTeams.removeWhere((team) {
@@ -449,7 +464,8 @@ class OrganizationScopedTeamService {
               final existingTeamId = team['team_id'] ?? '';
               final matches = existingTeamId == teamId;
               if (matches) {
-                LoggingService.info('🎯 Found team to remove from user: $existingTeamId');
+                LoggingService.info(
+                    '🎯 Found team to remove from user: $existingTeamId');
               }
               return matches;
             }
@@ -457,7 +473,8 @@ class OrganizationScopedTeamService {
           });
 
           final finalTeamCount = userTeams.length;
-          LoggingService.info('👤 User has ${userTeams.length} teams after removal (removed ${initialTeamCount - finalTeamCount})');
+          LoggingService.info(
+              '👤 User has ${userTeams.length} teams after removal (removed ${initialTeamCount - finalTeamCount})');
 
           // Update user document
           await ScopedFirestoreService.users.doc(coachUserId).update({
@@ -465,16 +482,19 @@ class OrganizationScopedTeamService {
             'updated_at': FieldValue.serverTimestamp(),
           });
 
-          LoggingService.info('✅ Updated user teams array for coach: $coachUserId');
+          LoggingService.info(
+              '✅ Updated user teams array for coach: $coachUserId');
         } else {
           LoggingService.warning('⚠️ User document not found: $coachUserId');
         }
       } catch (e) {
-        LoggingService.error('⚠️ Failed to update user teams array (non-critical)', e);
+        LoggingService.error(
+            '⚠️ Failed to update user teams array (non-critical)', e);
         // Don't throw - team removal succeeded, user sync is secondary
       }
 
-      LoggingService.info('✅ Bidirectional coach removal completed: $coachUserId from $teamId');
+      LoggingService.info(
+          '✅ Bidirectional coach removal completed: $coachUserId from $teamId');
     } catch (e, stackTrace) {
       LoggingService.error('❌ Failed to remove coach from team', e, stackTrace);
       rethrow;
@@ -486,22 +506,25 @@ class OrganizationScopedTeamService {
   Future<List<user_model.User>> getAvailableCoaches() async {
     try {
       LoggingService.info('🚀 STARTING getAvailableCoaches method');
-      
+
       // Defensive validation - check org context first
       if (!OrganizationContext.isInitialized) {
-        LoggingService.error('❌ Organization context not initialized for getAvailableCoaches');
-        throw Exception('Organization context not initialized. Please ensure organization is selected.');
+        LoggingService.error(
+            '❌ Organization context not initialized for getAvailableCoaches');
+        throw Exception(
+            'Organization context not initialized. Please ensure organization is selected.');
       }
 
       LoggingService.info('✅ Organization context is initialized');
-      
+
       ScopedFirestoreService.validateContext();
       LoggingService.info('✅ Scoped Firestore context validated');
-      LoggingService.info('🔍 Getting available coaches for org: ${OrganizationContext.currentOrgId}');
-      
+      LoggingService.info(
+          '🔍 Getting available coaches for org: ${OrganizationContext.currentOrgId}');
+
       // 🔥 ENHANCED: Try different query strategies to find coaches
       List<QueryDocumentSnapshot> allDocs = [];
-      
+
       // Strategy 1: Try lowercase 'coach'
       LoggingService.info('🔧 Strategy 1: Querying users with role="coach"');
       try {
@@ -509,17 +532,19 @@ class OrganizationScopedTeamService {
             .where('role', isEqualTo: 'coach')
             .get();
         allDocs.addAll(snapshot1.docs);
-        LoggingService.info('📋 Found ${snapshot1.docs.length} users with role="coach"');
-        
+        LoggingService.info(
+            '📋 Found ${snapshot1.docs.length} users with role="coach"');
+
         // Log details of found users
         for (var doc in snapshot1.docs) {
           final data = doc.data() as Map<String, dynamic>;
-          LoggingService.info('  - User ${doc.id}: ${data['name']} (${data['email']})');
+          LoggingService.info(
+              '  - User ${doc.id}: ${data['name']} (${data['email']})');
         }
       } catch (e) {
         LoggingService.warning('⚠️ Query with role="coach" failed: $e');
       }
-      
+
       // Strategy 2: Try capitalized 'Coach'
       LoggingService.info('🔧 Strategy 2: Querying users with role="Coach"');
       try {
@@ -527,54 +552,64 @@ class OrganizationScopedTeamService {
             .where('role', isEqualTo: 'Coach')
             .get();
         allDocs.addAll(snapshot2.docs);
-        LoggingService.info('📋 Found ${snapshot2.docs.length} users with role="Coach"');
-        
+        LoggingService.info(
+            '📋 Found ${snapshot2.docs.length} users with role="Coach"');
+
         // Log details of found users
         for (var doc in snapshot2.docs) {
           final data = doc.data() as Map<String, dynamic>;
-          LoggingService.info('  - User ${doc.id}: ${data['name']} (${data['email']})');
+          LoggingService.info(
+              '  - User ${doc.id}: ${data['name']} (${data['email']})');
         }
       } catch (e) {
         LoggingService.warning('⚠️ Query with role="Coach" failed: $e');
       }
-      
+
       // Strategy 3: If still no results, get ALL users and filter locally
       if (allDocs.isEmpty) {
-        LoggingService.warning('⚠️ No coaches found with role queries, trying to get all users');
+        LoggingService.warning(
+            '⚠️ No coaches found with role queries, trying to get all users');
         try {
           final snapshotAll = await ScopedFirestoreService.users.get();
           allDocs.addAll(snapshotAll.docs);
-          LoggingService.info('📋 Found ${snapshotAll.docs.length} total users to filter');
+          LoggingService.info(
+              '📋 Found ${snapshotAll.docs.length} total users to filter');
         } catch (e) {
           LoggingService.error('❌ Failed to get any users', e);
           return [];
         }
       }
-      
+
       final coaches = <user_model.User>[];
       final roleVariations = ['coach', 'Coach', 'COACH'];
-      
+
       for (final doc in allDocs) {
         try {
           final data = doc.data() as Map<String, dynamic>;
           final userRole = data['role']?.toString() ?? '';
-          
+
           // Check if user is a coach (flexible role matching)
           final isCoach = roleVariations.contains(userRole);
-          
+
           // Check if user is active (flexible field checking)
-          final isActive = data['is_active'] ?? data['isActive'] ?? data['active'] ?? true;
-          
-          LoggingService.info('👤 User ${doc.id}: role="$userRole", isCoach=$isCoach, isActive=$isActive');
-          
+          final isActive =
+              data['is_active'] ?? data['isActive'] ?? data['active'] ?? true;
+
+          LoggingService.info(
+              '👤 User ${doc.id}: role="$userRole", isCoach=$isCoach, isActive=$isActive');
+
           if (isCoach && isActive) {
             final user = user_model.User.fromFirestore(doc);
             // Less strict validation - just check basic required fields
-            if (user.id.isNotEmpty && user.name.isNotEmpty && user.email.isNotEmpty) {
+            if (user.id.isNotEmpty &&
+                user.name.isNotEmpty &&
+                user.email.isNotEmpty) {
               coaches.add(user);
-              LoggingService.info('✅ Added coach: ${user.name} (${user.email})');
+              LoggingService.info(
+                  '✅ Added coach: ${user.name} (${user.email})');
             } else {
-              LoggingService.warning('⚠️ Skipping coach with missing basic data: ${doc.id}');
+              LoggingService.warning(
+                  '⚠️ Skipping coach with missing basic data: ${doc.id}');
             }
           }
         } catch (e) {
@@ -582,22 +617,27 @@ class OrganizationScopedTeamService {
           // Continue processing other documents
         }
       }
-      
-      LoggingService.info('✅ Successfully found ${coaches.length} valid coaches');
-      
+
+      LoggingService.info(
+          '✅ Successfully found ${coaches.length} valid coaches');
+
       // If still no coaches found, provide detailed debug info
       if (coaches.isEmpty) {
         LoggingService.warning('⚠️ No coaches found! Debug info:');
-        LoggingService.warning('   - Total documents checked: ${allDocs.length}');
-        LoggingService.warning('   - Organization ID: ${OrganizationContext.currentOrgId}');
-        for (final doc in allDocs.take(5)) {  // Show first 5 for debugging
+        LoggingService.warning(
+            '   - Total documents checked: ${allDocs.length}');
+        LoggingService.warning(
+            '   - Organization ID: ${OrganizationContext.currentOrgId}');
+        for (final doc in allDocs.take(5)) {
+          // Show first 5 for debugging
           final data = doc.data() as Map<String, dynamic>;
           final role = data['role']?.toString() ?? 'unknown';
           final active = data['is_active'] ?? data['isActive'] ?? true;
-          LoggingService.warning('   - User ${doc.id}: role="$role", active=$active');
+          LoggingService.warning(
+              '   - User ${doc.id}: role="$role", active=$active');
         }
       }
-      
+
       return coaches;
     } catch (e, stackTrace) {
       LoggingService.error('❌ Error getting available coaches', e, stackTrace);
@@ -629,7 +669,8 @@ class OrganizationScopedTeamService {
       // Process coaches array (new structure)
       if (data['coaches'] != null && data['coaches'] is List) {
         final coaches = List<dynamic>.from(data['coaches']);
-        LoggingService.info('📋 Processing ${coaches.length} coaches from team data');
+        LoggingService.info(
+            '📋 Processing ${coaches.length} coaches from team data');
 
         for (var coach in coaches) {
           if (coach is Map<String, dynamic>) {
@@ -646,16 +687,16 @@ class OrganizationScopedTeamService {
                   await ScopedFirestoreService.users.doc(coachId).get();
               if (userDoc.exists) {
                 final userData = userDoc.data() as Map<String, dynamic>;
-                
+
                 // Create User object for proper type handling
                 final user = user_model.User.fromFirestore(userDoc);
-                
+
                 // Create TeamCoach object for proper type handling
                 final teamCoach = TeamCoach.fromJson(coach);
 
                 // Return structure that matches dialog expectations
                 coachDetails.add({
-                  'user': user,           // ✅ PROPER User object
+                  'user': user, // ✅ PROPER User object
                   'teamCoach': teamCoach, // ✅ PROPER TeamCoach object
                   // Also include raw data for backwards compatibility
                   'userId': coachId,
@@ -666,12 +707,15 @@ class OrganizationScopedTeamService {
                   'isActive': coach['isActive'] ?? true,
                 });
 
-                LoggingService.info('✅ Added coach details: ${user.name} (${user.id})');
+                LoggingService.info(
+                    '✅ Added coach details: ${user.name} (${user.id})');
               } else {
-                LoggingService.warning('⚠️ User document not found for coach: $coachId');
+                LoggingService.warning(
+                    '⚠️ User document not found for coach: $coachId');
               }
             } catch (e) {
-              LoggingService.error('❌ Error getting coach user details: $coachId', e);
+              LoggingService.error(
+                  '❌ Error getting coach user details: $coachId', e);
               // Continue processing other coaches
             }
           } else {
@@ -696,7 +740,8 @@ class OrganizationScopedTeamService {
         });
       }
 
-      LoggingService.info('✅ Successfully got details for ${coachDetails.length} coaches');
+      LoggingService.info(
+          '✅ Successfully got details for ${coachDetails.length} coaches');
       return coachDetails;
     } catch (e, stackTrace) {
       LoggingService.error('❌ Failed to get team coach details', e, stackTrace);

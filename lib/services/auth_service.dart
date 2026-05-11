@@ -6,7 +6,8 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 class AuthService {
   static Future<AuthResult> loginUser(String email, String password) async {
     try {
-      final userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+      final userCredential =
+          await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email.trim(),
         password: password.trim(),
       );
@@ -21,7 +22,7 @@ class AuthService {
       // First, try to find organizations and then check for user
       final organizations = await FirebaseFirestore.instance
           .collection('organizations')
-          .limit(10)  // Reasonable limit for organization check
+          .limit(10) // Reasonable limit for organization check
           .get();
 
       for (final org in organizations.docs) {
@@ -76,6 +77,7 @@ class AuthResult {
 
   AuthResult._(this.isSuccess, this.userRole, this.error);
 
-  factory AuthResult.success(String userRole) => AuthResult._(true, userRole, null);
+  factory AuthResult.success(String userRole) =>
+      AuthResult._(true, userRole, null);
   factory AuthResult.error(String error) => AuthResult._(false, null, error);
 }

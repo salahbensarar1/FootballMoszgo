@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:footballtraining/services/organization_context.dart';
 import '../models/payment_model.dart';
 // Batch processing constants
 const int kStreamListenerLimit = 1000;
@@ -127,7 +128,12 @@ class PaymentRepository {
       'createdAt': FieldValue.serverTimestamp(),
     });
 
-    await _firestore.collection('players').doc(playerId).update({
+    await _firestore
+        .collection('organizations')
+        .doc(OrganizationContext.currentOrgId)
+        .collection('players')
+        .doc(playerId)
+        .update({
       'lastPaymentDate': Timestamp.fromDate(date),
       'amountPaid': FieldValue.increment(amount),
     });

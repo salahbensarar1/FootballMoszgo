@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:footballtraining/services/organization_context.dart';
 import 'package:footballtraining/views/admin/reports/player_report_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -135,36 +136,57 @@ class _SessionReportScreenState extends State<SessionReportScreen>
 
   Future<void> _fetchCoachName() async {
     if (sessionData.isEmpty) {
-      setState(() => isLoadingCoach = false);
+      if (mounted) setState(() => isLoadingCoach = false);
       return;
     }
 
-    final String? coachId = sessionData['coach_uid'] as String?;
-    if (coachId != null && coachId.isNotEmpty) {
-      try {
-        final coachDoc =
-            await _firestore.collection('users').doc(coachId).get();
-        if (mounted) {
-          setState(() {
-            coachName = coachDoc.exists
-                ? (coachDoc.data() as Map<String, dynamic>)['name'] ?? 'N/A'
-                : 'Coach Not Found';
-            isLoadingCoach = false;
-          });
-        }
-      } catch (e) {
-        print("Error fetching coach name: $e");
-        if (mounted) {
-          setState(() {
-            coachName = 'Error Loading Coach';
-            isLoadingCoach = false;
-          });
-        }
-      }
-    } else {
+    final String fallbackName = (sessionData['coach_name'] ?? 'N/A').toString();
+    final String? coachIdRaw = sessionData['coach_uid'] as String?;
+
+    // If no coach UID stored, fallback immediately
+    if (coachIdRaw == null || coachIdRaw.trim().isEmpty) {
       if (mounted) {
         setState(() {
-          coachName = sessionData['coach_name'] ?? 'N/A';
+          coachName = fallbackName;
+          isLoadingCoach = false;
+        });
+      }
+      return;
+    }
+
+    final coachId = coachIdRaw.trim();
+
+    try {
+      final coachDoc = await _firestore
+          .collection('organizations')
+          .doc(OrganizationContext.currentOrgId)
+          .collection('users')
+          .doc(coachId)
+          .get();
+
+      String resolvedName = fallbackName;
+
+      if (coachDoc.exists) {
+        final data = coachDoc.data();
+        final nameFromUserDoc = data?['name'];
+
+        if (nameFromUserDoc != null &&
+            nameFromUserDoc.toString().trim().isNotEmpty) {
+          resolvedName = nameFromUserDoc.toString().trim();
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          coachName = resolvedName;
+          isLoadingCoach = false;
+        });
+      }
+    } catch (e) {
+      // Any error → fallback to session-stored coach_name
+      if (mounted) {
+        setState(() {
+          coachName = fallbackName;
           isLoadingCoach = false;
         });
       }

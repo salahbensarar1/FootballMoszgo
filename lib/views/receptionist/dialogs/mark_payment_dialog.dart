@@ -314,7 +314,12 @@ class _MarkPaymentDialogState extends State<MarkPaymentDialog>
                       vertical: isSmallScreen ? 6 : 8,
                     ),
                   ),
-                  items: snapshot.data!.docs.map((doc) {
+                  items: snapshot.data!.docs
+                      .where((doc) =>
+                          (doc.data() as Map<String, dynamic>)['payment_required']
+                              as bool? ??
+                          true)
+                      .map((doc) {
                     final data = doc.data() as Map<String, dynamic>;
                     final playerName = data['name'] ??
                         AppLocalizations.of(context)!.unnamedPlayer;
@@ -1026,7 +1031,7 @@ class _MarkPaymentDialogState extends State<MarkPaymentDialog>
                   ),
                 ),
                 Text(
-                  '\$${paymentAmount.toStringAsFixed(2)}',
+                  '${NumberFormat('#,##0', 'hu_HU').format(paymentAmount)} Ft',
                   style: GoogleFonts.poppins(
                     fontSize: isSmallScreen ? 11 : 12,
                     fontWeight: FontWeight.w600,

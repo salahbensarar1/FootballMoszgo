@@ -23,6 +23,7 @@ class PlayerCard extends StatelessWidget {
     final String title = data['name'] ?? 'Unnamed Player';
     final String subtitle = "${l10n.position}: ${data['position'] ?? 'Unknown'}";
     final String pictureUrl = data['picture']?.toString() ?? '';
+    final bool paymentRequired = data['payment_required'] as bool? ?? true;
 
     return Card(
       elevation: 0,
@@ -126,33 +127,53 @@ class PlayerCard extends StatelessWidget {
               ],
             ),
           ),
-          // Payment Status Section
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Divider(height: 1),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Icon(Icons.payment_rounded, size: 18, color: Colors.grey.shade600),
-                    const SizedBox(width: 8),
-                    Text(
-                      l10n.paymentStatus,
-                      style: GoogleFonts.poppins(
-                        fontWeight: FontWeight.w500,
-                        fontSize: 14,
-                        color: Colors.grey.shade700,
+          // Payment Status Section — only for players who must pay monthly
+          if (paymentRequired)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Divider(height: 1),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Icon(Icons.payment_rounded, size: 18, color: Colors.grey.shade600),
+                      const SizedBox(width: 8),
+                      Text(
+                        l10n.paymentStatus,
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w500,
+                          fontSize: 14,
+                          color: Colors.grey.shade700,
+                        ),
                       ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  PaymentMonthIndicator(playerId: item.id),
+                ],
+              ),
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: Row(
+                children: [
+                  const Divider(height: 1),
+                  Icon(Icons.money_off_rounded, size: 16, color: Colors.grey.shade400),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Exempt from monthly payment',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: Colors.grey.shade400,
+                      fontStyle: FontStyle.italic,
                     ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                PaymentMonthIndicator(playerId: item.id),
-              ],
+                  ),
+                ],
+              ),
             ),
-          ),
         ],
       ),
     );

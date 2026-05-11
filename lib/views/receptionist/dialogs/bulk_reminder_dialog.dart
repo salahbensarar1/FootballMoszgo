@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 
 // Import your payment models
 import '../../../data/models/payment_model.dart';
@@ -24,7 +25,6 @@ class BulkReminderDialog extends StatefulWidget {
 }
 
 class _BulkReminderDialogState extends State<BulkReminderDialog> {
-  bool isProcessing = false;
   List<PaymentReminder> reminderQueue = [];
   bool includePartiallyPaid = true;
   bool includeUnpaid = true;
@@ -99,36 +99,28 @@ class _BulkReminderDialogState extends State<BulkReminderDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: isProcessing ? null : () => Navigator.pop(context),
+          onPressed: () => Navigator.pop(context),
           child: Text(
             'Cancel',
             style: GoogleFonts.poppins(color: Colors.grey.shade600),
           ),
         ),
-        ElevatedButton(
-          onPressed: _canSendReminders() ? _processBulkReminders : null,
+        ElevatedButton.icon(
+          onPressed: null,
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFF59E0B),
-            disabledBackgroundColor: Colors.grey.shade300,
+            disabledBackgroundColor: Colors.grey.shade200,
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
-          child: isProcessing
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                )
-              : Text(
-                  'Send ${reminderQueue.length} Reminders',
-                  style: GoogleFonts.poppins(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+          icon: Icon(Icons.schedule_rounded,
+              size: 16, color: Colors.grey.shade500),
+          label: Text(
+            'Coming Soon',
+            style: GoogleFonts.poppins(
+              color: Colors.grey.shade500,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ),
       ],
     );
@@ -215,6 +207,8 @@ class _BulkReminderDialogState extends State<BulkReminderDialog> {
     // MEMORY-SAFE: Added limit to prevent crashes with thousands of teams
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
+          .collection('organizations')
+          .doc(OrganizationContext.currentOrgId)
           .collection('teams')
           .limit(kDropdownMaxItems)
           .orderBy('team_name')
@@ -325,7 +319,7 @@ class _BulkReminderDialogState extends State<BulkReminderDialog> {
           if (teamsWithoutFees > 0)
             _buildSummaryRow('Teams without Fees:', '$teamsWithoutFees'),
           _buildSummaryRow(
-              'Outstanding Amount:', '\$${totalAmount.toStringAsFixed(2)}'),
+              'Outstanding Amount:', '${NumberFormat('#,##0', 'hu_HU').format(totalAmount)} Ft'),
         ],
       ),
     );
@@ -406,12 +400,6 @@ class _BulkReminderDialogState extends State<BulkReminderDialog> {
     );
   }
 
-  bool _canSendReminders() {
-    return reminderQueue.isNotEmpty &&
-        reminderQueue.any((r) => r.hasValidEmail) &&
-        !isProcessing;
-  }
-
   Future<void> _loadReminderQueue() async {
     try {
       final playersSnapshot = await FirebaseFirestore.instance
@@ -488,68 +476,4 @@ class _BulkReminderDialogState extends State<BulkReminderDialog> {
     }
   }
 
-  Future<void> _processBulkReminders() async {
-    if (!_canSendReminders()) return;
-
-    setState(() => isProcessing = true);
-
-    try {
-      int remindersSent = 0;
-
-      for (var reminder in reminderQueue) {
-        if (reminder.hasValidEmail) {
-          // In a real app, you would send an actual email here
-          // For now, we'll just simulate the process
-          await Future.delayed(const Duration(milliseconds: 100));
-          remindersSent++;
-        }
-      }
-
-      Navigator.pop(context);
-      _showSuccessSnackBar(
-          '$remindersSent payment reminders sent successfully!');
-    } catch (e) {
-      _showErrorSnackBar('Error sending reminders: $e');
-    } finally {
-      if (mounted) {
-        setState(() => isProcessing = false);
-      }
-    }
-  }
-
-  void _showSuccessSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.check_circle_rounded, color: Colors.white),
-            const SizedBox(width: 8),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        backgroundColor: const Color(0xFF10B981),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: const EdgeInsets.all(16),
-      ),
-    );
-  }
-
-  void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.error_outline_rounded, color: Colors.white),
-            const SizedBox(width: 8),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        backgroundColor: const Color(0xFFEF4444),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: const EdgeInsets.all(16),
-      ),
-    );
-  }
 }

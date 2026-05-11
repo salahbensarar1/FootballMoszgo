@@ -1,7 +1,7 @@
 // lib/views/shared/widgets/payment_month_indicator.dart
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:footballtraining/services/organization_context.dart';
 import 'package:footballtraining/utils/date_formatter.dart';
 import 'package:footballtraining/data/models/payment_model.dart';
 
@@ -36,7 +36,6 @@ class _PaymentMonthIndicatorState extends State<PaymentMonthIndicator>
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
   late Animation<double> _rotationAnimation;
-
   @override
   void initState() {
     super.initState();
@@ -54,7 +53,6 @@ class _PaymentMonthIndicatorState extends State<PaymentMonthIndicator>
       duration: const Duration(milliseconds: 200),
       vsync: this,
     );
-
     _scaleAnimation = Tween<double>(
       begin: 1.0,
       end: 1.15,
@@ -62,7 +60,6 @@ class _PaymentMonthIndicatorState extends State<PaymentMonthIndicator>
       parent: _animationController,
       curve: Curves.easeInOut,
     ));
-
     _rotationAnimation = Tween<double>(
       begin: 0.0,
       end: 0.1,
@@ -77,9 +74,10 @@ class _PaymentMonthIndicatorState extends State<PaymentMonthIndicator>
     final now = DateTime.now();
     final currentYear = (widget.selectedYear ?? now.year).toString();
     final months = DateFormatter.getMonthNames(); // Fixed: Remove parameter
-
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
+          .collection("organizations")
+          .doc(OrganizationContext.currentOrgId)
           .collection('players')
           .doc(widget.playerId)
           .collection('payments')
@@ -89,9 +87,7 @@ class _PaymentMonthIndicatorState extends State<PaymentMonthIndicator>
         if (!snapshot.hasData) {
           return _buildLoadingIndicator();
         }
-
         final paymentData = _processPaymentData(snapshot.data!.docs);
-
         return _buildPaymentIndicators(months, paymentData, currentYear);
       },
     );
@@ -116,17 +112,17 @@ class _PaymentMonthIndicatorState extends State<PaymentMonthIndicator>
 
     for (final doc in docs) {
       final data = doc.data() as Map<String, dynamic>;
-      final monthKey = data['month'] as String;
+      final monthKey = data['month'] as String? ?? doc.id.split('-').last;
 
       paymentData[monthKey] = {
         'isPaid': data['isPaid'] ?? false,
-        'isActive': data['isActive'] ??
-            true, // Default to true for backward compatibility
+        'isActive': data['isActive'] ?? true,
         'updatedAt': data['updatedAt'],
         'updatedBy': data['updatedBy'],
       };
     }
 
+    // print('🔍 [PlayerCard-PaymentIndicator] Final payment data keys: ${paymentData.keys}');
     return paymentData;
   }
 
@@ -542,6 +538,8 @@ class _PaymentMonthIndicatorState extends State<PaymentMonthIndicator>
       String monthKey, PaymentStatus newStatus, String currentYear) async {
     try {
       final docRef = FirebaseFirestore.instance
+          .collection("organizations")
+          .doc(OrganizationContext.currentOrgId)
           .collection('players')
           .doc(widget.playerId)
           .collection('payments')
@@ -559,7 +557,6 @@ class _PaymentMonthIndicatorState extends State<PaymentMonthIndicator>
             'updatedBy': widget.currentUserEmail ?? 'Unknown',
           }, SetOptions(merge: true));
           break;
-
         case PaymentStatus.unpaid:
           await docRef.set({
             'playerId': widget.playerId,
@@ -571,7 +568,6 @@ class _PaymentMonthIndicatorState extends State<PaymentMonthIndicator>
             'updatedBy': widget.currentUserEmail ?? 'Unknown',
           }, SetOptions(merge: true));
           break;
-
         case PaymentStatus.notActive:
           await docRef.set({
             'playerId': widget.playerId,
@@ -583,7 +579,6 @@ class _PaymentMonthIndicatorState extends State<PaymentMonthIndicator>
             'updatedBy': widget.currentUserEmail ?? 'Unknown',
           }, SetOptions(merge: true));
           break;
-
         case PaymentStatus.partial:
           await docRef.set({
             'playerId': widget.playerId,
@@ -596,12 +591,10 @@ class _PaymentMonthIndicatorState extends State<PaymentMonthIndicator>
           }, SetOptions(merge: true));
           break;
       }
-
       // Call the callback if provided
       if (widget.onStatusChanged != null) {
         widget.onStatusChanged!(newStatus, monthKey);
       }
-
       // Show success feedback
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -650,10 +643,8 @@ class _PaymentMonthIndicatorState extends State<PaymentMonthIndicator>
           ),
         );
       }
-
       print('Error updating payment status: $e');
     }
   }
-
   // Legacy method for backward compatibility
 }

@@ -16,6 +16,7 @@ class PlayersSection extends StatefulWidget {
           List<QueryDocumentSnapshot>, Map<String, bool>, Map<String, String>)
       onSaveSession;
   final String? currentSessionId;
+  final void Function(List<QueryDocumentSnapshot>)? onPlayersChanged;
 
   const PlayersSection({
     super.key,
@@ -26,6 +27,7 @@ class PlayersSection extends StatefulWidget {
     required this.isSmallScreen,
     required this.onSaveSession,
     this.currentSessionId,
+    this.onPlayersChanged,
   });
 
   @override
@@ -99,6 +101,7 @@ class _PlayersSectionState extends State<PlayersSection>
           }
           _isLoading = false;
         });
+        widget.onPlayersChanged?.call(_cachedPlayers!);
       }
     });
   }

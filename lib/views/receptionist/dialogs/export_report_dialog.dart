@@ -15,7 +15,6 @@ class _ExportReportDialogState extends State<ExportReportDialog> {
   bool includeCharts = true;
   bool includePlayerDetails = true;
   bool includeTeamSummary = true;
-  bool isProcessing = false;
 
   final Map<String, String> reportTypes = {
     'overview': 'Payment Overview',
@@ -117,43 +116,28 @@ class _ExportReportDialogState extends State<ExportReportDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: isProcessing ? null : () => Navigator.pop(context),
+          onPressed: () => Navigator.pop(context),
           child: Text(
             'Cancel',
             style: GoogleFonts.poppins(color: Colors.grey.shade600),
           ),
         ),
-        ElevatedButton(
-          onPressed: isProcessing ? null : _processExport,
+        ElevatedButton.icon(
+          onPressed: null,
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF10B981),
-            disabledBackgroundColor: Colors.grey.shade300,
+            disabledBackgroundColor: Colors.grey.shade200,
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
-          child: isProcessing
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                )
-              : Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.download_rounded, size: 16),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Export ${selectedFormat.toUpperCase()}',
-                      style: GoogleFonts.poppins(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
+          icon: Icon(Icons.schedule_rounded,
+              size: 16, color: Colors.grey.shade500),
+          label: Text(
+            'Coming Soon',
+            style: GoogleFonts.poppins(
+              color: Colors.grey.shade500,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ),
       ],
     );
@@ -435,91 +419,4 @@ class _ExportReportDialogState extends State<ExportReportDialog> {
     }
   }
 
-  Future<void> _processExport() async {
-    setState(() => isProcessing = true);
-
-    try {
-      // Show loading dialog
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => AlertDialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const CircularProgressIndicator(color: Color(0xFF10B981)),
-              const SizedBox(height: 16),
-              Text(
-                'Generating ${formatTypes[selectedFormat]}...',
-                style: GoogleFonts.poppins(),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'This may take a few moments',
-                style: GoogleFonts.poppins(
-                  fontSize: 12,
-                  color: Colors.grey.shade600,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-
-      // Simulate export process
-      await Future.delayed(const Duration(seconds: 3));
-
-      Navigator.pop(context); // Close loading dialog
-      Navigator.pop(context); // Close export dialog
-
-      _showSuccessSnackBar(
-          '${formatTypes[selectedFormat]} exported successfully! Check your downloads folder.');
-    } catch (e) {
-      Navigator.pop(context); // Close loading dialog if open
-      _showErrorSnackBar('Export failed: $e');
-    } finally {
-      if (mounted) {
-        setState(() => isProcessing = false);
-      }
-    }
-  }
-
-  void _showSuccessSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.check_circle_rounded, color: Colors.white),
-            const SizedBox(width: 8),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        backgroundColor: const Color(0xFF10B981),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: const EdgeInsets.all(16),
-        duration: const Duration(seconds: 4),
-      ),
-    );
-  }
-
-  void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.error_outline_rounded, color: Colors.white),
-            const SizedBox(width: 8),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        backgroundColor: const Color(0xFFEF4444),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: const EdgeInsets.all(16),
-      ),
-    );
-  }
 }

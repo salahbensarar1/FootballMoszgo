@@ -32,11 +32,13 @@ class StandardCard extends StatelessWidget {
     if (currentTab == 0) {
       // Coach
       title = data['name'] ?? 'Unnamed Coach';
-      subtitle = "Specialization: ${data['specialization'] ?? 'General'}";
+      subtitle = data['role_description'] ?? data['email'] ?? 'Coach';
     } else {
       // Team
       title = data['team_name'] ?? 'Unnamed Team';
-      subtitle = "Category: ${data['category'] ?? 'Unknown'}";
+      final playerCount = data['number_of_players'] ?? 0;
+      final coachIds = data['coach_ids'] as List<dynamic>? ?? [];
+      subtitle = "$playerCount players • ${coachIds.length} coaches";
     }
 
     return Card(

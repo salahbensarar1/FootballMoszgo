@@ -7,7 +7,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:footballtraining/services/organization_context.dart';
 
 class UserService {
-  static const String cloudinaryUploadUrl = "https://api.cloudinary.com/v1_1/YOUR_CLOUD_NAME/image/upload";
+  static const String cloudinaryUploadUrl =
+      "https://api.cloudinary.com/v1_1/YOUR_CLOUD_NAME/image/upload";
   static const String cloudinaryUploadPreset = "YOUR_UPLOAD_PRESET";
 
   static Future<UserProfile?> getCurrentUserDetails() async {
@@ -59,15 +60,17 @@ class UserService {
 
   static Future<String?> uploadImageToCloudinary(File imageFile) async {
     try {
-      final request = http.MultipartRequest('POST', Uri.parse(cloudinaryUploadUrl));
-      
+      final request =
+          http.MultipartRequest('POST', Uri.parse(cloudinaryUploadUrl));
+
       request.fields['upload_preset'] = cloudinaryUploadPreset;
       request.fields['folder'] = 'football_profiles';
-      
-      request.files.add(await http.MultipartFile.fromPath('file', imageFile.path));
+
+      request.files
+          .add(await http.MultipartFile.fromPath('file', imageFile.path));
 
       final response = await request.send();
-      
+
       if (response.statusCode == 200) {
         final responseData = await response.stream.bytesToString();
         final jsonData = json.decode(responseData);
@@ -86,7 +89,7 @@ class UserService {
     try {
       final user = FirebaseAuth.instance.currentUser;
       final orgId = OrganizationContext.currentOrgId;
-      
+
       if (user == null || orgId == null) return false;
 
       final userQuery = await FirebaseFirestore.instance

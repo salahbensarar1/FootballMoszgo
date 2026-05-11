@@ -10,11 +10,13 @@ import '../../../services/organization_context.dart';
 class PlayerDetailsDialog extends StatefulWidget {
   final PlayerPaymentStatus player;
   final int selectedYear;
+  final double? teamFee;
 
   const PlayerDetailsDialog({
     super.key,
     required this.player,
     required this.selectedYear,
+    this.teamFee,
   });
 
   @override
@@ -53,7 +55,6 @@ class _PlayerDetailsDialogState extends State<PlayerDetailsDialog>
             Expanded(
               child: _buildTabContent(),
             ),
-            _buildActionButtons(),
           ],
         ),
       ),
@@ -446,7 +447,7 @@ class _PlayerDetailsDialogState extends State<PlayerDetailsDialog>
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    '\$100.00',
+                    '${NumberFormat('#,##0', 'hu_HU').format(widget.teamFee ?? 0)} Ft',
                     style: GoogleFonts.poppins(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -472,10 +473,10 @@ class _PlayerDetailsDialogState extends State<PlayerDetailsDialog>
   }
 
   Widget _buildPaymentSummary() {
-    final totalPaid = widget.player.paidMonths * 100.0;
+    final fee = widget.teamFee ?? 0.0;
+    final totalPaid = widget.player.paidMonths * fee;
     final totalOutstanding =
-        (widget.player.totalMonths - widget.player.paidMonths) * 100.0;
-    final totalExpected = widget.player.totalMonths * 100.0;
+        (widget.player.totalMonths - widget.player.paidMonths) * fee;
     final paymentRate = widget.player.paymentProgress * 100;
 
     return SingleChildScrollView(
@@ -495,7 +496,7 @@ class _PlayerDetailsDialogState extends State<PlayerDetailsDialog>
 
           _buildSummaryCard(
             'Total Paid',
-            '\$${totalPaid.toStringAsFixed(2)}',
+            '${NumberFormat('#,##0', 'hu_HU').format(totalPaid)} Ft',
             Icons.account_balance_wallet_rounded,
             Colors.green,
             '${widget.player.paidMonths} months',
@@ -504,7 +505,7 @@ class _PlayerDetailsDialogState extends State<PlayerDetailsDialog>
 
           _buildSummaryCard(
             'Outstanding',
-            '\$${totalOutstanding.toStringAsFixed(2)}',
+            '${NumberFormat('#,##0', 'hu_HU').format(totalOutstanding)} Ft',
             Icons.pending_actions_rounded,
             Colors.orange,
             '${widget.player.totalMonths - widget.player.paidMonths} months',
@@ -728,58 +729,6 @@ class _PlayerDetailsDialogState extends State<PlayerDetailsDialog>
     );
   }
 
-  Widget _buildActionButtons() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(20),
-          bottomRight: Radius.circular(20),
-        ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: OutlinedButton.icon(
-              onPressed: () => _sendPaymentReminder(),
-              icon: const Icon(Icons.email_rounded, size: 16),
-              label: Text(
-                'Send Reminder',
-                style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
-              ),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFFF59E0B),
-                side: const BorderSide(color: Color(0xFFF59E0B)),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: ElevatedButton.icon(
-              onPressed: () => _markPayment(),
-              icon: const Icon(Icons.payment_rounded, size: 16),
-              label: Text(
-                'Mark Payment',
-                style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _getStatusColor(widget.player.status),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
 // Helper methods for PaymentOverviewScreen
   List<Color> _getStatusGradient(PaymentStatus status) {
     switch (status) {
@@ -891,7 +840,7 @@ class _PlayerDetailsDialogState extends State<PlayerDetailsDialog>
               if (payment.notes != null && payment.notes!.isNotEmpty)
                 _buildDetailRow('Notes:', payment.notes!),
             ],
-            _buildDetailRow('Amount:', '\$100.00'),
+            _buildDetailRow('Amount:', '${NumberFormat('#,##0', 'hu_HU').format(widget.teamFee ?? 0)} Ft'),
           ],
         ),
         actions: [
@@ -931,43 +880,6 @@ class _PlayerDetailsDialogState extends State<PlayerDetailsDialog>
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  void _sendPaymentReminder() {
-    Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.email_rounded, color: Colors.white),
-            const SizedBox(width: 8),
-            Text('Payment reminder sent to ${widget.player.name}'),
-          ],
-        ),
-        backgroundColor: const Color(0xFFF59E0B),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    );
-  }
-
-  void _markPayment() {
-    Navigator.pop(context);
-    // You can integrate with MarkPaymentDialog here or implement inline payment marking
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.info_rounded, color: Colors.white),
-            const SizedBox(width: 8),
-            const Text('Use the Mark Payment feature from the main screen'),
-          ],
-        ),
-        backgroundColor: const Color(0xFF667eea),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }

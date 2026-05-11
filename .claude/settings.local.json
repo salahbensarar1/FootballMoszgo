@@ -1,5 +1,4 @@
 {
-  "model": "claude-sonnet-4-20250514",
   "permissions": {
     "allow": [
       "Bash(rm:*)",
@@ -21,9 +20,14 @@
       "Bash(firebase appdistribution:*)",
       "Bash(firebase apps:sdkconfig:*)",
       "Bash(tree:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(wc -l /Users/salahbensarar/AndroidStudioProjects/footballtraining/lib/views/receptionist/components/*.dart /Users/salahbensarar/AndroidStudioProjects/footballtraining/lib/views/receptionist/dialogs/*.dart /Users/salahbensarar/AndroidStudioProjects/footballtraining/lib/views/receptionist/widgets/*.dart /Users/salahbensarar/AndroidStudioProjects/footballtraining/lib/views/receptionist/*.dart)",
+      "Bash(wc -l /Users/salahbensarar/AndroidStudioProjects/footballtraining/lib/views/shared/widgets/*.dart)",
+      "Bash(git -C /Users/salahbensarar/AndroidStudioProjects/footballtraining log --oneline)",
+      "Bash(git -C /Users/salahbensarar/AndroidStudioProjects/footballtraining status --short)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"
-  }
+  },
+  "model": "claude-sonnet-4-20250514"
 }

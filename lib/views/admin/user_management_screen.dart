@@ -326,6 +326,7 @@ class _UserManagementScreenState extends State<UserManagementScreen>
       builder: (context) => AddUserDialog(
         l10n: l10n,
         onUserAdded: () => setState(() {}),
+        organizationId: OrganizationContext.currentOrgId,
       ),
     );
   }

@@ -50,6 +50,10 @@ class _CoachScreenState extends State<CoachScreen>
   DateTime? trainingEnd;
   String? currentSessionId;
   bool hasEditedSession = false;
+  Timer? _countdownTimer;
+  DateTime _now = DateTime.now();
+  bool _autoSaveTriggered = false;
+  List<QueryDocumentSnapshot> _cachedPlayers = [];
 
   // Controllers
   final TextEditingController notesController = TextEditingController();
@@ -74,6 +78,7 @@ class _CoachScreenState extends State<CoachScreen>
 
   @override
   void dispose() {
+    _countdownTimer?.cancel();
     _fadeController.dispose();
     _slideController.dispose();
     notesController.dispose();
@@ -164,8 +169,7 @@ class _CoachScreenState extends State<CoachScreen>
   // Computed Properties
   bool get isTrainingActive {
     if (trainingStart == null || trainingEnd == null) return false;
-    final now = DateTime.now();
-    return now.isAfter(trainingStart!) && now.isBefore(trainingEnd!);
+    return _now.isAfter(trainingStart!) && _now.isBefore(trainingEnd!);
   }
 
   bool get canStartTraining => selectedTeam != null && trainingType != null;
@@ -180,6 +184,26 @@ class _CoachScreenState extends State<CoachScreen>
       trainingEnd = trainingStart!.add(const Duration(hours: 2));
       hasEditedSession = false;
       currentSessionId = null;
+    });
+    _startCountdownTimer();
+  }
+
+  void _startCountdownTimer() {
+    _countdownTimer?.cancel();
+    _autoSaveTriggered = false;
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      setState(() => _now = DateTime.now());
+      if (trainingEnd != null &&
+          _now.isAfter(trainingEnd!) &&
+          !_autoSaveTriggered) {
+        _autoSaveTriggered = true;
+        _saveTrainingSession(
+          _cachedPlayers,
+          isEdit: currentSessionId != null,
+          isAutoSave: true,
+        );
+      }
     });
   }
 
@@ -196,9 +220,9 @@ class _CoachScreenState extends State<CoachScreen>
   }
 
   Future<void> _saveTrainingSession(List<QueryDocumentSnapshot> players,
-      {bool isEdit = false}) async {
+      {bool isEdit = false, bool isAutoSave = false}) async {
     final l10n = AppLocalizations.of(context)!;
-    if (!isTrainingActive && !isEdit) return;
+    if (!isTrainingActive && !isEdit && !isAutoSave) return;
 
     try {
       // Get coach name
@@ -272,6 +296,8 @@ class _CoachScreenState extends State<CoachScreen>
   }
 
   void _resetSession() {
+    _countdownTimer?.cancel();
+    _autoSaveTriggered = false;
     setState(() {
       hasEditedSession = true;
       trainingStart = null;
@@ -477,11 +503,15 @@ class _CoachScreenState extends State<CoachScreen>
                         initialNotes: notes,
                         isTrainingActive: isTrainingActive,
                         isSmallScreen: isSmallScreen,
+                        onPlayersChanged: (players) {
+                          setState(() => _cachedPlayers = players);
+                        },
                         onSaveSession:
                             (players, updatedAttendance, updatedNotes) {
                           // Update parent state with latest attendance data
                           attendance.addAll(updatedAttendance);
                           notes.addAll(updatedNotes);
+                          _cachedPlayers = players;
                           _saveTrainingSession(players,
                               isEdit: currentSessionId != null);
                         },
@@ -595,9 +625,16 @@ class _CoachScreenState extends State<CoachScreen>
   }
 
   Widget _buildTrainingActiveCard(AppLocalizations l10n, bool isSmallScreen) {
-    final elapsedMinutes = DateTime.now().difference(trainingStart!).inMinutes;
-    final totalMinutes = trainingEnd!.difference(trainingStart!).inMinutes;
-    final progress = elapsedMinutes / totalMinutes;
+    final remaining = trainingEnd!.difference(_now);
+    final elapsed = _now.difference(trainingStart!);
+    final progress = (elapsed.inSeconds / (120 * 60)).clamp(0.0, 1.0);
+    final remainingMin = remaining.inMinutes.clamp(0, 120);
+    final remainingSec = remaining.inSeconds.remainder(60).clamp(0, 59);
+    final Color progressColor = remainingMin < 5
+        ? Colors.red
+        : remainingMin < 15
+            ? Colors.orange
+            : Colors.white;
 
     return Container(
       width: double.infinity,
@@ -678,7 +715,7 @@ class _CoachScreenState extends State<CoachScreen>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                "$elapsedMinutes perc eltelt",
+                "$remainingMin:${remainingSec.toString().padLeft(2, '0')} hátravan",
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: isSmallScreen ? 13 : 15,
@@ -710,7 +747,7 @@ class _CoachScreenState extends State<CoachScreen>
               value: progress,
               minHeight: 8,
               backgroundColor: Colors.white.withOpacity(0.3),
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              valueColor: AlwaysStoppedAnimation<Color>(progressColor),
             ),
           ),
         ],

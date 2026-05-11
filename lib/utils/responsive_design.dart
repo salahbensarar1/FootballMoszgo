@@ -1,36 +1,27 @@
 import 'package:flutter/material.dart';
+import 'responsive_utils.dart';
 
-/// Responsive design utility for consistent UI across all devices
+/// Legacy responsive design utility - now delegates to ResponsiveUtils
+/// This file exists for backward compatibility during migration
 class ResponsiveDesign {
-  static const double _mobileBreakpoint = 600;
-  static const double _tabletBreakpoint = 900;
-  static const double _desktopBreakpoint = 1200;
-
   /// Check if current screen is mobile
   static bool isMobile(BuildContext context) {
-    return MediaQuery.of(context).size.width < _mobileBreakpoint;
+    return ResponsiveUtils.isMobile(context);
   }
 
   /// Check if current screen is tablet
   static bool isTablet(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-    return width >= _mobileBreakpoint && width < _desktopBreakpoint;
+    return ResponsiveUtils.isTablet(context);
   }
 
   /// Check if current screen is desktop
   static bool isDesktop(BuildContext context) {
-    return MediaQuery.of(context).size.width >= _desktopBreakpoint;
+    return ResponsiveUtils.isDesktop(context);
   }
 
   /// Get responsive padding based on screen size
   static EdgeInsets getResponsivePadding(BuildContext context) {
-    if (isMobile(context)) {
-      return const EdgeInsets.all(16);
-    } else if (isTablet(context)) {
-      return const EdgeInsets.all(24);
-    } else {
-      return const EdgeInsets.all(32);
-    }
+    return ResponsiveUtils.getPadding(context);
   }
 
   /// Get responsive horizontal padding
@@ -106,20 +97,12 @@ class ResponsiveDesign {
 
   /// Get maximum width for content on large screens
   static double getMaxContentWidth(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    if (isDesktop(context)) {
-      return screenWidth * 0.6; // 60% of screen width on desktop
-    } else if (isTablet(context)) {
-      return screenWidth * 0.8; // 80% on tablet
-    } else {
-      return screenWidth; // Full width on mobile
-    }
+    return ResponsiveUtils.getMaxContentWidth(context);
   }
 
   /// Get responsive spacing
   static double getSpacing(BuildContext context, {double factor = 1.0}) {
-    final baseSpacing = isMobile(context) ? 16.0 : 24.0;
-    return baseSpacing * factor;
+    return ResponsiveUtils.getSpacing(context, factor: factor);
   }
 
   /// Get safe area bottom padding
@@ -133,23 +116,23 @@ class ResponsiveDesign {
   }
 }
 
-/// Extension methods for easier responsive design
+/// Extension methods for easier responsive design - delegates to ResponsiveUtils
 extension ResponsiveExtensions on BuildContext {
-  bool get isMobile => ResponsiveDesign.isMobile(this);
-  bool get isTablet => ResponsiveDesign.isTablet(this);
-  bool get isDesktop => ResponsiveDesign.isDesktop(this);
-  
-  EdgeInsets get responsivePadding => ResponsiveDesign.getResponsivePadding(this);
+  bool get isMobile => ResponsiveUtils.isMobile(this);
+  bool get isTablet => ResponsiveUtils.isTablet(this);
+  bool get isDesktop => ResponsiveUtils.isDesktop(this);
+
+  EdgeInsets get responsivePadding => ResponsiveUtils.getPadding(this);
   EdgeInsets get responsiveHorizontalPadding => ResponsiveDesign.getResponsiveHorizontalPadding(this);
-  
+
   double get titleFontSize => ResponsiveDesign.getTitleFontSize(this);
   double get bodyFontSize => ResponsiveDesign.getBodyFontSize(this);
   double get captionFontSize => ResponsiveDesign.getCaptionFontSize(this);
-  
+
   double get iconSize => ResponsiveDesign.getIconSize(this);
   double get buttonHeight => ResponsiveDesign.getButtonHeight(this);
   double get borderRadius => ResponsiveDesign.getBorderRadius(this);
   double get maxContentWidth => ResponsiveDesign.getMaxContentWidth(this);
-  
+
   double spacing({double factor = 1.0}) => ResponsiveDesign.getSpacing(this, factor: factor);
 }

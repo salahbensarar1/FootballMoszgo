@@ -12,7 +12,7 @@ import 'package:footballtraining/views/coach/coach_screen.dart';
 import 'package:footballtraining/views/login/login_page.dart';
 import 'package:footballtraining/views/receptionist/receptionist_screen.dart';
 
-import 'package:footballtraining/utils/responsive_design.dart';
+import 'package:footballtraining/utils/responsive_utils.dart';
 import 'package:footballtraining/services/organization_context.dart';
 import 'package:intl/intl.dart';
 import 'dart:math' as math;
@@ -1394,7 +1394,7 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   Widget _buildDrawerHeader(AppLocalizations l10n) {
     return Container(
-      padding: EdgeInsets.all(context.spacing()),
+      padding: EdgeInsets.all(ResponsiveUtils.getSpacing(context)),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [Color(0xFFF27121), Color(0xFFE94057), Color(0xFF8A2387)],
@@ -1407,24 +1407,24 @@ class _DashboardScreenState extends State<DashboardScreen>
         mainAxisSize: MainAxisSize.min,
         children: [
           CircleAvatar(
-            radius: context.isMobile ? 30 : 35,
+            radius: ResponsiveUtils.isMobile(context) ? 30 : 35,
             backgroundColor: Colors.white.withValues(alpha: 0.2),
             child: Text(
               (userName?.isNotEmpty == true)
                   ? userName!.substring(0, 1).toUpperCase()
                   : 'U',
               style: TextStyle(
-                fontSize: context.isMobile ? 24 : 28,
+                fontSize: ResponsiveUtils.isMobile(context) ? 24 : 28,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
               ),
             ),
           ),
-          SizedBox(height: context.spacing(factor: 0.5)),
+          SizedBox(height: ResponsiveUtils.getSpacing(context, factor: 0.5)),
           Text(
             userName ?? 'User',
             style: TextStyle(
-              fontSize: context.bodyFontSize,
+              fontSize: ResponsiveUtils.isMobile(context) ? 16 : (ResponsiveUtils.isTablet(context) ? 18 : 20),
               fontWeight: FontWeight.w600,
               color: Colors.white,
             ),
@@ -1434,7 +1434,7 @@ class _DashboardScreenState extends State<DashboardScreen>
           Text(
             userRole?.toUpperCase() ?? 'USER',
             style: TextStyle(
-              fontSize: context.captionFontSize,
+              fontSize: ResponsiveUtils.isMobile(context) ? 14 : 16,
               color: Colors.white.withValues(alpha: 0.8),
             ),
             maxLines: 1,
@@ -1448,14 +1448,14 @@ class _DashboardScreenState extends State<DashboardScreen>
   Widget _buildDrawerSection(String title) {
     return Container(
       padding: EdgeInsets.fromLTRB(
-          context.spacing(),
-          context.spacing(factor: 0.75),
-          context.spacing(),
-          context.spacing(factor: 0.25)),
+          ResponsiveUtils.getSpacing(context),
+          ResponsiveUtils.getSpacing(context, factor: 0.75),
+          ResponsiveUtils.getSpacing(context),
+          ResponsiveUtils.getSpacing(context, factor: 0.25)),
       child: Text(
         title,
         style: TextStyle(
-          fontSize: context.captionFontSize,
+          fontSize: ResponsiveUtils.isMobile(context) ? 14 : 16,
           fontWeight: FontWeight.w600,
           color: Colors.grey.shade600,
           letterSpacing: 0.5,
@@ -1478,13 +1478,13 @@ class _DashboardScreenState extends State<DashboardScreen>
             : Colors.grey.shade700;
 
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: context.spacing(factor: 0.5)),
+      margin: EdgeInsets.symmetric(horizontal: ResponsiveUtils.getSpacing(context, factor: 0.5)),
       child: ListTile(
-        leading: Icon(icon, color: color, size: context.iconSize * 0.8),
+        leading: Icon(icon, color: color, size: ResponsiveUtils.isMobile(context) ? 24 : (ResponsiveUtils.isTablet(context) ? 32 : 40) * 0.8),
         title: Text(
           title,
           style: TextStyle(
-            fontSize: context.bodyFontSize * 0.9,
+            fontSize: ResponsiveUtils.isMobile(context) ? 16 : (ResponsiveUtils.isTablet(context) ? 18 : 20) * 0.9,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
             color: color,
           ),
@@ -1495,9 +1495,9 @@ class _DashboardScreenState extends State<DashboardScreen>
         selectedTileColor: const Color(0xFFF27121).withValues(alpha: 0.1),
         onTap: onTap,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(context.borderRadius),
+          borderRadius: BorderRadius.circular(ResponsiveUtils.isMobile(context) ? 8 : 12),
         ),
-        contentPadding: EdgeInsets.symmetric(horizontal: context.spacing()),
+        contentPadding: EdgeInsets.symmetric(horizontal: ResponsiveUtils.getSpacing(context)),
       ),
     );
   }

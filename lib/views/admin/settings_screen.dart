@@ -465,7 +465,8 @@ class _SettingsScreenState extends State<SettingsScreen>
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.info_outlined, color: Colors.orange.shade600, size: 20),
+              Icon(Icons.info_outlined,
+                  color: Colors.orange.shade600, size: 20),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(

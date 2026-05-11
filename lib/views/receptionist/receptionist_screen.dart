@@ -5,7 +5,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:footballtraining/utils/responsive_utils.dart';
+import 'package:footballtraining/shared/utils/coach_role_utils.dart';
+import 'package:footballtraining/shared/utils/responsive_utils.dart';
 import 'package:footballtraining/views/login/login_page.dart';
 import 'package:footballtraining/views/receptionist/dialogs/add_entry_dialog.dart';
 import 'package:footballtraining/views/receptionist/dialogs/coach_assignment_dialog.dart';
@@ -14,13 +15,15 @@ import 'package:footballtraining/views/receptionist/settings_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
-import 'package:footballtraining/views/shared/widgets/payment_month_indicator.dart';
+import 'package:footballtraining/shared/widgets/payment_month_indicator.dart';
 import 'package:footballtraining/data/repositories/coach_management_service.dart';
+import 'package:footballtraining/data/repositories/team_repository.dart';
+import 'package:footballtraining/data/models/team_model.dart';
 import 'package:footballtraining/services/organization_context.dart';
 import 'package:footballtraining/services/receptionist_data_service.dart';
 import 'package:footballtraining/views/receptionist/widgets/player_card.dart';
 import 'package:footballtraining/views/receptionist/widgets/standard_card.dart';
-import 'package:footballtraining/utils/responsive_utils.dart';
+import 'package:footballtraining/shared/utils/responsive_utils.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class ReceptionistScreen extends StatefulWidget {
@@ -47,9 +50,10 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
   String searchQuery = "";
   final TextEditingController _searchController = TextEditingController();
   late TabController _tabController;
-  
+
   // Services - simplified
-  final CoachManagementService _coachManagementService = CoachManagementService();
+  final CoachManagementService _coachManagementService =
+      CoachManagementService();
   late ReceptionistDataService _dataService;
 
   // User data
@@ -1063,7 +1067,10 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
     } else {
       // Teams
       title = data['team_name'] ?? 'Unnamed Team';
-      subtitle = "${l10n.players}: ${data['number_of_players'] ?? 0}";
+      final playerCount = data['number_of_players'] ?? 0;
+      final coachCount =
+          (data['coaches'] as List?)?.length ?? data['coach_count'] ?? 0;
+      subtitle = "$playerCount ${l10n.players} • $coachCount ${l10n.coaches}";
       cardIcon = Icons.groups_rounded;
     }
 
@@ -1489,6 +1496,9 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
     String selectedTeam = data['team'] ?? "";
     String selectedCoach = data['coach'] ?? "";
 
+    // Payment required toggle state for Edit Player
+    bool paymentRequired = data['payment_required'] as bool? ?? false;
+
     // State notifiers for image handling
     final profileImageUrl = ValueNotifier<String?>(data['picture']);
     final imageFile = ValueNotifier<File?>(null);
@@ -1637,6 +1647,71 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                                   );
                                 },
                               ),
+                              const SizedBox(height: 16),
+                              // Payment Required Toggle
+                              StatefulBuilder(
+                                builder: (context, setState) {
+                                  return Container(
+                                    margin: const EdgeInsets.only(top: 16),
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      color: paymentRequired
+                                          ? Colors.green.shade50
+                                          : Colors.grey.shade100,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: paymentRequired
+                                            ? Colors.green.shade200
+                                            : Colors.grey.shade300,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.credit_card_rounded,
+                                          color: paymentRequired
+                                              ? Colors.green.shade700
+                                              : Colors.grey.shade500,
+                                          size: 20,
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                'Monthly payment required',
+                                                style: GoogleFonts.poppins(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w500,
+                                                  color: paymentRequired
+                                                      ? Colors.green.shade800
+                                                      : Colors.grey.shade700,
+                                                ),
+                                              ),
+                                              Text(
+                                                paymentRequired
+                                                    ? 'Player is tracked for monthly payments'
+                                                    : 'Player is exempt from monthly payments',
+                                                style: GoogleFonts.poppins(
+                                                  fontSize: 11,
+                                                  color: Colors.grey.shade500,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        Switch(
+                                          value: paymentRequired,
+                                          onChanged: (value) =>
+                                              setState(() => paymentRequired = value),
+                                          activeColor: Colors.green.shade600,
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
                             ],
                           ),
                         ),
@@ -1669,14 +1744,40 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                 ),
                 onPressed: () async {
                   try {
+                    // Update player document with payment_required field
                     await FirebaseFirestore.instance
+                        .collection('organizations')
+                        .doc(OrganizationContext.currentOrgId)
                         .collection('players')
                         .doc(doc.id)
                         .update({
                       'name': nameController.text,
                       'position': positionController.text,
                       'team': selectedTeam,
+                      'payment_required': paymentRequired,
+                      'updated_at': FieldValue.serverTimestamp(),
                     });
+
+                    // Update current month's payment document with is_active field
+                    final now = DateTime.now();
+                    final paymentDocId = '${now.year}_${now.month}';
+
+                    await FirebaseFirestore.instance
+                        .collection('organizations')
+                        .doc(OrganizationContext.currentOrgId)
+                        .collection('players')
+                        .doc(doc.id)
+                        .collection('payments')
+                        .doc(paymentDocId)
+                        .set(
+                          {
+                            'is_active': paymentRequired,
+                            'month': now.month,
+                            'year': now.year,
+                            'updated_at': FieldValue.serverTimestamp(),
+                          },
+                          SetOptions(merge: true),
+                        );
 
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -1848,44 +1949,123 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                     icon: Icons.description_rounded,
                   ),
                 ],
-                if (currentTab != 2) ...[
+                if (currentTab == 0) ...[
                   const SizedBox(height: 16),
-                  StreamBuilder<QuerySnapshot>(
-                    stream: FirebaseFirestore.instance
-                        .collection('teams')
-                        .snapshots(),
+                  FutureBuilder<DocumentSnapshot>(
+                    future: FirebaseFirestore.instance
+                        .collection('organizations')
+                        .doc(OrganizationContext.currentOrgId)
+                        .collection('users')
+                        .doc(doc.id)
+                        .get(),
                     builder: (context, snapshot) {
-                      if (!snapshot.hasData) {
-                        return const CircularProgressIndicator();
+                      // Still loading
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
                       }
 
-                      List<DropdownMenuItem<String>> teamItems = snapshot
-                          .data!.docs
-                          .map<DropdownMenuItem<String>>((doc) {
-                        final String tName = doc['team_name'];
-                        return DropdownMenuItem<String>(
-                          value: tName,
-                          child: Text(tName),
+                      // Error — show the actual error so we can debug
+                      if (snapshot.hasError) {
+                        return Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.red.shade300),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            'Error loading teams: ${snapshot.error}',
+                            style: TextStyle(color: Colors.red.shade700, fontSize: 12),
+                          ),
                         );
-                      }).toList();
+                      }
+
+                      // No data or document does not exist
+                      if (!snapshot.hasData || !snapshot.data!.exists) {
+                        return const SizedBox.shrink();
+                      }
+
+                      // Safely read the teams array
+                      final data = snapshot.data!.data() as Map<String, dynamic>?;
+                      final rawTeams = data?['teams'];
+
+                      List<Map<String, dynamic>> activeTeams = [];
+
+                      if (rawTeams != null && rawTeams is List) {
+                        activeTeams = rawTeams
+                            .whereType<Map<String, dynamic>>()
+                            .where((entry) => entry['is_active'] == true)
+                            .toList();
+                      }
 
                       return Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
                           border: Border.all(color: Colors.grey.shade300),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: DropdownButtonFormField<String>(
-                          value: selectedTeam.isNotEmpty ? selectedTeam : null,
-                          items: teamItems,
-                          onChanged: (val) => selectedTeam = val!,
-                          decoration: InputDecoration(
-                            labelText: l10n.team,
-                            prefixIcon: Icon(Icons.groups_rounded,
-                                color: Colors.grey.shade600),
-                            border: InputBorder.none,
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 12),
-                          ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.groups_rounded,
+                                    color: Colors.blue.shade600, size: 20),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Assigned Teams',
+                                  style: GoogleFonts.poppins(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            if (activeTeams.isEmpty) ...[
+                              Text(
+                                'No teams assigned yet',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 13,
+                                  color: Colors.grey.shade600,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Use "Manage Coaches" on a team to assign',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 12,
+                                  color: Colors.grey.shade500,
+                                ),
+                              ),
+                            ] else ...[
+                              ...activeTeams.map((entry) {
+                                final teamName =
+                                    entry['team_name'] as String? ?? 'Unknown team';
+                                final role = entry['role'] as String? ?? 'coach';
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 8),
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.circle,
+                                          size: 8, color: Colors.blue.shade600),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          '$teamName — ${CoachRoleUtils.getCoachRoleDisplayName(role)}',
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 13,
+                                            color: Colors.grey.shade700,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }),
+                            ],
+                          ],
                         ),
                       );
                     },
@@ -1978,12 +2158,12 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
               onPressed: () async {
                 try {
                   if (currentTab == 0) {
-                    // For coaches, include profile image URL if changed
+                    // For coaches: only update name, email, role_description, and picture
+                    // Team assignments are managed through the teams collection
                     Map<String, dynamic> updateData = {
                       'name': nameController.text,
                       'email': emailController.text,
                       'role_description': descriptionController.text,
-                      'team': selectedTeam,
                     };
 
                     // Only add the picture field if we have a new image URL
@@ -2173,6 +2353,8 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
 
         // Delete player document
         await FirebaseFirestore.instance
+            .collection('organizations')
+            .doc(OrganizationContext.currentOrgId)
             .collection('players')
             .doc(doc.id)
             .delete();
@@ -2382,6 +2564,8 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
               Expanded(
                 child: StreamBuilder<QuerySnapshot>(
                   stream: FirebaseFirestore.instance
+                      .collection('organizations')
+                      .doc(OrganizationContext.currentOrgId)
                       .collection('players')
                       .doc(playerId)
                       .collection('payments')
@@ -2390,6 +2574,9 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                   builder: (context, snapshot) {
                     // ENTERPRISE-GRADE: Store payment status with 3 states
                     Map<String, PaymentStatus> payments = {};
+
+                    print('🔍 [ReceptionistScreen] Snapshot hasData: ${snapshot.hasData}, docs: ${snapshot.data?.docs.length ?? 0}');
+
                     if (snapshot.hasData) {
                       for (var doc in snapshot.data!.docs) {
                         final paymentData = doc.data() as Map<String, dynamic>;
@@ -2406,9 +2593,15 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                           status = PaymentStatus.unpaid; // Red - Unpaid
                         }
 
-                        payments[doc['month']] = status;
+                        final monthKey = paymentData['month'] as String? ?? doc.id.split('-').last;
+
+                        print('🔍 [ReceptionistScreen] Doc ID: ${doc.id}, Month: $monthKey, isPaid: $isPaid, isActive: $isActive');
+
+                        payments[monthKey] = status;
                       }
                     }
+
+                    print('🔍 [ReceptionistScreen] Final payments keys: ${payments.keys}, values: ${payments.values}');
 
                     return Container(
                       margin: EdgeInsets.symmetric(
@@ -2502,40 +2695,6 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                 ),
               ),
 
-              // 🔥 RESPONSIVE ACTION BUTTONS with adaptive sizing
-              Container(
-                margin: EdgeInsets.all(config['paddingMedium']),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    icon: Icon(Icons.email_rounded, size: config['iconSize']),
-                    label: Text(
-                      "Send Reminder",
-                      style: GoogleFonts.poppins(
-                        fontWeight: FontWeight.w600,
-                        fontSize: config['buttonFontSize'],
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: tabConfigs[currentTab].gradient[0],
-                      foregroundColor: Colors.white,
-                      elevation: 3,
-                      shadowColor:
-                          tabConfigs[currentTab].gradient[0].withOpacity(0.3),
-                      shape: RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius.circular(config['borderRadius']),
-                      ),
-                      padding: EdgeInsets.symmetric(
-                        vertical: config['buttonVerticalPadding'],
-                        horizontal: config['paddingLarge'],
-                      ),
-                    ),
-                    onPressed: () => _sendPaymentReminder(playerId),
-                  ),
-                ),
-              ),
             ],
           ),
         );
@@ -2548,6 +2707,8 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
       String month, PaymentStatus currentStatus) async {
     try {
       final docRef = FirebaseFirestore.instance
+          .collection('organizations')
+          .doc(OrganizationContext.currentOrgId)
           .collection('players')
           .doc(playerId)
           .collection('payments')
@@ -2611,275 +2772,6 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
           ),
         );
       }
-    }
-  }
-
-  Future<void> _sendPaymentReminder(String playerId) async {
-    final l10n = AppLocalizations.of(context)!;
-
-    // Find the player's details first
-    final playerDoc = await FirebaseFirestore.instance
-        .collection('players')
-        .doc(playerId)
-        .get();
-
-    if (!playerDoc.exists) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.error_outline, color: Colors.white),
-                const SizedBox(width: 8),
-                Text(l10n.playerNotFound),
-              ],
-            ),
-            backgroundColor: Colors.red.shade600,
-            behavior: SnackBarBehavior.floating,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        );
-      }
-      return;
-    }
-
-    final playerData = playerDoc.data() as Map<String, dynamic>;
-    final playerName = playerData['name'] ?? 'Unknown Player';
-    final email = playerData['email'] ?? '';
-
-    if (email.isEmpty) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.warning_rounded, color: Colors.white),
-                const SizedBox(width: 8),
-                Text(l10n.noEmailAvailable),
-              ],
-            ),
-            backgroundColor: Colors.orange.shade600,
-            behavior: SnackBarBehavior.floating,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        );
-      }
-      return;
-    }
-
-    // Find unpaid months
-    final unpaidMonths = <String>[];
-    final now = DateTime.now();
-    final currentYear = now.year.toString();
-    final monthNames = [
-      l10n.monthJanuary,
-      l10n.monthFebruary,
-      l10n.monthMarch,
-      l10n.monthApril,
-      l10n.monthMayFull,
-      l10n.monthJune,
-      l10n.monthJuly,
-      l10n.monthAugust,
-      l10n.monthSeptember,
-      l10n.monthOctober,
-      l10n.monthNovember,
-      l10n.monthDecember
-    ];
-
-    try {
-      final QuerySnapshot snapshot = await FirebaseFirestore.instance
-          .collection('players')
-          .doc(playerId)
-          .collection('payments')
-          .where('year', isEqualTo: currentYear)
-          .get();
-
-      // Check which months are unpaid
-      Set<String> paidMonths = {};
-      for (var doc in snapshot.docs) {
-        if (doc['isPaid'] == true) {
-          paidMonths.add(doc['month']);
-        }
-      }
-
-      // Add unpaid months to the list
-      for (int i = 1; i <= 12; i++) {
-        String monthKey = i.toString().padLeft(2, '0');
-        if (!paidMonths.contains(monthKey)) {
-          unpaidMonths.add(monthNames[i - 1]);
-        }
-      }
-
-      if (unpaidMonths.isEmpty) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  const Icon(Icons.check_circle, color: Colors.white),
-                  const SizedBox(width: 8),
-                  Text(l10n.allMonthsPaid),
-                ],
-              ),
-              backgroundColor: Colors.green.shade600,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-            ),
-          );
-        }
-        return;
-      }
-
-      // Show email preview dialog
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            title: Row(
-              children: [
-                Icon(Icons.email_rounded,
-                    color: tabConfigs[currentTab].gradient[0]),
-                const SizedBox(width: 8),
-                Text(
-                  l10n.paymentReminderEmail,
-                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
-            content: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('To: $email',
-                            style: GoogleFonts.poppins(
-                                fontWeight: FontWeight.w500)),
-                        Text('Subject: Payment Reminder for $playerName',
-                            style: GoogleFonts.poppins(
-                                fontWeight: FontWeight.w500)),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(AppLocalizations.of(context)!.dearParentGuardian,
-                      style: GoogleFonts.poppins()),
-                  const SizedBox(height: 10),
-                  Text(
-                    AppLocalizations.of(context)!.reminderUnpaidMonths,
-                    style: GoogleFonts.poppins(),
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.red.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.red.shade200),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: unpaidMonths
-                          .map(
-                            (month) => Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 2),
-                              child: Row(
-                                children: [
-                                  Icon(Icons.circle,
-                                      size: 6, color: Colors.red.shade600),
-                                  const SizedBox(width: 8),
-                                  Text('$month $currentYear',
-                                      style: GoogleFonts.poppins(fontSize: 13)),
-                                ],
-                              ),
-                            ),
-                          )
-                          .toList(),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(AppLocalizations.of(context)!.pleasePayEarliest,
-                      style: GoogleFonts.poppins()),
-                  const SizedBox(height: 10),
-                  Text(AppLocalizations.of(context)!.thankYou,
-                      style: GoogleFonts.poppins()),
-                  Text(AppLocalizations.of(context)!.footballClubManagement,
-                      style: GoogleFonts.poppins(fontWeight: FontWeight.w500)),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                child: Text(
-                  'Close',
-                  style: GoogleFonts.poppins(color: Colors.grey.shade600),
-                ),
-                onPressed: () => Navigator.pop(context),
-              ),
-              ElevatedButton.icon(
-                icon: const Icon(Icons.send_rounded, size: 18),
-                label: Text(
-                  'Send Email',
-                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: tabConfigs[currentTab].gradient[0],
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ),
-                onPressed: () {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Row(
-                        children: [
-                          const Icon(Icons.check_circle, color: Colors.white),
-                          const SizedBox(width: 8),
-                          Text('Email sent to $email'),
-                        ],
-                      ),
-                      backgroundColor: Colors.green.shade600,
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.error_outline, color: Colors.white),
-              const SizedBox(width: 8),
-              Expanded(child: Text('Error: $e')),
-            ],
-          ),
-          backgroundColor: Colors.red.shade600,
-          behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      );
     }
   }
 

@@ -6,7 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:footballtraining/data/repositories/team_service.dart';
+import 'package:footballtraining/shared/utils/coach_role_utils.dart';
 import 'package:footballtraining/services/organization_context.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
@@ -62,6 +62,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
   DateTime? birthDate;
   String position = "";
   String? selectedTeamForPlayer;
+  bool _playerPaymentRequired = true;
 
   // Team fields
   String teamName = "";
@@ -995,8 +996,8 @@ class _AddEntryDialogState extends State<AddEntryDialog>
               SizedBox(height: isSmallScreen ? 16 : 20),
 
               // Role options
-              ...TeamService.allCoachRoles.map((role) {
-                final isLast = role == TeamService.allCoachRoles.last;
+              ...CoachRoleUtils.allCoachRoles.map((role) {
+                final isLast = role == CoachRoleUtils.allCoachRoles.last;
                 return Column(
                   children: [
                     Material(
@@ -1040,7 +1041,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
                               SizedBox(width: isSmallScreen ? 12 : 16),
                               Expanded(
                                 child: Text(
-                                  TeamService.getCoachRoleDisplayName(
+                                  CoachRoleUtils.getCoachRoleDisplayName(
                                       role, AppLocalizations.of(context)!),
                                   style: GoogleFonts.poppins(
                                     fontSize: isSmallScreen ? 14 : 16,
@@ -1100,11 +1101,6 @@ class _AddEntryDialogState extends State<AddEntryDialog>
     if (!_formKey.currentState!.validate()) return;
     _formKey.currentState!.save();
 
-    if (_uploadedImageUrl == null) {
-      _showErrorSnackBar("Please upload an image for the coach.");
-      return;
-    }
-
     try {
       // Create coach in Firebase Auth
       UserCredential userCredential =
@@ -1119,15 +1115,21 @@ class _AddEntryDialogState extends State<AddEntryDialog>
       // Basic coach assignment handled by organization setup service
       print('Coach $name created with UID: $coachUID');
 
-      // Add role description and picture
+      // Create organization-scoped user document
       await FirebaseFirestore.instance
           .collection('organizations')
           .doc(OrganizationContext.currentOrgId)
           .collection('users')
           .doc(coachUID)
-          .update({
+          .set({
+        'name': name,
+        'email': email,
+        'role': 'coach',
         'role_description': roleDescription,
         'picture': _uploadedImageUrl,
+        'is_active': true,
+        'created_at': FieldValue.serverTimestamp(),
+        'uid': coachUID,
       });
 
       final teamCount = selectedTeamsForCoach.length;
@@ -1196,7 +1198,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
-                      TeamService.getCoachRoleDisplayName(
+                      CoachRoleUtils.getCoachRoleDisplayName(
                           team['role'], AppLocalizations.of(context)),
                       style: GoogleFonts.poppins(
                         fontSize: isSmallScreen ? 10 : 11,
@@ -1269,6 +1271,75 @@ class _AddEntryDialogState extends State<AddEntryDialog>
       _buildSectionHeader(l10n.teamAssignment, Icons.groups_rounded),
       const SizedBox(height: 16),
       _buildTeamDropdown(l10n, isCoach: false),
+      const SizedBox(height: 24),
+
+      // Payment Setting
+      _buildSectionHeader(l10n.paymentStatus, Icons.payment_rounded),
+      const SizedBox(height: 12),
+      StatefulBuilder(
+        builder: (context, setToggleState) {
+          return Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: _playerPaymentRequired
+                  ? Colors.green.shade50
+                  : Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: _playerPaymentRequired
+                    ? Colors.green.shade200
+                    : Colors.grey.shade300,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.credit_card_rounded,
+                  color: _playerPaymentRequired
+                      ? Colors.green.shade700
+                      : Colors.grey.shade500,
+                  size: 20,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Monthly payment required',
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: _playerPaymentRequired
+                              ? Colors.green.shade800
+                              : Colors.grey.shade700,
+                        ),
+                      ),
+                      Text(
+                        _playerPaymentRequired
+                            ? 'Player is tracked for monthly payments'
+                            : 'Player is exempt from monthly payments',
+                        style: GoogleFonts.poppins(
+                          fontSize: 11,
+                          color: Colors.grey.shade500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Switch(
+                  value: _playerPaymentRequired,
+                  onChanged: (val) {
+                    setToggleState(() => _playerPaymentRequired = val);
+                    setState(() {});
+                  },
+                  activeColor: Colors.green.shade600,
+                ),
+              ],
+            ),
+          );
+        },
+      ),
     ];
   }
 
@@ -1490,7 +1561,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
-                    TeamService.getCoachRoleDisplayName(
+                    CoachRoleUtils.getCoachRoleDisplayName(
                         coach['role'], AppLocalizations.of(context)),
                     style: GoogleFonts.poppins(
                       fontSize: isSmallScreen ? 10 : 11,
@@ -1885,8 +1956,8 @@ class _AddEntryDialogState extends State<AddEntryDialog>
               SizedBox(height: isSmallScreen ? 16 : 20),
 
               // Role options
-              ...TeamService.allCoachRoles.map((role) {
-                final isLast = role == TeamService.allCoachRoles.last;
+              ...CoachRoleUtils.allCoachRoles.map((role) {
+                final isLast = role == CoachRoleUtils.allCoachRoles.last;
                 return Column(
                   children: [
                     Material(
@@ -1930,7 +2001,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
                               SizedBox(width: isSmallScreen ? 12 : 16),
                               Expanded(
                                 child: Text(
-                                  TeamService.getCoachRoleDisplayName(
+                                  CoachRoleUtils.getCoachRoleDisplayName(
                                       role, AppLocalizations.of(context)!),
                                   style: GoogleFonts.poppins(
                                     fontSize: isSmallScreen ? 14 : 16,
@@ -2560,6 +2631,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
         "birth_date": birthDate != null ? Timestamp.fromDate(birthDate!) : null,
         "position": position,
         "team": selectedTeamForPlayer,
+        "payment_required": _playerPaymentRequired,
         "organization_id": OrganizationContext.currentOrgId,
         "created_at": Timestamp.now(),
       });

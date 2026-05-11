@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 
 // Import your payment models
 import '../../../data/models/payment_model.dart';
@@ -24,14 +25,14 @@ class PaymentStatsSection extends StatelessWidget {
       children: [
         _buildStatCard(
           'Total Collected',
-          '\$${stats.totalCollected.toStringAsFixed(0)}',
+          '${NumberFormat('#,##0', 'hu_HU').format(stats.totalCollected)} Ft',
           Icons.account_balance_wallet_rounded,
           const LinearGradient(colors: [Color(0xFF10B981), Color(0xFF059669)]),
           stats.collectionRate,
         ),
         _buildStatCard(
           'Outstanding',
-          '\$${stats.totalOutstanding.toStringAsFixed(0)}',
+          '${NumberFormat('#,##0', 'hu_HU').format(stats.totalOutstanding)} Ft',
           Icons.pending_actions_rounded,
           const LinearGradient(colors: [Color(0xFFF59E0B), Color(0xFFD97706)]),
           100 - stats.collectionRate,
@@ -45,9 +46,9 @@ class PaymentStatsSection extends StatelessWidget {
         ),
         _buildStatCard(
           'This Month',
-          '\$${stats.thisMonthCollected.toStringAsFixed(0)}',
+          '${NumberFormat('#,##0', 'hu_HU').format(stats.thisMonthCollected)} Ft',
           Icons.calendar_month_rounded,
-          const LinearGradient(colors: [Color(0xFFEC4899), Color(0xBE185D)]),
+          const LinearGradient(colors: [Color(0xFFEC4899), Color(0xFFBE185D)]),
           stats.thisMonthProgress,
         ),
       ],
