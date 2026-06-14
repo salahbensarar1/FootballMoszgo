@@ -2,7 +2,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:footballtraining/l10n/app_localizations.dart';
+import 'package:footballtraining/core/theme/app_theme.dart';
 
 // Import your payment models
 import '../../../data/models/payment_model.dart';
@@ -23,15 +24,9 @@ class PlayerPaymentCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.surface,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Border.all(color: AppTheme.border),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -77,14 +72,14 @@ class PlayerPaymentCard extends StatelessWidget {
                         style: GoogleFonts.poppins(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: Colors.grey.shade800,
+                          color: AppTheme.textPrimary,
                         ),
                       ),
                       Text(
                         player.team,
                         style: GoogleFonts.poppins(
                           fontSize: 14,
-                          color: Colors.grey.shade600,
+                          color: AppTheme.textSecondary,
                         ),
                       ),
                     ],
@@ -94,7 +89,8 @@ class PlayerPaymentCard extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: _getStatusColor(player.status).withOpacity(0.1),
+                    color:
+                        _getStatusColor(player.status).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -112,7 +108,7 @@ class PlayerPaymentCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.grey.shade50,
+                color: AppTheme.surface2,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
@@ -125,7 +121,7 @@ class PlayerPaymentCard extends StatelessWidget {
                         style: GoogleFonts.poppins(
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
-                          color: Colors.grey.shade700,
+                          color: AppTheme.textSecondary,
                         ),
                       ),
                       Text(
@@ -133,7 +129,7 @@ class PlayerPaymentCard extends StatelessWidget {
                         style: GoogleFonts.poppins(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: Colors.grey.shade800,
+                          color: AppTheme.textPrimary,
                         ),
                       ),
                     ],
@@ -141,7 +137,7 @@ class PlayerPaymentCard extends StatelessWidget {
                   const SizedBox(height: 8),
                   LinearProgressIndicator(
                     value: _getProgressValue(),
-                    backgroundColor: Colors.grey.shade200,
+                    backgroundColor: AppTheme.surface,
                     valueColor: AlwaysStoppedAnimation<Color>(
                       _getStatusColor(player.status),
                     ),
@@ -153,24 +149,26 @@ class PlayerPaymentCard extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
+                        color: AppTheme.surface,
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.grey.shade300),
+                        border: Border.all(color: AppTheme.border),
                       ),
                       child: Row(
                         children: [
                           Icon(
                             Icons.info_outline_rounded,
                             size: 16,
-                            color: Colors.grey.shade600,
+                            color: AppTheme.textSecondary,
                           ),
                           const SizedBox(width: 6),
                           Expanded(
                             child: Text(
-                              AppLocalizations.of(context)!.playerInactiveMonths(player.inactiveMonths.toString()),
+                              AppLocalizations.of(context)!
+                                  .playerInactiveMonths(
+                                      player.inactiveMonths.toString()),
                               style: GoogleFonts.poppins(
                                 fontSize: 11,
-                                color: Colors.grey.shade600,
+                                color: AppTheme.textSecondary,
                               ),
                             ),
                           ),
@@ -223,9 +221,9 @@ class PlayerPaymentCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: color.withOpacity(0.3)),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -252,7 +250,8 @@ class PlayerPaymentCard extends StatelessWidget {
   String _getProgressText(BuildContext context) {
     switch (player.status) {
       case PaymentStatus.notActive:
-        return AppLocalizations.of(context)!.inactiveMonthsProgress(player.inactiveMonths.toString());
+        return AppLocalizations.of(context)!
+            .inactiveMonthsProgress(player.inactiveMonths.toString());
       default:
         return AppLocalizations.of(context)!.activeMonthsProgress(
           player.paidMonths.toString(),

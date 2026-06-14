@@ -1,7 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:footballtraining/l10n/app_localizations.dart';
+import 'package:footballtraining/core/theme/app_theme.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
@@ -160,13 +161,13 @@ class _PlayerReportScreenState extends State<PlayerReportScreen>
             Expanded(
               child: Text(
                 message,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.poppins(
                     fontWeight: FontWeight.w500, fontSize: 14),
               ),
             ),
           ],
         ),
-        backgroundColor: isError ? Colors.red.shade600 : Colors.green.shade600,
+        backgroundColor: isError ? AppTheme.error : AppTheme.success,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: const EdgeInsets.all(16),
@@ -595,7 +596,7 @@ class _PlayerReportScreenState extends State<PlayerReportScreen>
         playerData['Attendance'] as Map<String, dynamic>?;
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: AppTheme.background,
       extendBodyBehindAppBar: true,
       appBar: _buildAppBar(name),
       body: FadeTransition(
@@ -645,31 +646,26 @@ class _PlayerReportScreenState extends State<PlayerReportScreen>
   PreferredSizeWidget _buildAppBar(String name) {
     return AppBar(
       elevation: 0,
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.background,
       leading: Container(
         margin: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.9),
+          color: AppTheme.surface2,
           borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          border: Border.all(color: AppTheme.border),
         ),
         child: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black87),
+          icon:
+              const Icon(Icons.arrow_back_ios_new, color: AppTheme.textPrimary),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
       title: Text(
         'Player Report',
-        style: GoogleFonts.inter(
+        style: GoogleFonts.syne(
           fontSize: 20,
           fontWeight: FontWeight.w600,
-          color: Colors.black87,
+          color: AppTheme.textPrimary,
         ),
       ),
       centerTitle: true,
@@ -677,15 +673,9 @@ class _PlayerReportScreenState extends State<PlayerReportScreen>
         Container(
           margin: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.9),
+            color: AppTheme.surface2,
             borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
+            border: Border.all(color: AppTheme.border),
           ),
           child: IconButton(
             icon: _isGeneratingPdf
@@ -695,10 +685,10 @@ class _PlayerReportScreenState extends State<PlayerReportScreen>
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
                       valueColor:
-                          AlwaysStoppedAnimation<Color>(Colors.red.shade600),
+                          AlwaysStoppedAnimation<Color>(AppTheme.primary),
                     ),
                   )
-                : Icon(Icons.picture_as_pdf, color: Colors.red.shade600),
+                : Icon(Icons.picture_as_pdf, color: AppTheme.primary),
             onPressed: _isGeneratingPdf ? null : _generatePlayerReport,
           ),
         ),
@@ -712,20 +702,9 @@ class _PlayerReportScreenState extends State<PlayerReportScreen>
       width: double.infinity,
       padding: EdgeInsets.all(isTablet ? 32 : 24),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF667eea), Color(0xFF764ba2), Color(0xFF6B73FF)],
-          stops: [0.0, 0.5, 1.0],
-        ),
+        gradient: AppTheme.primaryGradient,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF667eea).withOpacity(0.4),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
+        boxShadow: AppTheme.primaryShadow,
       ),
       child: isMobile
           ? _buildMobileProfileContent(name, position, teamName, pictureUrl)
@@ -767,7 +746,7 @@ class _PlayerReportScreenState extends State<PlayerReportScreen>
           border: Border.all(color: Colors.white, width: 4),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: 0.3),
               blurRadius: 15,
               offset: const Offset(0, 8),
             ),
@@ -795,10 +774,10 @@ class _PlayerReportScreenState extends State<PlayerReportScreen>
       children: [
         Text(
           name,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.syne(
             fontSize: 28,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: AppTheme.background,
           ),
           textAlign: isRow ? TextAlign.start : TextAlign.center,
         ),
@@ -806,26 +785,27 @@ class _PlayerReportScreenState extends State<PlayerReportScreen>
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
+            color: AppTheme.background.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withOpacity(0.3)),
+            border:
+                Border.all(color: AppTheme.background.withValues(alpha: 0.3)),
           ),
           child: Text(
             position,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.poppins(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: Colors.white,
+              color: AppTheme.background,
             ),
           ),
         ),
         const SizedBox(height: 8),
         Text(
           teamName,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.poppins(
             fontSize: 18,
             fontWeight: FontWeight.w500,
-            color: Colors.white.withOpacity(0.9),
+            color: AppTheme.background.withValues(alpha: 0.9),
           ),
           textAlign: isRow ? TextAlign.start : TextAlign.center,
         ),
@@ -885,15 +865,10 @@ class _PlayerReportScreenState extends State<PlayerReportScreen>
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.surface,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        border: Border.all(color: AppTheme.border, width: 1),
+        boxShadow: AppTheme.cardShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -903,19 +878,19 @@ class _PlayerReportScreenState extends State<PlayerReportScreen>
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
+                  color: AppTheme.surface2,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(Icons.info_outline,
-                    color: Colors.blue.shade600, size: 24),
+                child:
+                    Icon(Icons.info_outline, color: AppTheme.primary, size: 24),
               ),
               const SizedBox(width: 16),
               Text(
                 l10n.basicInfo,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.syne(
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
-                  color: Colors.black87,
+                  color: AppTheme.textPrimary,
                 ),
               ),
             ],
@@ -946,15 +921,10 @@ class _PlayerReportScreenState extends State<PlayerReportScreen>
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.surface,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        border: Border.all(color: AppTheme.border, width: 1),
+        boxShadow: AppTheme.cardShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -964,16 +934,12 @@ class _PlayerReportScreenState extends State<PlayerReportScreen>
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: presence == true
-                      ? Colors.green.shade50
-                      : Colors.red.shade50,
+                  color: AppTheme.surface2,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
                   presence == true ? Icons.check_circle : Icons.cancel,
-                  color: presence == true
-                      ? Colors.green.shade600
-                      : Colors.red.shade600,
+                  color: presence == true ? AppTheme.success : AppTheme.error,
                   size: 24,
                 ),
               ),
@@ -984,10 +950,10 @@ class _PlayerReportScreenState extends State<PlayerReportScreen>
                   children: [
                     Text(
                       l10n.lastSession,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.syne(
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
-                        color: Colors.black87,
+                        color: AppTheme.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -996,18 +962,18 @@ class _PlayerReportScreenState extends State<PlayerReportScreen>
                           horizontal: 12, vertical: 4),
                       decoration: BoxDecoration(
                         color: presence == true
-                            ? Colors.green.shade100
-                            : Colors.red.shade100,
+                            ? AppTheme.success.withValues(alpha: 0.15)
+                            : AppTheme.error.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
                         presence == true ? l10n.present : l10n.absent,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.poppins(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                           color: presence == true
-                              ? Colors.green.shade700
-                              : Colors.red.shade700,
+                              ? AppTheme.success
+                              : AppTheme.error,
                         ),
                       ),
                     ),
@@ -1035,15 +1001,10 @@ class _PlayerReportScreenState extends State<PlayerReportScreen>
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.surface,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        border: Border.all(color: AppTheme.border, width: 1),
+        boxShadow: AppTheme.cardShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1053,19 +1014,18 @@ class _PlayerReportScreenState extends State<PlayerReportScreen>
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.orange.shade50,
+                  color: AppTheme.surface2,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(Icons.bar_chart,
-                    color: Colors.orange.shade600, size: 24),
+                child: Icon(Icons.bar_chart, color: AppTheme.primary, size: 24),
               ),
               const SizedBox(width: 16),
               Text(
                 l10n.trainingSummary,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.syne(
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
-                  color: Colors.black87,
+                  color: AppTheme.textPrimary,
                 ),
               ),
             ],
@@ -1081,14 +1041,14 @@ class _PlayerReportScreenState extends State<PlayerReportScreen>
                     child: CircularProgressIndicator(
                       strokeWidth: 3,
                       valueColor:
-                          AlwaysStoppedAnimation<Color>(Colors.orange.shade600),
+                          AlwaysStoppedAnimation<Color>(AppTheme.primary),
                     ),
                   ),
                   const SizedBox(height: 16),
                   Text(
                     'Loading statistics...',
-                    style: GoogleFonts.inter(
-                        fontSize: 14, color: Colors.grey.shade600),
+                    style: GoogleFonts.poppins(
+                        fontSize: 14, color: AppTheme.textSecondary),
                   ),
                 ],
               ),
@@ -1120,15 +1080,10 @@ class _PlayerReportScreenState extends State<PlayerReportScreen>
                                     margin: const EdgeInsets.only(bottom: 12),
                                     padding: const EdgeInsets.all(16),
                                     decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        colors: [
-                                          Colors.grey.shade50,
-                                          Colors.grey.shade100
-                                        ],
-                                      ),
+                                      color: AppTheme.surface2,
                                       borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                          color: Colors.grey.shade200),
+                                      border:
+                                          Border.all(color: AppTheme.border),
                                     ),
                                     child: Row(
                                       mainAxisAlignment:
@@ -1137,10 +1092,10 @@ class _PlayerReportScreenState extends State<PlayerReportScreen>
                                         Expanded(
                                           child: Text(
                                             entry.key,
-                                            style: GoogleFonts.inter(
+                                            style: GoogleFonts.poppins(
                                               fontSize: 16,
                                               fontWeight: FontWeight.w600,
-                                              color: Colors.black87,
+                                              color: AppTheme.textPrimary,
                                             ),
                                           ),
                                         ),
@@ -1154,7 +1109,7 @@ class _PlayerReportScreenState extends State<PlayerReportScreen>
                                           ),
                                           child: Text(
                                             '${entry.value} minutes',
-                                            style: GoogleFonts.inter(
+                                            style: GoogleFonts.poppins(
                                               fontSize: 14,
                                               fontWeight: FontWeight.w600,
                                               color: Colors.white,
@@ -1206,13 +1161,9 @@ class _PlayerReportScreenState extends State<PlayerReportScreen>
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Colors.blue.shade50, Colors.indigo.shade50],
-        ),
+        color: AppTheme.surface2,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.blue.shade200),
+        border: Border.all(color: AppTheme.border),
       ),
       child: Row(
         children: [
@@ -1223,7 +1174,7 @@ class _PlayerReportScreenState extends State<PlayerReportScreen>
           Container(
             width: 1,
             height: 50,
-            color: Colors.grey.shade300,
+            color: AppTheme.border,
             margin: const EdgeInsets.symmetric(horizontal: 20),
           ),
           Expanded(
@@ -1242,7 +1193,7 @@ class _PlayerReportScreenState extends State<PlayerReportScreen>
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(icon, color: color, size: 28),
@@ -1250,7 +1201,7 @@ class _PlayerReportScreenState extends State<PlayerReportScreen>
         const SizedBox(height: 12),
         Text(
           value,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.poppins(
             fontSize: 24,
             fontWeight: FontWeight.bold,
             color: color,
@@ -1259,7 +1210,8 @@ class _PlayerReportScreenState extends State<PlayerReportScreen>
         const SizedBox(height: 4),
         Text(
           label,
-          style: GoogleFonts.inter(fontSize: 12, color: Colors.grey.shade600),
+          style:
+              GoogleFonts.poppins(fontSize: 12, color: AppTheme.textSecondary),
           textAlign: TextAlign.center,
         ),
       ],
@@ -1271,16 +1223,16 @@ class _PlayerReportScreenState extends State<PlayerReportScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: iconColor.withOpacity(0.05),
+        color: AppTheme.surface2,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: iconColor.withOpacity(0.1)),
+        border: Border.all(color: AppTheme.border),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.1),
+              color: AppTheme.surfaceHigh,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: iconColor, size: 20),
@@ -1292,19 +1244,19 @@ class _PlayerReportScreenState extends State<PlayerReportScreen>
               children: [
                 Text(
                   label,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.poppins(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: Colors.black87,
+                    color: AppTheme.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   value,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
-                    color: Colors.grey.shade700,
+                    color: AppTheme.textSecondary,
                   ),
                 ),
               ],
@@ -1325,7 +1277,7 @@ class _PlayerReportScreenState extends State<PlayerReportScreen>
         child: FloatingActionButton.extended(
           onPressed: _isGeneratingPdf ? null : _generatePlayerReport,
           backgroundColor:
-              _isGeneratingPdf ? Colors.grey.shade400 : const Color(0xFF667eea),
+              _isGeneratingPdf ? AppTheme.textMuted : AppTheme.primary,
           elevation: 8,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
@@ -1344,7 +1296,7 @@ class _PlayerReportScreenState extends State<PlayerReportScreen>
                 const SizedBox(width: 12),
                 Text(
                   'Generating...',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
@@ -1355,7 +1307,7 @@ class _PlayerReportScreenState extends State<PlayerReportScreen>
                 const SizedBox(width: 12),
                 Text(
                   'Export PDF',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: Colors.white,

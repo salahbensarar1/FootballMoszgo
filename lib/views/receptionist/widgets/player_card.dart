@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:footballtraining/views/shared/widgets/payment_month_indicator.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:footballtraining/l10n/app_localizations.dart';
+import 'package:footballtraining/core/theme/app_theme.dart';
 
 class PlayerCard extends StatelessWidget {
   final DocumentSnapshot item;
@@ -21,7 +22,8 @@ class PlayerCard extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final data = item.data() as Map<String, dynamic>;
     final String title = data['name'] ?? 'Unnamed Player';
-    final String subtitle = "${l10n.position}: ${data['position'] ?? 'Unknown'}";
+    final String subtitle =
+        "${l10n.position}: ${data['position'] ?? 'Unknown'}";
     final String pictureUrl = data['picture']?.toString() ?? '';
     final bool paymentRequired = data['payment_required'] as bool? ?? true;
 
@@ -56,9 +58,10 @@ class PlayerCard extends StatelessWidget {
                     ),
                     child: CircleAvatar(
                       radius: 28,
-                      backgroundColor: Colors.grey.shade100,
+                      backgroundColor: AppTheme.surface2,
                       backgroundImage: pictureUrl.isEmpty
-                          ? const AssetImage("assets/images/default_profile.jpeg")
+                          ? const AssetImage(
+                              "assets/images/default_profile.jpeg")
                           : NetworkImage(pictureUrl) as ImageProvider,
                     ),
                   ),
@@ -73,7 +76,7 @@ class PlayerCard extends StatelessWidget {
                         style: GoogleFonts.poppins(
                           fontWeight: FontWeight.w600,
                           fontSize: 16,
-                          color: Colors.grey.shade800,
+                          color: AppTheme.textPrimary,
                         ),
                         overflow: TextOverflow.ellipsis,
                         maxLines: 1,
@@ -82,7 +85,7 @@ class PlayerCard extends StatelessWidget {
                       Text(
                         subtitle,
                         style: GoogleFonts.poppins(
-                          color: Colors.grey.shade600,
+                          color: AppTheme.textSecondary,
                           fontSize: 14,
                         ),
                         overflow: TextOverflow.ellipsis,
@@ -92,8 +95,10 @@ class PlayerCard extends StatelessWidget {
                   ),
                 ),
                 PopupMenuButton<String>(
-                  icon: Icon(Icons.more_vert_rounded, color: Colors.grey.shade600),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  icon: Icon(Icons.more_vert_rounded,
+                      color: AppTheme.textSecondary),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                   onSelected: (value) {
                     if (value == "edit") {
                       onEdit();
@@ -106,9 +111,11 @@ class PlayerCard extends StatelessWidget {
                       value: "edit",
                       child: Row(
                         children: [
-                          Icon(Icons.edit_rounded, size: 20, color: Colors.blue.shade600),
+                          Icon(Icons.edit_rounded,
+                              size: 20, color: Colors.blue.shade600),
                           const SizedBox(width: 8),
-                          Text(l10n.edit),
+                          Text(l10n.edit,
+                              style: TextStyle(color: AppTheme.textPrimary)),
                         ],
                       ),
                     ),
@@ -116,9 +123,11 @@ class PlayerCard extends StatelessWidget {
                       value: "delete",
                       child: Row(
                         children: [
-                          Icon(Icons.delete_rounded, size: 20, color: Colors.red.shade600),
+                          Icon(Icons.delete_rounded,
+                              size: 20, color: Colors.red.shade600),
                           const SizedBox(width: 8),
-                          Text(l10n.delete, style: TextStyle(color: Colors.red.shade600)),
+                          Text(l10n.delete,
+                              style: TextStyle(color: Colors.red.shade600)),
                         ],
                       ),
                     ),
@@ -138,14 +147,15 @@ class PlayerCard extends StatelessWidget {
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      Icon(Icons.payment_rounded, size: 18, color: Colors.grey.shade600),
+                      Icon(Icons.payment_rounded,
+                          size: 18, color: AppTheme.textSecondary),
                       const SizedBox(width: 8),
                       Text(
                         l10n.paymentStatus,
                         style: GoogleFonts.poppins(
                           fontWeight: FontWeight.w500,
                           fontSize: 14,
-                          color: Colors.grey.shade700,
+                          color: AppTheme.textPrimary,
                         ),
                       ),
                     ],
@@ -161,13 +171,14 @@ class PlayerCard extends StatelessWidget {
               child: Row(
                 children: [
                   const Divider(height: 1),
-                  Icon(Icons.money_off_rounded, size: 16, color: Colors.grey.shade400),
+                  Icon(Icons.money_off_rounded,
+                      size: 16, color: AppTheme.textMuted),
                   const SizedBox(width: 6),
                   Text(
                     'Exempt from monthly payment',
                     style: GoogleFonts.poppins(
                       fontSize: 12,
-                      color: Colors.grey.shade400,
+                      color: AppTheme.textMuted,
                       fontStyle: FontStyle.italic,
                     ),
                   ),

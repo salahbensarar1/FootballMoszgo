@@ -121,7 +121,7 @@ class RoleHelper {
   /// Returns a light version of the role color
   /// Used for subtle backgrounds and hover states
   static Color getRoleLightColor(String role) {
-    return getRoleColor(role).withOpacity(0.1);
+    return getRoleColor(role).withValues(alpha: 0.1);
   }
 
   /// Returns role-specific permissions list
@@ -197,7 +197,7 @@ class RoleHelper {
       decoration: BoxDecoration(
         color: getRoleLightColor(role),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: getRoleColor(role).withOpacity(0.3)),
+        border: Border.all(color: getRoleColor(role).withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

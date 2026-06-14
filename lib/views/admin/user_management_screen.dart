@@ -3,14 +3,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:footballtraining/l10n/app_localizations.dart';
 import 'package:footballtraining/services/organization_context.dart';
 import 'package:footballtraining/views/admin/components/user_card.dart';
 import 'package:footballtraining/views/admin/components/user_filters.dart';
 import 'package:footballtraining/views/shared/widgets/empty_state_widget.dart';
 import 'package:footballtraining/views/shared/widgets/error_state_widget.dart';
 import 'package:footballtraining/views/shared/widgets/loading_state_widget.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:footballtraining/core/theme/app_theme.dart';
+import 'package:footballtraining/core/widgets/app_widgets.dart';
+import 'package:footballtraining/core/painters/pitch_painter.dart';
 
 // Import components
 import 'package:footballtraining/views/admin/dialogs/add_user_dialog.dart';
@@ -127,29 +129,52 @@ class _UserManagementScreenState extends State<UserManagementScreen>
 
   @override
   Widget build(BuildContext context) {
+    ScreenConfig.init(context);
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: AppTheme.background,
+      extendBodyBehindAppBar: false,
+      resizeToAvoidBottomInset: false,
       appBar: _buildAppBar(l10n),
-      body: FadeTransition(
-        opacity: _fadeAnimation,
-        child: SlideTransition(
-          position: _slideAnimation,
-          child: Column(
-            children: [
-              UserFilters(
-                searchController: _searchController,
-                searchQuery: searchQuery,
-                selectedRoleFilter: selectedRoleFilter,
-                onSearchChanged: (value) => setState(() => searchQuery = value),
-                onRoleFilterChanged: (role) =>
-                    setState(() => selectedRoleFilter = role),
-              ),
-              Expanded(child: _buildUsersList(l10n)),
-            ],
+      body: Stack(
+        children: [
+          // Background pitch pattern
+          CustomPaint(
+            painter: PitchLinePainter(
+              lineColor: AppTheme.primary.withValues(alpha: 0.02),
+            ),
+            size: Size.infinite,
           ),
-        ),
+
+          // Main content
+          FadeTransition(
+            opacity: _fadeAnimation,
+            child: SlideTransition(
+              position: _slideAnimation,
+              child: Column(
+                children: [
+                  // Premium header section with stats
+                  _buildHeaderSection(l10n),
+
+                  // Filters section
+                  UserFilters(
+                    searchController: _searchController,
+                    searchQuery: searchQuery,
+                    selectedRoleFilter: selectedRoleFilter,
+                    onSearchChanged: (value) =>
+                        setState(() => searchQuery = value),
+                    onRoleFilterChanged: (role) =>
+                        setState(() => selectedRoleFilter = role),
+                  ),
+
+                  // Users list
+                  Expanded(child: _buildUsersList(l10n)),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
       floatingActionButton: _buildAddUserFab(l10n),
     );
@@ -159,33 +184,155 @@ class _UserManagementScreenState extends State<UserManagementScreen>
     return AppBar(
       elevation: 0,
       centerTitle: true,
+      backgroundColor: Colors.transparent,
       title: Text(
         l10n.manageUsers,
-        style: GoogleFonts.poppins(
-          fontWeight: FontWeight.w600,
-          fontSize: 20,
+        style: AppTheme.heading2.copyWith(
+          color: AppTheme.background,
+          fontSize: 22,
         ),
       ),
       flexibleSpace: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFF27121), Color(0xFFFF8A50)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          gradient: AppTheme.primaryGradient,
+          boxShadow: AppTheme.cardShadow,
         ),
       ),
       leading: IconButton(
-        icon: Icon(Icons.arrow_back_ios_rounded, color: Colors.white),
+        icon: const Icon(Icons.arrow_back_ios_rounded,
+            color: AppTheme.background, size: 22),
         onPressed: () => Navigator.pop(context),
       ),
       actions: [
-        IconButton(
-          icon: Icon(Icons.refresh_rounded, color: Colors.white),
-          onPressed: () => setState(() {}),
-          tooltip: l10n.refresh,
+        Container(
+          margin: const EdgeInsets.only(right: 8),
+          decoration: BoxDecoration(
+            color: AppTheme.background.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: IconButton(
+            icon: const Icon(Icons.refresh_rounded,
+                color: AppTheme.background, size: 22),
+            onPressed: () => setState(() {}),
+            tooltip: l10n.refresh,
+          ),
         ),
       ],
+    );
+  }
+
+  Widget _buildHeaderSection(AppLocalizations l10n) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: _firestore
+          .collection('organizations')
+          .doc(OrganizationContext.currentOrgId)
+          .collection('users')
+          .snapshots(),
+      builder: (context, snapshot) {
+        // Count stats
+        int totalUsers = 0;
+        int coaches = 0;
+        int receptionists = 0;
+
+        if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
+          final users = snapshot.data!.docs;
+          totalUsers = users.length;
+
+          for (var doc in users) {
+            final role = doc.data() as Map<String, dynamic>?;
+            final userRole = role?['role']?.toString().toLowerCase() ?? '';
+
+            if (userRole.contains('coach')) coaches++;
+            if (userRole.contains('receptionist')) receptionists++;
+          }
+        }
+
+        return Container(
+          margin: const EdgeInsets.all(16),
+          padding: ScreenConfig.cardPadding,
+          decoration: BoxDecoration(
+            gradient: AppTheme.primaryGradient,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: AppTheme.primaryShadow,
+          ),
+          child: Row(
+            children: [
+              // Main stat
+              Expanded(
+                flex: 2,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Total Users',
+                      style: AppTheme.caption.copyWith(
+                        color: AppTheme.background.withValues(alpha: 0.8),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    AnimatedCounter(
+                      target: totalUsers,
+                      style: AppTheme.heading1.copyWith(
+                        color: AppTheme.background,
+                        fontSize: ScreenConfig.fontXXL,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Role breakdown
+              Expanded(
+                flex: 3,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildRoleStatChip(
+                        'Coaches', coaches.toString(), Icons.sports),
+                    _buildRoleStatChip(
+                        'Staff', receptionists.toString(), Icons.badge),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildRoleStatChip(String label, String value, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppTheme.background.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppTheme.background.withValues(alpha: 0.2),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: AppTheme.background, size: 18),
+          const SizedBox(height: 2),
+          Text(
+            value,
+            style: AppTheme.bodyMedium.copyWith(
+              color: AppTheme.background,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          Text(
+            label,
+            style: AppTheme.caption.copyWith(
+              color: AppTheme.background.withValues(alpha: 0.8),
+              fontSize: ScreenConfig.fontS,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -273,28 +420,46 @@ class _UserManagementScreenState extends State<UserManagementScreen>
     final isMobile = size.width < 480;
 
     if (isMobile) {
-      return FloatingActionButton(
-        onPressed: () => _addUser(l10n),
-        backgroundColor: const Color(0xFFF27121),
-        foregroundColor: Colors.white,
-        elevation: 8,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: const Icon(Icons.person_add_rounded),
-        tooltip: l10n.add,
+      return Container(
+        decoration: BoxDecoration(
+          gradient: AppTheme.primaryGradient,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: AppTheme.primaryShadow,
+        ),
+        child: FloatingActionButton(
+          onPressed: () => _addUser(l10n),
+          backgroundColor: Colors.transparent,
+          foregroundColor: AppTheme.background,
+          elevation: 0,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: const Icon(Icons.person_add_rounded, size: 24),
+          tooltip: l10n.add,
+        ),
       );
     }
 
-    return FloatingActionButton.extended(
-      onPressed: () => _addUser(l10n),
-      backgroundColor: const Color(0xFFF27121),
-      foregroundColor: Colors.white,
-      icon: const Icon(Icons.person_add_rounded),
-      label: Text(
-        l10n.add,
-        style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+    return Container(
+      decoration: BoxDecoration(
+        gradient: AppTheme.primaryGradient,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: AppTheme.primaryShadow,
       ),
-      elevation: 8,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: FloatingActionButton.extended(
+        onPressed: () => _addUser(l10n),
+        backgroundColor: Colors.transparent,
+        foregroundColor: AppTheme.background,
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        icon: const Icon(Icons.person_add_rounded, size: 22),
+        label: Text(
+          l10n.add,
+          style: AppTheme.bodyMedium.copyWith(
+            color: AppTheme.background,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
     );
   }
 

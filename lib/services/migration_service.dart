@@ -1,7 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:footballtraining/data/models/organization_model.dart';
-import 'package:footballtraining/services/organization_context.dart';
 import 'package:logger/logger.dart';
 
 /// Service for migrating from single-tenant to multi-tenant architecture

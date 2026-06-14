@@ -1,8 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:footballtraining/l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:footballtraining/core/theme/app_theme.dart';
 
 // Import your updated payment models
 import '../../data/models/payment_model.dart';
@@ -145,7 +146,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
     final isTablet = size.width >= 600 && size.width < 1024;
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: AppTheme.background,
       appBar: _buildAppBar(l10n),
       body: isLoadingTeamFees
           ? _buildLoadingState(l10n)
@@ -240,15 +241,9 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
       ),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppTheme.surface,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 20,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          border: Border.all(color: AppTheme.border),
         ),
         child: TabBar(
           controller: _tabController,
@@ -290,7 +285,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
             Icon(
               icon,
               size: isSmallScreen ? 16 : 18,
-              color: isActive ? Colors.white : Colors.grey.shade600,
+              color: isActive ? Colors.white : AppTheme.textSecondary,
             ),
             if (!isSmallScreen) ...[
               const SizedBox(width: 6),
@@ -300,7 +295,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
                   style: GoogleFonts.poppins(
                     fontSize: 13,
                     fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-                    color: isActive ? Colors.white : Colors.grey.shade600,
+                    color: isActive ? Colors.white : AppTheme.textSecondary,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -350,9 +345,9 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
   Widget _buildYearSelector(AppLocalizations l10n) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: AppTheme.border),
       ),
       child: DropdownButtonFormField<int>(
         value: selectedYear,
@@ -382,9 +377,9 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
   Widget _buildFilterSelector(AppLocalizations l10n) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: AppTheme.border),
       ),
       child: DropdownButtonFormField<String>(
         value: selectedFilter,
@@ -515,15 +510,9 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
       LinearGradient gradient, double progress) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.surface,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Border.all(color: AppTheme.border),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -546,7 +535,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
                   style: GoogleFonts.poppins(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
-                    color: Colors.grey.shade600,
+                    color: AppTheme.textSecondary,
                   ),
                 ),
               ],
@@ -558,7 +547,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
                 style: GoogleFonts.poppins(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
-                  color: Colors.grey.shade800,
+                  color: AppTheme.textPrimary,
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
@@ -567,13 +556,13 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
               title,
               style: GoogleFonts.poppins(
                 fontSize: 12,
-                color: Colors.grey.shade600,
+                color: AppTheme.textSecondary,
               ),
             ),
             const SizedBox(height: 8),
             LinearProgressIndicator(
               value: (progress / 100).clamp(0.0, 1.0),
-              backgroundColor: Colors.grey.shade200,
+              backgroundColor: AppTheme.surface,
               valueColor: AlwaysStoppedAnimation<Color>(
                 gradient.colors.first,
               ),
@@ -589,15 +578,9 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
     return Container(
       height: 200,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.surface,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Border.all(color: AppTheme.border),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -615,14 +598,14 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
                     style: GoogleFonts.poppins(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: Colors.grey.shade800,
+                      color: AppTheme.textPrimary,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: ScreenConfig.spaceM),
             Expanded(
               child: _buildSimpleChart(stats.monthlyData),
             ),
@@ -688,7 +671,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
                         months[index],
                         style: GoogleFonts.poppins(
                           fontSize: 10,
-                          color: Colors.grey.shade600,
+                          color: AppTheme.textSecondary,
                         ),
                       ),
                     ],
@@ -705,15 +688,9 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
   Widget _buildQuickActions(AppLocalizations l10n) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.surface,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Border.all(color: AppTheme.border),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -731,14 +708,14 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
                     style: GoogleFonts.poppins(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: Colors.grey.shade800,
+                      color: AppTheme.textPrimary,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: ScreenConfig.spaceM),
             LayoutBuilder(
               builder: (context, constraints) {
                 if (constraints.maxWidth < 400) {
@@ -895,15 +872,9 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.surface,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Border.all(color: AppTheme.border),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -943,7 +914,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
                         style: GoogleFonts.poppins(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: Colors.grey.shade800,
+                          color: AppTheme.textPrimary,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -951,7 +922,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
                         '${player.team} • ${_formatHUF(teamFee)}/${l10n.month}',
                         style: GoogleFonts.poppins(
                           fontSize: 14,
-                          color: Colors.grey.shade600,
+                          color: AppTheme.textSecondary,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -981,7 +952,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.grey.shade50,
+                color: AppTheme.surface2,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
@@ -994,7 +965,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
                         style: GoogleFonts.poppins(
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
-                          color: Colors.grey.shade700,
+                          color: AppTheme.textSecondary,
                         ),
                       ),
                       Text(
@@ -1002,7 +973,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
                         style: GoogleFonts.poppins(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: Colors.grey.shade800,
+                          color: AppTheme.textPrimary,
                         ),
                       ),
                     ],
@@ -1012,7 +983,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
                     value: player.totalMonths > 0
                         ? player.paidMonths / player.totalMonths
                         : 0,
-                    backgroundColor: Colors.grey.shade200,
+                    backgroundColor: AppTheme.surface,
                     valueColor: AlwaysStoppedAnimation<Color>(
                       _getStatusColor(player.status),
                     ),
@@ -1107,11 +1078,11 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
               strokeWidth: 3,
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: ScreenConfig.spaceM),
           Text(
             l10n.loadingPaymentData,
             style: GoogleFonts.poppins(
-              color: Colors.grey.shade600,
+              color: AppTheme.textSecondary,
               fontSize: 16,
             ),
           ),
@@ -1131,22 +1102,22 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
               width: 120,
               height: 120,
               decoration: BoxDecoration(
-                color: Colors.grey.shade100,
+                color: AppTheme.surface,
                 borderRadius: BorderRadius.circular(60),
               ),
               child: Icon(
                 Icons.payment_rounded,
-                color: Colors.grey.shade400,
+                color: AppTheme.textSecondary,
                 size: 60,
               ),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: ScreenConfig.spaceL),
             Text(
               message,
               style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
-                color: Colors.grey.shade800,
+                color: AppTheme.textPrimary,
               ),
               textAlign: TextAlign.center,
             ),
@@ -1421,9 +1392,9 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.only(
+        decoration: BoxDecoration(
+          color: AppTheme.surface,
+          borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(24),
             topRight: Radius.circular(24),
           ),
@@ -1437,7 +1408,7 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
+                  color: AppTheme.border,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -1542,5 +1513,4 @@ class _PaymentOverviewScreenState extends State<PaymentOverviewScreen>
       ),
     );
   }
-
 }

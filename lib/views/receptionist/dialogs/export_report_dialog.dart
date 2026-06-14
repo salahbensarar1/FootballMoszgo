@@ -50,7 +50,7 @@ class _ExportReportDialogState extends State<ExportReportDialog> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0xFF10B981).withOpacity(0.1),
+              color: const Color(0xFF10B981).withValues(alpha:0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Icon(Icons.file_download_rounded,
@@ -308,9 +308,9 @@ class _ExportReportDialogState extends State<ExportReportDialog> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFF10B981).withOpacity(0.05),
+        color: const Color(0xFF10B981).withValues(alpha:0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF10B981).withOpacity(0.2)),
+        border: Border.all(color: const Color(0xFF10B981).withValues(alpha:0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

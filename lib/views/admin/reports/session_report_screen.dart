@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:footballtraining/services/organization_context.dart';
 import 'package:footballtraining/views/admin/reports/player_report_screen.dart';
+import 'package:footballtraining/core/theme/app_theme.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
@@ -268,13 +269,13 @@ class _SessionReportScreenState extends State<SessionReportScreen>
             Expanded(
               child: Text(
                 message,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.poppins(
                     fontWeight: FontWeight.w500, fontSize: 14),
               ),
             ),
           ],
         ),
-        backgroundColor: isError ? Colors.red.shade600 : Colors.green.shade600,
+        backgroundColor: isError ? AppTheme.error : AppTheme.success,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: const EdgeInsets.all(16),
@@ -637,24 +638,34 @@ class _SessionReportScreenState extends State<SessionReportScreen>
           child: Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppTheme.surface,
               borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppTheme.border),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const CircularProgressIndicator(),
+                CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primary),
+                ),
                 const SizedBox(height: 16),
                 Text('Loading player details...',
-                    style: GoogleFonts.inter(fontSize: 14)),
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      color: AppTheme.textPrimary,
+                    )),
               ],
             ),
           ),
         ),
       );
 
-      DocumentSnapshot playerDoc =
-          await _firestore.collection('players').doc(playerId).get();
+      DocumentSnapshot playerDoc = await _firestore
+          .collection('organizations')
+          .doc(OrganizationContext.currentOrgId)
+          .collection('players')
+          .doc(playerId)
+          .get();
 
       if (mounted) Navigator.pop(context);
 
@@ -687,7 +698,7 @@ class _SessionReportScreenState extends State<SessionReportScreen>
     final endTime = sessionData['end_time'] as Timestamp?;
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: AppTheme.background,
       extendBodyBehindAppBar: true,
       appBar: _buildAppBar(teamName),
       body: sessionData.isEmpty
@@ -739,18 +750,29 @@ class _SessionReportScreenState extends State<SessionReportScreen>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          SizedBox(
-            width: 60,
-            height: 60,
-            child: CircularProgressIndicator(
-              strokeWidth: 4,
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.blue.shade600),
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: AppTheme.surface2,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: AppTheme.border),
+            ),
+            child: const Padding(
+              padding: EdgeInsets.all(16),
+              child: CircularProgressIndicator(
+                strokeWidth: 3,
+                valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primary),
+              ),
             ),
           ),
           const SizedBox(height: 20),
           Text(
             'Loading session details...',
-            style: GoogleFonts.inter(fontSize: 16, color: Colors.grey.shade600),
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              color: AppTheme.textSecondary,
+            ),
           ),
         ],
       ),
@@ -760,31 +782,27 @@ class _SessionReportScreenState extends State<SessionReportScreen>
   PreferredSizeWidget _buildAppBar(String teamName) {
     return AppBar(
       elevation: 0,
-      backgroundColor: Colors.transparent,
+      scrolledUnderElevation: 0,
+      backgroundColor: AppTheme.background,
       leading: Container(
         margin: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.9),
+          color: AppTheme.surface2,
           borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          border: Border.all(color: AppTheme.border, width: 1),
         ),
         child: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black87),
+          icon: const Icon(Icons.arrow_back_ios_new,
+              color: AppTheme.textPrimary, size: 18),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
       title: Text(
         'Session Report',
-        style: GoogleFonts.inter(
+        style: GoogleFonts.syne(
           fontSize: 20,
-          fontWeight: FontWeight.w600,
-          color: Colors.black87,
+          fontWeight: FontWeight.w700,
+          color: AppTheme.textPrimary,
         ),
       ),
       centerTitle: true,
@@ -792,28 +810,22 @@ class _SessionReportScreenState extends State<SessionReportScreen>
         Container(
           margin: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.9),
+            color: AppTheme.surface2,
             borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
+            border: Border.all(color: AppTheme.border, width: 1),
           ),
           child: IconButton(
             icon: isGeneratingPdf
-                ? SizedBox(
+                ? const SizedBox(
                     width: 20,
                     height: 20,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
                       valueColor:
-                          AlwaysStoppedAnimation<Color>(Colors.red.shade600),
+                          AlwaysStoppedAnimation<Color>(AppTheme.primary),
                     ),
                   )
-                : Icon(Icons.picture_as_pdf, color: Colors.red.shade600),
+                : const Icon(Icons.picture_as_pdf, color: AppTheme.primary),
             onPressed: isGeneratingPdf ? null : _generateSessionReport,
           ),
         ),
@@ -827,39 +839,28 @@ class _SessionReportScreenState extends State<SessionReportScreen>
       width: double.infinity,
       padding: EdgeInsets.all(isTablet ? 32 : 24),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF667eea), Color(0xFF764ba2), Color(0xFF6B73FF)],
-          stops: [0.0, 0.5, 1.0],
-        ),
+        gradient: AppTheme.primaryGradient,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF667eea).withOpacity(0.4),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
+        boxShadow: AppTheme.primaryShadow,
       ),
       child: Column(
         children: [
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: AppTheme.background.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Icon(Icons.event_available,
-                color: Colors.white, size: isTablet ? 40 : 32),
+                color: AppTheme.background, size: isTablet ? 40 : 32),
           ),
           const SizedBox(height: 20),
           Text(
             teamName,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.syne(
               fontSize: isTablet ? 32 : 28,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: AppTheme.background,
             ),
             textAlign: TextAlign.center,
           ),
@@ -867,16 +868,16 @@ class _SessionReportScreenState extends State<SessionReportScreen>
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: AppTheme.background.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withOpacity(0.3)),
+              border: Border.all(color: AppTheme.background.withValues(alpha: 0.2)),
             ),
             child: Text(
               trainingType,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.poppins(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: Colors.white,
+                color: AppTheme.background,
               ),
             ),
           ),
@@ -885,26 +886,26 @@ class _SessionReportScreenState extends State<SessionReportScreen>
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(Icons.calendar_today,
-                  color: Colors.white.withOpacity(0.8), size: 16),
+                  color: AppTheme.background.withValues(alpha: 0.8), size: 16),
               const SizedBox(width: 8),
               Text(
                 _formatDateOnly(startTime),
-                style: GoogleFonts.inter(
+                style: GoogleFonts.poppins(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
-                  color: Colors.white.withOpacity(0.9),
+                  color: AppTheme.background.withValues(alpha: 0.9),
                 ),
               ),
               const SizedBox(width: 16),
               Icon(Icons.access_time,
-                  color: Colors.white.withOpacity(0.8), size: 16),
+                  color: AppTheme.background.withValues(alpha: 0.8), size: 16),
               const SizedBox(width: 8),
               Text(
                 "${_formatTimeOnly(startTime)} - ${_formatTimeOnly(endTime)}",
-                style: GoogleFonts.inter(
+                style: GoogleFonts.poppins(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
-                  color: Colors.white.withOpacity(0.9),
+                  color: AppTheme.background.withValues(alpha: 0.9),
                 ),
               ),
             ],
@@ -951,15 +952,10 @@ class _SessionReportScreenState extends State<SessionReportScreen>
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.surface,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        border: Border.all(color: AppTheme.border, width: 1),
+        boxShadow: AppTheme.cardShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -969,19 +965,19 @@ class _SessionReportScreenState extends State<SessionReportScreen>
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
+                  color: AppTheme.surface2,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(Icons.info_outline,
-                    color: Colors.blue.shade600, size: 24),
+                    color: AppTheme.primary, size: 24),
               ),
               const SizedBox(width: 16),
               Text(
                 'Session Details',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.syne(
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
-                  color: Colors.black87,
+                  color: AppTheme.textPrimary,
                 ),
               ),
             ],
@@ -1006,15 +1002,10 @@ class _SessionReportScreenState extends State<SessionReportScreen>
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.surface,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        border: Border.all(color: AppTheme.border, width: 1),
+        boxShadow: AppTheme.cardShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1024,19 +1015,19 @@ class _SessionReportScreenState extends State<SessionReportScreen>
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.indigo.shade50,
+                  color: AppTheme.surface2,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(Icons.analytics,
-                    color: Colors.indigo.shade600, size: 24),
+                    color: AppTheme.primary, size: 24),
               ),
               const SizedBox(width: 16),
               Text(
                 'Session Statistics',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.syne(
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
-                  color: Colors.black87,
+                  color: AppTheme.textPrimary,
                 ),
               ),
             ],
@@ -1090,12 +1081,9 @@ class _SessionReportScreenState extends State<SessionReportScreen>
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          gradient: LinearGradient(colors: [
-                            Colors.indigo.shade50,
-                            Colors.purple.shade50
-                          ]),
+                          color: AppTheme.surface2,
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.indigo.shade200),
+                          border: Border.all(color: AppTheme.border, width: 1),
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -1104,39 +1092,39 @@ class _SessionReportScreenState extends State<SessionReportScreen>
                               children: [
                                 Text(
                                   '${sessionStats['totalMinutes'] ?? 0}',
-                                  style: GoogleFonts.inter(
+                                  style: GoogleFonts.poppins(
                                     fontSize: 24,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.indigo.shade700,
+                                    color: AppTheme.primary,
                                   ),
                                 ),
                                 Text(
                                   'Total Minutes',
-                                  style: GoogleFonts.inter(
+                                  style: GoogleFonts.poppins(
                                       fontSize: 12,
-                                      color: Colors.grey.shade600),
+                                      color: AppTheme.textSecondary),
                                 ),
                               ],
                             ),
                             Container(
                                 width: 1,
                                 height: 40,
-                                color: Colors.grey.shade300),
+                                color: AppTheme.border),
                             Column(
                               children: [
                                 Text(
                                   '${(sessionStats['avgMinutesPerPlayer'] ?? 0.0).toStringAsFixed(0)}',
-                                  style: GoogleFonts.inter(
+                                  style: GoogleFonts.poppins(
                                     fontSize: 24,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.purple.shade700,
+                                    color: AppTheme.secondary,
                                   ),
                                 ),
                                 Text(
                                   'Avg per Player',
-                                  style: GoogleFonts.inter(
+                                  style: GoogleFonts.poppins(
                                       fontSize: 12,
-                                      color: Colors.grey.shade600),
+                                      color: AppTheme.textSecondary),
                                 ),
                               ],
                             ),
@@ -1159,9 +1147,9 @@ class _SessionReportScreenState extends State<SessionReportScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.05),
+        color: AppTheme.surface2,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: AppTheme.border),
       ),
       child: Column(
         children: [
@@ -1169,7 +1157,7 @@ class _SessionReportScreenState extends State<SessionReportScreen>
           const SizedBox(height: 8),
           Text(
             value,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.poppins(
               fontSize: 20,
               fontWeight: FontWeight.bold,
               color: color,
@@ -1177,7 +1165,7 @@ class _SessionReportScreenState extends State<SessionReportScreen>
           ),
           Text(
             label,
-            style: GoogleFonts.inter(fontSize: 12, color: Colors.grey.shade600),
+            style: GoogleFonts.poppins(fontSize: 12, color: AppTheme.textSecondary),
           ),
         ],
       ),
@@ -1189,15 +1177,10 @@ class _SessionReportScreenState extends State<SessionReportScreen>
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.surface,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        border: Border.all(color: AppTheme.border, width: 1),
+        boxShadow: AppTheme.cardShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1207,19 +1190,19 @@ class _SessionReportScreenState extends State<SessionReportScreen>
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.green.shade50,
+                  color: AppTheme.surface2,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child:
-                    Icon(Icons.people, color: Colors.green.shade600, size: 24),
+                    Icon(Icons.people, color: AppTheme.primary, size: 24),
               ),
               const SizedBox(width: 16),
               Text(
                 'Player Attendance',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.syne(
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
-                  color: Colors.black87,
+                  color: AppTheme.textPrimary,
                 ),
               ),
               const Spacer(),
@@ -1227,15 +1210,15 @@ class _SessionReportScreenState extends State<SessionReportScreen>
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: Colors.green.shade100,
+                  color: AppTheme.primary.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
                   '${playerAttendanceList.length}',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.poppins(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color: Colors.green.shade700,
+                    color: AppTheme.primary,
                   ),
                 ),
               ),
@@ -1246,12 +1229,12 @@ class _SessionReportScreenState extends State<SessionReportScreen>
             Center(
               child: Column(
                 children: [
-                  Icon(Icons.group_off, size: 64, color: Colors.grey.shade400),
+                  Icon(Icons.group_off, size: 64, color: AppTheme.textMuted),
                   const SizedBox(height: 16),
                   Text(
                     'No players recorded for this session.',
-                    style: GoogleFonts.inter(
-                        fontSize: 16, color: Colors.grey.shade600),
+                    style: GoogleFonts.poppins(
+                        fontSize: 16, color: AppTheme.textSecondary),
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -1296,25 +1279,14 @@ class _SessionReportScreenState extends State<SessionReportScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            isPresent ? Colors.green.shade50 : Colors.red.shade50,
-            Colors.white,
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: AppTheme.surface2,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isPresent ? Colors.green.shade200 : Colors.red.shade200,
+          color: isPresent
+              ? AppTheme.success.withValues(alpha: 0.4)
+              : AppTheme.error.withValues(alpha: 0.4),
+          width: 1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: InkWell(
         onTap: () => _navigateToPlayerDetails(playerId),
@@ -1324,12 +1296,14 @@ class _SessionReportScreenState extends State<SessionReportScreen>
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: isPresent ? Colors.green.shade100 : Colors.red.shade100,
+                color: isPresent
+                    ? AppTheme.success.withValues(alpha: 0.15)
+                    : AppTheme.error.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
                 isPresent ? Icons.check_circle : Icons.cancel,
-                color: isPresent ? Colors.green.shade700 : Colors.red.shade700,
+                color: isPresent ? AppTheme.success : AppTheme.error,
                 size: 24,
               ),
             ),
@@ -1340,10 +1314,10 @@ class _SessionReportScreenState extends State<SessionReportScreen>
                 children: [
                   Text(
                     playerName,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.poppins(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+                      color: AppTheme.textPrimary,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -1355,18 +1329,16 @@ class _SessionReportScreenState extends State<SessionReportScreen>
                             horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
                           color: isPresent
-                              ? Colors.green.shade100
-                              : Colors.red.shade100,
+                              ? AppTheme.success.withValues(alpha: 0.15)
+                              : AppTheme.error.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
                           isPresent ? 'Present' : 'Absent',
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.poppins(
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
-                            color: isPresent
-                                ? Colors.green.shade700
-                                : Colors.red.shade700,
+                            color: isPresent ? AppTheme.success : AppTheme.error,
                           ),
                         ),
                       ),
@@ -1376,15 +1348,15 @@ class _SessionReportScreenState extends State<SessionReportScreen>
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: Colors.blue.shade100,
+                            color: AppTheme.primary.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
                             '$minutes min',
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.poppins(
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
-                              color: Colors.blue.shade700,
+                              color: AppTheme.primary,
                             ),
                           ),
                         ),
@@ -1395,7 +1367,7 @@ class _SessionReportScreenState extends State<SessionReportScreen>
               ),
             ),
             Icon(Icons.chevron_right_rounded,
-                color: Colors.grey.shade400, size: 24),
+                color: AppTheme.textMuted, size: 24),
           ],
         ),
       ),
@@ -1407,16 +1379,16 @@ class _SessionReportScreenState extends State<SessionReportScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: iconColor.withOpacity(0.05),
+        color: AppTheme.surface2,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: iconColor.withOpacity(0.1)),
+        border: Border.all(color: AppTheme.border),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.1),
+              color: AppTheme.surfaceHigh,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: iconColor, size: 20),
@@ -1428,19 +1400,19 @@ class _SessionReportScreenState extends State<SessionReportScreen>
               children: [
                 Text(
                   label,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.poppins(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: Colors.black87,
+                    color: AppTheme.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   value,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
-                    color: Colors.grey.shade700,
+                    color: AppTheme.textSecondary,
                   ),
                 ),
               ],
@@ -1461,7 +1433,7 @@ class _SessionReportScreenState extends State<SessionReportScreen>
         child: FloatingActionButton.extended(
           onPressed: isGeneratingPdf ? null : _generateSessionReport,
           backgroundColor:
-              isGeneratingPdf ? Colors.grey.shade400 : const Color(0xFF667eea),
+              isGeneratingPdf ? AppTheme.textMuted : AppTheme.primary,
           elevation: 8,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
@@ -1480,7 +1452,7 @@ class _SessionReportScreenState extends State<SessionReportScreen>
                 const SizedBox(width: 12),
                 Text(
                   'Generating...',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
@@ -1491,7 +1463,7 @@ class _SessionReportScreenState extends State<SessionReportScreen>
                 const SizedBox(width: 12),
                 Text(
                   'Export PDF',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: Colors.white,

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:footballtraining/l10n/app_localizations.dart';
+import 'package:footballtraining/core/theme/app_theme.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class WelcomeSectionExtracted extends StatelessWidget {
   final String? userDisplayName;
@@ -24,36 +26,49 @@ class WelcomeSectionExtracted extends StatelessWidget {
           children: [
             Text(
               "Hello, ",
-              style: TextStyle(
-                fontSize: isSmallScreen ? 22 : 26,
+              style: GoogleFonts.poppins(
+                fontSize: isSmallScreen ? 20 : 24,
                 fontWeight: FontWeight.w400,
-                color: Colors.grey.shade700,
+                color: AppTheme.textSecondary,
               ),
             ),
             Expanded(
               child: Text(
                 userDisplayName ?? l10n.coach,
-                style: TextStyle(
-                  fontSize: isSmallScreen ? 22 : 26,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                  overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.syne(
+                  fontSize: isSmallScreen ? 20 : 24,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.textPrimary,
                 ),
                 maxLines: 1,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 8),
-        Text(
-          isTrainingActive
-              ? "Aktív edzés folyamatban"
-              : "Üdvözöljük az edző felületen!",
-          style: TextStyle(
-            fontSize: isSmallScreen ? 14 : 16,
-            color: isTrainingActive ? Colors.green.shade600 : Colors.grey.shade600,
-            fontWeight: isTrainingActive ? FontWeight.w600 : FontWeight.normal,
-          ),
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isTrainingActive ? AppTheme.success : AppTheme.textMuted,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              isTrainingActive ? "Training in progress" : "Ready for training",
+              style: GoogleFonts.poppins(
+                fontSize: isSmallScreen ? 13 : 14,
+                color: isTrainingActive
+                    ? AppTheme.success
+                    : AppTheme.textSecondary,
+                fontWeight:
+                    isTrainingActive ? FontWeight.w600 : FontWeight.w400,
+              ),
+            ),
+          ],
         ),
       ],
     );

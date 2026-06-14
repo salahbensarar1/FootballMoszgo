@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:footballtraining/core/theme/app_theme.dart';
 
 /// Utility class for responsive design helpers
 class ResponsiveUtils {
@@ -122,8 +123,42 @@ class ResponsiveUtils {
     } else if (mobile != null) {
       return mobile;
     }
-    
+
     // Fallback to mobile if provided, otherwise empty container
     return mobile ?? const SizedBox.shrink();
+  }
+
+  /// Get card decoration with dark theme styling
+  static BoxDecoration getCardDecoration({
+    Color? backgroundColor,
+    double borderRadius = 16,
+    bool hasBorder = true,
+    Color? borderColor,
+  }) {
+    return BoxDecoration(
+      color: backgroundColor ?? AppTheme.surface,
+      borderRadius: BorderRadius.circular(borderRadius),
+      border: hasBorder
+          ? Border.all(color: borderColor ?? AppTheme.border, width: 1)
+          : null,
+    );
+  }
+
+  /// Get responsive font size
+  static double getFontSize(
+    BuildContext context, {
+    double? mobile,
+    double? tablet,
+    double? desktop,
+    double baseFontSize = 16.0,
+  }) {
+    if (isDesktop(context) && desktop != null) return desktop;
+    if (isTablet(context) && tablet != null) return tablet;
+    if (isMobile(context) && mobile != null) return mobile;
+
+    // Default scaling
+    if (isDesktop(context)) return baseFontSize * 1.1;
+    if (isTablet(context)) return baseFontSize * 1.05;
+    return baseFontSize;
   }
 }

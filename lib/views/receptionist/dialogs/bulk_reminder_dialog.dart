@@ -46,7 +46,7 @@ class _BulkReminderDialogState extends State<BulkReminderDialog> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0xFFF59E0B).withOpacity(0.1),
+              color: const Color(0xFFF59E0B).withValues(alpha:0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Icon(Icons.email_rounded, color: Color(0xFFF59E0B)),
@@ -286,9 +286,9 @@ class _BulkReminderDialogState extends State<BulkReminderDialog> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF59E0B).withOpacity(0.05),
+        color: const Color(0xFFF59E0B).withValues(alpha:0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFF59E0B).withOpacity(0.2)),
+        border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha:0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

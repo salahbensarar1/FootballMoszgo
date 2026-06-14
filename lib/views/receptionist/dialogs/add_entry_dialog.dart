@@ -5,7 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:footballtraining/l10n/app_localizations.dart';
 import 'package:footballtraining/shared/utils/coach_role_utils.dart';
 import 'package:footballtraining/services/organization_context.dart';
 import 'package:image_picker/image_picker.dart';
@@ -78,17 +78,17 @@ class _AddEntryDialogState extends State<AddEntryDialog>
         'coach': {
           'gradient': [Color(0xFF667eea), Color(0xFF764ba2)],
           'icon': Icons.sports_rounded,
-          'lightColor': Color(0xFF667eea).withOpacity(0.1),
+          'lightColor': Color(0xFF667eea).withValues(alpha: 0.1),
         },
         'player': {
           'gradient': [Color(0xFF10B981), Color(0xFF059669)],
           'icon': Icons.person_rounded,
-          'lightColor': Color(0xFF10B981).withOpacity(0.1),
+          'lightColor': Color(0xFF10B981).withValues(alpha: 0.1),
         },
         'team': {
           'gradient': [Color(0xFFF59E0B), Color(0xFFD97706)],
           'icon': Icons.groups_rounded,
-          'lightColor': Color(0xFFF59E0B).withOpacity(0.1),
+          'lightColor': Color(0xFFF59E0B).withValues(alpha: 0.1),
         },
       };
 
@@ -240,7 +240,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 20,
                     spreadRadius: 5,
                     offset: const Offset(0, 10),
@@ -288,7 +288,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
@@ -315,7 +315,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
                   _getSubtitle(l10n),
                   style: GoogleFonts.poppins(
                     fontSize: 14,
-                    color: Colors.white.withOpacity(0.8),
+                    color: Colors.white.withValues(alpha: 0.8),
                   ),
                 ),
               ],
@@ -393,7 +393,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: primaryColor.withOpacity(0.3),
+                        color: primaryColor.withValues(alpha: 0.3),
                         blurRadius: 8,
                         offset: const Offset(0, 4),
                       ),
@@ -2101,7 +2101,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
         boxShadow: (focusNode?.hasFocus == true)
             ? [
                 BoxShadow(
-                  color: primaryColor.withOpacity(0.1),
+                  color: primaryColor.withValues(alpha: 0.1),
                   blurRadius: 8,
                   spreadRadius: 2,
                 )
@@ -2151,7 +2151,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
         boxShadow: (_focusNodes[2].hasFocus)
             ? [
                 BoxShadow(
-                  color: primaryColor.withOpacity(0.1),
+                  color: primaryColor.withValues(alpha: 0.1),
                   blurRadius: 8,
                   spreadRadius: 2,
                 )
@@ -2343,7 +2343,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
               border: Border.all(color: primaryColor, width: 3),
               boxShadow: [
                 BoxShadow(
-                  color: primaryColor.withOpacity(0.2),
+                  color: primaryColor.withValues(alpha: 0.2),
                   blurRadius: 12,
                   offset: const Offset(0, 6),
                 ),
@@ -2383,7 +2383,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: primaryColor.withOpacity(0.3),
+                  color: primaryColor.withValues(alpha: 0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),

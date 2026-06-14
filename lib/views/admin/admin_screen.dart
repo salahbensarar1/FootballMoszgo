@@ -1,20 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:footballtraining/views/admin/reports/player_report_screen.dart';
+import 'package:footballtraining/l10n/app_localizations.dart';
 import 'package:footballtraining/views/admin/reports/session_report_screen.dart';
 import 'package:footballtraining/views/admin/reports/team_report_screen.dart';
-import 'package:footballtraining/views/dashboard/dashboard_screen.dart';
 import 'package:footballtraining/views/login/login_page.dart';
 import 'package:footballtraining/services/organization_context.dart';
-
 import 'package:footballtraining/views/admin/user_management_screen.dart';
 import 'package:footballtraining/views/admin/settings_screen.dart';
-import 'package:footballtraining/views/admin/widgets/data_migration_button.dart';
 import 'package:footballtraining/views/mlsz/mlsz_dashboard_screen.dart';
-import 'package:footballtraining/views/mlsz/mlsz_matches_screen.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:footballtraining/core/theme/app_theme.dart';
+import 'package:footballtraining/core/widgets/app_widgets.dart';
 import 'package:intl/intl.dart';
 
 class AdminScreen extends StatefulWidget {
@@ -30,72 +26,61 @@ class _AdminScreenState extends State<AdminScreen>
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // UI State
-  String searchQuery = "";
-  int currentTab = 0;
-  final TextEditingController _searchController = TextEditingController();
-  late TabController _tabController;
+  // Animation controllers
+  late AnimationController _entryController;
+  late Animation<double> _fadeAnim;
+  late Animation<Offset> _slideAnim;
 
   // User data
   String? userName;
   String? email;
   String? profileImageUrl;
+  String? organizationName;
 
   // Loading states
   bool isLoading = false;
   String? errorMessage;
 
-  // Tab configuration
-  final List<TabConfig> tabConfigs = [
-    TabConfig(
-      icon: Icons.event_available,
-      activeIcon: Icons.event_available,
-      gradient: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-    ),
-    TabConfig(
-      icon: Icons.people_outline,
-      activeIcon: Icons.people,
-      gradient: [Color(0xFF10B981), Color(0xFF059669)],
-    ),
-    TabConfig(
-      icon: Icons.groups_outlined,
-      activeIcon: Icons.groups,
-      gradient: [Color(0xFFF59E0B), Color(0xFFD97706)],
-    ),
-  ];
+  // Stats data
+  int totalPlayers = 0;
+  int totalTeams = 0;
+  int activeSessions = 0;
+  double attendanceRate = 0.0;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
-    _tabController.addListener(_handleTabChange);
+    _setupAnimations();
     _getUserDetails();
-    _searchController.addListener(_handleSearchChange);
+    _loadStats();
   }
 
   @override
   void dispose() {
-    _tabController.dispose();
-    _searchController.dispose();
+    _entryController.dispose();
     super.dispose();
   }
 
-  void _handleTabChange() {
-    if (_tabController.indexIsChanging) {
-      setState(() {
-        currentTab = _tabController.index;
-        searchQuery = "";
-        _searchController.clear();
-      });
-    }
-  }
+  void _setupAnimations() {
+    _entryController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
 
-  void _handleSearchChange() {
-    if (_searchController.text.isEmpty && searchQuery.isNotEmpty) {
-      setState(() {
-        searchQuery = "";
-      });
-    }
+    _fadeAnim = CurvedAnimation(
+      parent: _entryController,
+      curve: Curves.easeOut,
+    );
+
+    _slideAnim = Tween<Offset>(
+      begin: const Offset(0, 0.06),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _entryController,
+      curve: Curves.easeOutCubic,
+    ));
+
+    _entryController.forward();
   }
 
   Future<void> _getUserDetails() async {
@@ -105,25 +90,38 @@ class _AdminScreenState extends State<AdminScreen>
     setState(() => isLoading = true);
 
     try {
-      final doc = await _firestore
+      // Get user details
+      final userDoc = await _firestore
           .collection('organizations')
           .doc(OrganizationContext.currentOrgId)
           .collection('users')
           .doc(user!.uid)
           .get();
+
+      // Get organization details
+      final orgDoc = await _firestore
+          .collection('organizations')
+          .doc(OrganizationContext.currentOrgId)
+          .get();
+
       if (mounted) {
-        if (doc.exists) {
-          final data = doc.data() as Map<String, dynamic>;
+        if (userDoc.exists) {
+          final userData = userDoc.data() as Map<String, dynamic>;
           setState(() {
-            userName = data['name'] ?? 'Admin';
-            email = data['email'] ?? user.email;
-            profileImageUrl = data['picture'];
+            userName = userData['name'] ?? 'Admin';
+            email = userData['email'] ?? user.email;
+            profileImageUrl = userData['picture'];
+          });
+        }
+
+        if (orgDoc.exists) {
+          final orgData = orgDoc.data() as Map<String, dynamic>;
+          setState(() {
+            organizationName = orgData['organization_name'] ?? 'Organization';
             isLoading = false;
           });
         } else {
           setState(() {
-            userName = "Admin";
-            email = user.email ?? "admin@example.com";
             isLoading = false;
           });
         }
@@ -134,247 +132,628 @@ class _AdminScreenState extends State<AdminScreen>
           errorMessage = e.toString();
           userName = "Admin";
           email = user?.email ?? "admin@example.com";
+          organizationName = "Organization";
           isLoading = false;
         });
       }
     }
   }
 
-  Stream<QuerySnapshot> _getStreamForCurrentTab(AppLocalizations l10n) {
-    Query query;
+  Future<void> _loadStats() async {
+    try {
+      final orgId = OrganizationContext.currentOrgId;
 
-    switch (currentTab) {
-      case 0: // Training Sessions
-        query = _firestore
-            .collection('organizations')
-            .doc(OrganizationContext.currentOrgId)
-            .collection('training_sessions')
-            .orderBy('start_time', descending: true);
-        if (searchQuery.isNotEmpty) {
-          query = query
-              .where('team', isGreaterThanOrEqualTo: searchQuery)
-              .where('team', isLessThanOrEqualTo: '$searchQuery\uf8ff');
-        }
-        break;
-      case 1: // Players
-        query = _firestore
-            .collection('organizations')
-            .doc(OrganizationContext.currentOrgId)
-            .collection('players');
-        if (searchQuery.isNotEmpty) {
-          query = query
-              .where('name', isGreaterThanOrEqualTo: searchQuery)
-              .where('name', isLessThanOrEqualTo: '$searchQuery\uf8ff')
-              .orderBy('name');
-        } else {
-          query = query.orderBy('name');
-        }
-        break;
-      case 2: // Teams
-        query = _firestore
-            .collection('organizations')
-            .doc(OrganizationContext.currentOrgId)
-            .collection('teams');
-        if (searchQuery.isNotEmpty) {
-          query = query
-              .where('team_name', isGreaterThanOrEqualTo: searchQuery)
-              .where('team_name', isLessThanOrEqualTo: '$searchQuery\uf8ff')
-              .orderBy('team_name');
-        } else {
-          query = query.orderBy('team_name');
-        }
-        break;
-      default:
-        return const Stream.empty();
+      // Get players count
+      final playersSnapshot = await _firestore
+          .collection('organizations')
+          .doc(orgId)
+          .collection('players')
+          .get();
+
+      // Get teams count
+      final teamsSnapshot = await _firestore
+          .collection('organizations')
+          .doc(orgId)
+          .collection('teams')
+          .get();
+
+      // Get recent sessions count (last 30 days)
+      final thirtyDaysAgo = DateTime.now().subtract(const Duration(days: 30));
+      final sessionsSnapshot = await _firestore
+          .collection('organizations')
+          .doc(orgId)
+          .collection('training_sessions')
+          .where('start_time',
+              isGreaterThanOrEqualTo: Timestamp.fromDate(thirtyDaysAgo))
+          .get();
+
+      // Calculate attendance rate
+      double totalAttendance = 0;
+      int totalPossibleAttendances = 0;
+
+      for (var session in sessionsSnapshot.docs) {
+        final data = session.data();
+        final players = data['players'] as List<dynamic>? ?? [];
+        totalPossibleAttendances += players.length;
+        totalAttendance += players
+            .where((p) => (p as Map<String, dynamic>)['present'] == true)
+            .length;
+      }
+
+      if (mounted) {
+        setState(() {
+          totalPlayers = playersSnapshot.docs.length;
+          totalTeams = teamsSnapshot.docs.length;
+          activeSessions = sessionsSnapshot.docs.length;
+          attendanceRate = totalPossibleAttendances > 0
+              ? (totalAttendance / totalPossibleAttendances) * 100
+              : 0.0;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          errorMessage = e.toString();
+        });
+      }
     }
-    return query.snapshots();
+  }
+
+  Stream<QuerySnapshot> _getRecentSessions() {
+    final oneWeekAgo = DateTime.now().subtract(const Duration(days: 7));
+    return _firestore
+        .collection('organizations')
+        .doc(OrganizationContext.currentOrgId)
+        .collection('training_sessions')
+        .where('start_time',
+            isGreaterThanOrEqualTo: Timestamp.fromDate(oneWeekAgo))
+        .orderBy('start_time', descending: true)
+        .limit(5)
+        .snapshots();
   }
 
   @override
   Widget build(BuildContext context) {
+    ScreenConfig.init(context);
     final l10n = AppLocalizations.of(context)!;
-    final size = MediaQuery.of(context).size;
-    final isPortrait = size.height > size.width;
-
-    final tabs = [l10n.attendances, l10n.players, l10n.teams];
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
-      appBar: _buildAppBar(l10n),
-      drawer: _buildDrawer(l10n),
-      body: Column(
-        children: [
-          _buildTabBar(l10n, tabs),
-          _buildSearchBar(l10n, tabs),
-          Expanded(child: _buildContent(l10n)),
+      backgroundColor: AppTheme.background,
+      appBar: PremiumAppBar(
+        title: 'Dashboard',
+        subtitle: organizationName,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: () {
+              // Add search functionality
+            },
+          ),
         ],
       ),
-    );
-  }
+      drawer: _buildDrawer(l10n),
+      body: FadeTransition(
+        opacity: _fadeAnim,
+        child: SlideTransition(
+          position: _slideAnim,
+          child: SingleChildScrollView(
+            padding: ScreenConfig.cardPadding,
+            child: Column(
+              children: [
+                // Hero Stats Card
+                _buildHeroStatsCard(l10n),
+                const SizedBox(height: 20),
 
-  PreferredSizeWidget _buildAppBar(AppLocalizations l10n) {
-    return AppBar(
-      elevation: 0,
-      centerTitle: true,
-      title: Text(
-        l10n.adminScreen,
-        style: GoogleFonts.poppins(
-          fontWeight: FontWeight.w600,
-          fontSize: 20,
-        ),
-      ),
-      flexibleSpace: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFF27121), Color(0xFFFF8A50)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+                // Quick Actions
+                _buildQuickActionsSection(l10n),
+                const SizedBox(height: 20),
+
+                // Recent Training Sessions
+                _buildRecentSessionsSection(l10n),
+              ],
+            ),
           ),
         ),
       ),
-      actions: [
-        IconButton(
-          icon: Icon(Icons.refresh, color: Colors.white),
-          onPressed: () => setState(() {}),
-          tooltip: l10n.refresh,
-        ),
-      ],
     );
   }
 
-  Widget _buildDrawer(AppLocalizations l10n) {
-    return Drawer(
-      child: Container(
-        color: Colors.white,
+  Widget _buildHeroStatsCard(AppLocalizations l10n) {
+    return Container(
+      height: 220,
+      margin: const EdgeInsets.only(bottom: 4),
+      decoration: BoxDecoration(
+        gradient: AppTheme.primaryGradient,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: AppTheme.primaryShadow,
+      ),
+      child: Padding(
+        padding: ScreenConfig.cardPadding,
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildDrawerHeader(l10n),
-            Expanded(
-              child: ListView(
-                padding: EdgeInsets.zero,
-                children: [
-                  _buildDrawerItem(
-                    icon: Icons.dashboard_rounded,
-                    title: l10n.dashboardOverview,
-                    onTap: () => _navigateToScreen(context, DashboardScreen()),
+            // Header
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'OVERVIEW',
+                  style: AppTheme.overline.copyWith(
+                    color: AppTheme.background.withValues(alpha: 0.7),
                   ),
-                  _buildDrawerItem(
-                    icon: Icons.people_alt_rounded,
-                    title: l10n.manageUsers,
-                    onTap: () =>
-                        _navigateToScreen(context, UserManagementScreen()),
+                ),
+                Text(
+                  DateFormat('MMM dd, yyyy').format(DateTime.now()),
+                  style: AppTheme.caption.copyWith(
+                    color: AppTheme.background.withValues(alpha: 0.7),
                   ),
-                  _buildDrawerItem(
-                    icon: Icons.analytics_rounded,
-                    title: l10n.reports,
-                    onTap: () => _showComingSoon(context, l10n),
-                  ),
-                  _buildDrawerItem(
-                    icon: Icons.notifications_rounded,
-                    title: l10n.notifications,
-                    onTap: () => _showComingSoon(context, l10n),
-                  ),
-                  _buildDrawerItem(
-                    icon: Icons.sports_soccer,
-                    title: "League Information",
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => const MLSZDashboardScreen()),
-                      );
-                    },
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-            const Divider(height: 1),
-            _buildDrawerItem(
-              icon: Icons.settings_rounded,
-              title: l10n.settings,
-              onTap: () => _navigateToScreen(context, const SettingsScreen()),
+            SizedBox(height: ScreenConfig.spaceM),
+
+            // Stats Row
+            Row(
+              children: [
+                Expanded(
+                  child: _buildHeroStat(
+                    totalPlayers.toString(),
+                    'TOTAL PLAYERS',
+                  ),
+                ),
+                Container(
+                  width: 1,
+                  height: 40,
+                  color: AppTheme.background.withValues(alpha: 0.2),
+                ),
+                Expanded(
+                  child: _buildHeroStat(
+                    totalTeams.toString(),
+                    'TOTAL TEAMS',
+                  ),
+                ),
+                Container(
+                  width: 1,
+                  height: 40,
+                  color: AppTheme.background.withValues(alpha: 0.2),
+                ),
+                Expanded(
+                  child: _buildHeroStat(
+                    activeSessions.toString(),
+                    'ACTIVE SESSIONS',
+                  ),
+                ),
+              ],
             ),
-            _buildDrawerItem(
-              icon: Icons.logout_rounded,
-              title: l10n.logout,
-              textColor: Colors.red.shade600,
-              iconColor: Colors.red.shade600,
-              onTap: () => _showLogoutDialog(context, l10n),
+            SizedBox(height: ScreenConfig.spaceM),
+
+            // Attendance Progress
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Attendance Rate',
+                  style: AppTheme.caption.copyWith(
+                    color: AppTheme.background.withValues(alpha: 0.7),
+                  ),
+                ),
+                SizedBox(height: ScreenConfig.spaceS),
+                LinearProgressIndicator(
+                  value: attendanceRate / 100,
+                  backgroundColor: AppTheme.background.withValues(alpha: 0.2),
+                  valueColor:
+                      AlwaysStoppedAnimation<Color>(AppTheme.background),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${attendanceRate.toStringAsFixed(1)}%',
+                  style: AppTheme.caption.copyWith(
+                    color: AppTheme.background.withValues(alpha: 0.9),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 20), // Add padding at bottom
           ],
         ),
       ),
     );
   }
 
-  Widget _buildDrawerHeader(AppLocalizations l10n) {
-    final size = MediaQuery.of(context).size;
-    final isTablet = size.width > 768;
-
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFFF27121), Color(0xFFFF8A50)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+  Widget _buildHeroStat(String number, String label) {
+    return Column(
+      children: [
+        AnimatedCounter(
+          target: int.tryParse(number) ?? 0,
+          style: AppTheme.heading1.copyWith(
+            color: AppTheme.background,
+            fontWeight: FontWeight.w800,
+          ),
         ),
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Hero(
-                tag: 'admin_avatar',
-                child: Container(
-                  width: isTablet ? 80.0 : 70.0,
-                  height: isTablet ? 80.0 : 70.0,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 3),
-                    boxShadow: [
-                      BoxShadow(
-                        // ignore: deprecated_member_use
-                        color: Colors.black.withOpacity(0.2),
-                        blurRadius: 10,
-                        offset: const Offset(0, 5),
-                      ),
-                    ],
-                  ),
-                  child: CircleAvatar(
-                    radius: 35,
-                    backgroundColor: Colors.white,
-                    backgroundImage: profileImageUrl?.isNotEmpty == true
-                        ? NetworkImage(profileImageUrl!)
-                        : const AssetImage('assets/images/admin.jpeg')
-                            as ImageProvider,
-                  ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: AppTheme.overline.copyWith(
+            color: AppTheme.background.withValues(alpha: 0.7),
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildQuickActionsSection(AppLocalizations l10n) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeader(title: 'Quick Actions'),
+        SizedBox(height: ScreenConfig.spaceM),
+        Row(
+          children: [
+            Expanded(
+              child: _buildQuickActionCard(
+                icon: Icons.groups,
+                title: 'Teams',
+                subtitle: 'Manage teams',
+                onTap: () => _showTeamsBottomSheet(context, l10n),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildQuickActionCard(
+                icon: Icons.analytics,
+                title: 'Reports',
+                subtitle: 'View analytics',
+                onTap: () => _showReportsBottomSheet(context, l10n),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildQuickActionCard(
+                icon: Icons.people,
+                title: 'Users',
+                subtitle: 'Manage users',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const UserManagementScreen()),
                 ),
               ),
-              const SizedBox(height: 16),
-              Text(
-                userName ?? l10n.adminScreen,
-                style: GoogleFonts.poppins(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildQuickActionCard({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return AppCard(
+      onTap: onTap,
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+          GradientIcon(
+            icon: icon,
+            size: 40,
+            iconSize: 20,
+          ),
+          const SizedBox(height: 10),
+          Text(
+            title,
+            style: AppTheme.caption.copyWith(
+              color: AppTheme.textSecondary,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecentSessionsSection(AppLocalizations l10n) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeader(
+          title: 'Recent Training Sessions',
+          actionText: 'See All',
+          onActionTap: () {
+            // Navigate to full sessions view
+          },
+        ),
+        SizedBox(height: ScreenConfig.spaceM),
+        StreamBuilder<QuerySnapshot>(
+          stream: _getRecentSessions(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return _buildSessionsLoading();
+            }
+
+            if (snapshot.hasError) {
+              return _buildSessionsError(l10n);
+            }
+
+            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+              return _buildSessionsEmpty(l10n);
+            }
+
+            return StaggeredList(
+              children: snapshot.data!.docs
+                  .map((doc) => _buildSessionCard(doc, l10n))
+                  .toList(),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSessionCard(DocumentSnapshot sessionDoc, AppLocalizations l10n) {
+    final data = sessionDoc.data() as Map<String, dynamic>? ?? {};
+    final teamName = data['team'] ?? 'Unknown Team';
+    final coachName = data['coach_name'] ?? 'Unknown Coach';
+    final startTime = data['start_time'] as Timestamp?;
+
+    String timeText = 'No Date';
+    if (startTime != null) {
+      final date = startTime.toDate();
+      timeText = DateFormat('MMM dd, HH:mm').format(date);
+    }
+
+    // Calculate attendance
+    final playersList = data['players'] as List<dynamic>? ?? [];
+    final totalPlayers = playersList.length;
+    final presentCount = playersList
+        .where((p) => (p as Map<String, dynamic>?)?['present'] == true)
+        .length;
+
+    // Determine attendance status
+    final attendanceRate =
+        totalPlayers > 0 ? (presentCount / totalPlayers) : 0.0;
+    Color statusColor;
+    String statusText;
+
+    if (attendanceRate > 0.7) {
+      statusColor = AppTheme.success;
+      statusText = 'Good';
+    } else if (attendanceRate > 0.4) {
+      statusColor = AppTheme.warning;
+      statusText = 'Fair';
+    } else {
+      statusColor = AppTheme.error;
+      statusText = 'Low';
+    }
+
+    return AppCard(
+      margin: const EdgeInsets.only(bottom: 12),
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => SessionReportScreen(sessionDoc: sessionDoc),
+        ),
+      ),
+      child: Row(
+        children: [
+          // Left accent bar
+          Container(
+            width: 3,
+            height: 60,
+            decoration: BoxDecoration(
+              gradient: AppTheme.primaryGradient,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(width: 12),
+
+          // Content
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  teamName,
+                  style: AppTheme.bodyLarge,
                 ),
-                overflow: TextOverflow.ellipsis,
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.person,
+                      size: 12,
+                      color: AppTheme.textMuted,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      coachName,
+                      style: AppTheme.caption,
+                    ),
+                    const SizedBox(width: 16),
+                    Icon(
+                      Icons.access_time,
+                      size: 12,
+                      color: AppTheme.textMuted,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      timeText,
+                      style: AppTheme.caption,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          // Right side - Attendance info
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              StatusBadge(
+                label: statusText,
+                color: statusColor,
               ),
               const SizedBox(height: 4),
               Text(
-                email ?? "admin@example.com",
-                style: GoogleFonts.poppins(
-                  color: Colors.white70,
-                  fontSize: 14,
+                '$presentCount/$totalPlayers players',
+                style: AppTheme.caption.copyWith(
+                  color: AppTheme.textMuted,
                 ),
-                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSessionsLoading() {
+    return Column(
+      children: List.generate(
+        3,
+        (index) => ShimmerCard(
+          height: 80,
         ),
+      ),
+    );
+  }
+
+  Widget _buildSessionsError(AppLocalizations l10n) {
+    return AppCard(
+      child: Center(
+        child: Column(
+          children: [
+            GradientIcon(
+              icon: Icons.error_outline,
+              gradient: LinearGradient(
+                colors: [AppTheme.error, AppTheme.error.withValues(alpha: 0.7)],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text('Error loading sessions', style: AppTheme.heading3),
+            const SizedBox(height: 4),
+            Text('Please try again', style: AppTheme.caption),
+            SizedBox(height: ScreenConfig.spaceM),
+            GradientButton(
+              label: 'Retry',
+              onPressed: () => setState(() {}),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSessionsEmpty(AppLocalizations l10n) {
+    return AppCard(
+      child: Center(
+        child: Column(
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: AppTheme.surface2,
+                borderRadius: BorderRadius.circular(40),
+              ),
+              child: const Icon(
+                Icons.event_available,
+                size: 40,
+                color: AppTheme.textMuted,
+              ),
+            ),
+            SizedBox(height: ScreenConfig.spaceM),
+            Text(
+              'No Recent Sessions',
+              style: AppTheme.heading3,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Training sessions will appear here',
+              style: AppTheme.caption,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDrawer(AppLocalizations l10n) {
+    return Drawer(
+      backgroundColor: AppTheme.surface,
+      child: Column(
+        children: [
+          PremiumDrawerHeader(
+            name: userName ?? 'Admin',
+            role: 'Administrator',
+            imageUrl: profileImageUrl,
+          ),
+          SizedBox(height: ScreenConfig.spaceS),
+          Expanded(
+            child: ListView(
+              padding: EdgeInsets.zero,
+              children: [
+                _buildDrawerItem(
+                  icon: Icons.dashboard_rounded,
+                  title: l10n.dashboardOverview,
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showTeamsBottomSheet(context, l10n);
+                  },
+                ),
+                _buildDrawerItem(
+                  icon: Icons.people_alt_rounded,
+                  title: l10n.manageUsers,
+                  onTap: () =>
+                      _navigateToScreen(context, const UserManagementScreen()),
+                ),
+                _buildDrawerItem(
+                  icon: Icons.analytics_rounded,
+                  title: l10n.reports,
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showReportsBottomSheet(context, l10n);
+                  },
+                ),
+                _buildDrawerItem(
+                  icon: Icons.notifications_rounded,
+                  title: l10n.notifications,
+                  onTap: () => _showComingSoon(context, l10n),
+                ),
+                _buildDrawerItem(
+                  icon: Icons.sports_soccer,
+                  title: "League Information",
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const MLSZDashboardScreen()),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1, color: AppTheme.border),
+          _buildDrawerItem(
+            icon: Icons.settings_rounded,
+            title: l10n.settings,
+            onTap: () => _navigateToScreen(context, const SettingsScreen()),
+          ),
+          _buildDrawerItem(
+            icon: Icons.logout_rounded,
+            title: l10n.logout,
+            textColor: AppTheme.error,
+            iconColor: AppTheme.error,
+            onTap: () => _showLogoutDialog(context, l10n),
+          ),
+          const SizedBox(height: 20),
+        ],
       ),
     );
   }
@@ -387,1156 +766,27 @@ class _AdminScreenState extends State<AdminScreen>
     Color? iconColor,
   }) {
     return ListTile(
-      leading: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: (iconColor ?? const Color(0xFFF27121)).withOpacity(0.1),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Icon(
-          icon,
-          color: iconColor ?? const Color(0xFFF27121),
-          size: 22,
-        ),
+      leading: GradientIcon(
+        icon: icon,
+        size: 36,
+        iconSize: 18,
+        gradient: iconColor != null
+            ? LinearGradient(colors: [iconColor, iconColor])
+            : null,
       ),
       title: Text(
         title,
-        style: GoogleFonts.poppins(
-          fontWeight: FontWeight.w500,
-          fontSize: 16,
-          color: textColor,
+        style: AppTheme.bodyMedium.copyWith(
+          color: textColor ?? AppTheme.textPrimary,
         ),
       ),
-      trailing: Icon(
+      trailing: const Icon(
         Icons.chevron_right,
-        color: Colors.grey.shade400,
+        color: AppTheme.textMuted,
+        size: 16,
       ),
       onTap: onTap,
-      contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-    );
-  }
-
-  Widget _buildTabBar(AppLocalizations l10n, List<String> tabs) {
-    final size = MediaQuery.of(context).size;
-    final isTablet = size.width > 768;
-    final isMobile = size.width < 480;
-    final tabHeight = isTablet ? 88.0 : (isMobile ? 70.0 : 80.0);
-
-    return Container(
-      height: tabHeight,
-      padding: EdgeInsets.symmetric(
-          horizontal: isMobile ? 12 : 16, vertical: isMobile ? 8 : 12),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 20,
-              offset: Offset(0, 4),
-            ),
-          ],
-        ),
-        child: TabBar(
-          controller: _tabController,
-          indicator: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            gradient: LinearGradient(
-              colors: tabConfigs[currentTab].gradient,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: tabConfigs[currentTab].gradient[0].withOpacity(0.3),
-                blurRadius: 8,
-                offset: Offset(0, 4),
-              ),
-            ],
-          ),
-          indicatorSize: TabBarIndicatorSize.tab,
-          dividerColor: Colors.transparent,
-          labelPadding: EdgeInsets.symmetric(horizontal: isMobile ? 4 : 8),
-          tabs: tabs.asMap().entries.map((entry) {
-            final index = entry.key;
-            final title = entry.value;
-            final isActive = currentTab == index;
-
-            final tabContentHeight = isTablet ? 56.0 : (isMobile ? 44.0 : 50.0);
-            final fontSize = isTablet ? 14.0 : (isMobile ? 11.0 : 13.0);
-            final iconSize = isTablet ? 22.0 : (isMobile ? 18.0 : 20.0);
-
-            return Tab(
-              height: tabContentHeight,
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: isMobile ? 6 : 12),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final availableWidth = constraints.maxWidth;
-                    final showText = availableWidth > 60;
-
-                    if (!showText) {
-                      return Icon(
-                        isActive
-                            ? tabConfigs[index].activeIcon
-                            : tabConfigs[index].icon,
-                        size: iconSize,
-                        color: isActive ? Colors.white : Colors.grey.shade600,
-                      );
-                    }
-
-                    return Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          isActive
-                              ? tabConfigs[index].activeIcon
-                              : tabConfigs[index].icon,
-                          size: iconSize,
-                          color: isActive ? Colors.white : Colors.grey.shade600,
-                        ),
-                        if (!isMobile) ...[
-                          SizedBox(width: 6),
-                          Flexible(
-                            child: Text(
-                              title,
-                              style: GoogleFonts.poppins(
-                                fontSize: fontSize,
-                                fontWeight: isActive
-                                    ? FontWeight.w600
-                                    : FontWeight.w500,
-                                color: isActive
-                                    ? Colors.white
-                                    : Colors.grey.shade600,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
-                            ),
-                          ),
-                        ],
-                      ],
-                    );
-                  },
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSearchBar(AppLocalizations l10n, List<String> tabs) {
-    final size = MediaQuery.of(context).size;
-    final isMobile = size.width < 480;
-
-    return Padding(
-      padding:
-          EdgeInsets.symmetric(horizontal: isMobile ? 12 : 16, vertical: 8),
-      child: Container(
-        constraints:
-            BoxConstraints(maxWidth: size.width - (isMobile ? 24 : 32)),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: Offset(0, 2),
-            ),
-          ],
-        ),
-        child: TextField(
-          controller: _searchController,
-          onChanged: (value) => setState(() => searchQuery = value),
-          style: GoogleFonts.poppins(
-            fontSize: isMobile ? 13 : 14,
-          ),
-          decoration: InputDecoration(
-            hintText: l10n.searchHint(tabs[currentTab]),
-            hintStyle: GoogleFonts.poppins(
-              color: Colors.grey.shade500,
-              fontSize: isMobile ? 13 : 14,
-            ),
-            prefixIcon: Container(
-              margin: EdgeInsets.all(isMobile ? 10 : 12),
-              padding: EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: Color(0xFFF27121).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                Icons.search_rounded,
-                color: Color(0xFFF27121),
-                size: isMobile ? 18 : 20,
-              ),
-            ),
-            suffixIcon: searchQuery.isNotEmpty
-                ? IconButton(
-                    icon: Icon(
-                      Icons.clear_rounded,
-                      color: Colors.grey.shade400,
-                      size: isMobile ? 18 : 20,
-                    ),
-                    onPressed: () {
-                      _searchController.clear();
-                      setState(() => searchQuery = "");
-                    },
-                    constraints: BoxConstraints(
-                      minWidth: isMobile ? 36 : 44,
-                      minHeight: isMobile ? 36 : 44,
-                    ),
-                  )
-                : null,
-            border: InputBorder.none,
-            contentPadding: EdgeInsets.symmetric(
-                horizontal: 16, vertical: isMobile ? 12 : 16),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildContent(AppLocalizations l10n) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: _getStreamForCurrentTab(l10n),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return _buildLoadingState(l10n);
-        }
-
-        if (snapshot.hasError) {
-          return _buildErrorState(l10n, snapshot.error.toString());
-        }
-
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return _buildEmptyState(l10n);
-        }
-
-        final items = snapshot.data!.docs;
-        return _buildItemsList(items, l10n);
-      },
-    );
-  }
-
-  Widget _buildLoadingState(AppLocalizations l10n) {
-    final size = MediaQuery.of(context).size;
-    final isTablet = size.width > 768;
-
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: isTablet ? 72.0 : 60.0,
-            height: isTablet ? 72.0 : 60.0,
-            decoration: BoxDecoration(
-              color: Color(0xFFF27121).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(30),
-            ),
-            child: CircularProgressIndicator(
-              color: Color(0xFFF27121),
-              strokeWidth: 3,
-            ),
-          ),
-          SizedBox(height: 16),
-          Text(
-            l10n.loading,
-            style: GoogleFonts.poppins(
-              color: Colors.grey.shade600,
-              fontSize: 16,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildErrorState(AppLocalizations l10n, String error) {
-    final size = MediaQuery.of(context).size;
-    final isTablet = size.width > 768;
-
-    return Center(
-      child: Padding(
-        padding: EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: isTablet ? 96.0 : 80.0,
-              height: isTablet ? 96.0 : 80.0,
-              decoration: BoxDecoration(
-                color: Colors.red.shade50,
-                borderRadius: BorderRadius.circular(40),
-              ),
-              child: Icon(
-                Icons.error_outline_rounded,
-                color: Colors.red.shade400,
-                size: 40,
-              ),
-            ),
-            SizedBox(height: 24),
-            Text(
-              l10n.somethingWentWrong,
-              style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey.shade800,
-              ),
-            ),
-            SizedBox(height: 8),
-            Text(
-              l10n.tryAgainOrContact,
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                color: Colors.grey.shade600,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: () => setState(() {}),
-              icon: Icon(Icons.refresh_rounded),
-              label: Text(l10n.retry),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xFFF27121),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmptyState(AppLocalizations l10n) {
-    final size = MediaQuery.of(context).size;
-    final isTablet = size.width > 768;
-    final tabs = [l10n.attendances, l10n.players, l10n.teams];
-    final icons = [
-      Icons.event_note_rounded,
-      Icons.people_rounded,
-      Icons.groups_rounded
-    ];
-
-    return Center(
-      child: Padding(
-        padding: EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: isTablet ? 140.0 : 120.0,
-              height: isTablet ? 140.0 : 120.0,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(60),
-              ),
-              child: Icon(
-                icons[currentTab],
-                color: Colors.grey.shade400,
-                size: 60,
-              ),
-            ),
-            SizedBox(height: 24),
-            Text(
-              searchQuery.isEmpty
-                  ? l10n.noEntitiesFound(tabs[currentTab])
-                  : l10n.noResultsFor(searchQuery),
-              style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey.shade800,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            if (searchQuery.isNotEmpty) ...[
-              SizedBox(height: 8),
-              Text(
-                l10n.tryAdjustingSearch,
-                style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  color: Colors.grey.shade600,
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildItemsList(List<DocumentSnapshot> items, AppLocalizations l10n) {
-    return ListView.separated(
-      padding: EdgeInsets.all(16),
-      itemCount: items.length,
-      separatorBuilder: (context, index) => SizedBox(height: 12),
-      itemBuilder: (context, index) {
-        final item = items[index];
-        switch (currentTab) {
-          case 0:
-            return _buildTrainingSessionCard(item, l10n);
-          case 1:
-            return _buildPlayerCard(item, l10n);
-          case 2:
-            return _buildTeamCard(item, l10n);
-          default:
-            return SizedBox.shrink();
-        }
-      },
-    );
-  }
-
-  Widget _buildTrainingSessionCard(
-      DocumentSnapshot sessionDoc, AppLocalizations l10n) {
-    final data = sessionDoc.data() as Map<String, dynamic>? ?? {};
-    final size = MediaQuery.of(context).size;
-    final isMobile = size.width < 480;
-    final isTablet = size.width > 768;
-
-    final teamName = data['team'] ?? 'N/A';
-    final trainingType = data['training_type'] ?? 'N/A';
-    final coachName = data['coach_name'] ?? 'Unknown Coach';
-    final startTime = data['start_time'] as Timestamp?;
-
-    String dateStr = 'No Date';
-    String timeStr = '';
-    if (startTime != null) {
-      dateStr = DateFormat('EEE, dd MMM').format(startTime.toDate());
-      timeStr = DateFormat('HH:mm').format(startTime.toDate());
-    }
-
-    int attendeeCount = 0;
-    int totalPlayers = 0;
-    final playersList = data['players'] as List<dynamic>?;
-    if (playersList != null) {
-      totalPlayers = playersList.length;
-      attendeeCount = playersList
-          .where((p) => (p as Map<String, dynamic>?)?['present'] == true)
-          .length;
-    }
-
-    if (isMobile) {
-      return Card(
-        elevation: 0,
-        margin: EdgeInsets.symmetric(vertical: 4),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: Colors.grey.shade200),
-        ),
-        child: InkWell(
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => SessionReportScreen(sessionDoc: sessionDoc),
-            ),
-          ),
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-                        ),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        Icons.event_available_rounded,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            teamName,
-                            style: GoogleFonts.poppins(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                              color: Colors.grey.shade800,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
-                          ),
-                          Text(
-                            trainingType,
-                            style: GoogleFonts.poppins(
-                              fontSize: 12,
-                              color: Colors.grey.shade600,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: attendeeCount > 0
-                            ? Colors.green.shade50
-                            : Colors.red.shade50,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        '$attendeeCount/$totalPlayers',
-                        style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 12,
-                          color: attendeeCount > 0
-                              ? Colors.green.shade700
-                              : Colors.red.shade700,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 8),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.person_outline,
-                      size: 14,
-                      color: Colors.grey.shade500,
-                    ),
-                    SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        coachName,
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          color: Colors.grey.shade600,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.access_time_rounded,
-                      size: 14,
-                      color: Colors.grey.shade500,
-                    ),
-                    SizedBox(width: 4),
-                    Flexible(
-                      child: Text(
-                        '$dateStr at $timeStr',
-                        style: GoogleFonts.poppins(
-                          fontSize: 11,
-                          color: Colors.grey.shade500,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.grey.shade200),
-      ),
-      child: InkWell(
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => SessionReportScreen(sessionDoc: sessionDoc),
-          ),
-        ),
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: EdgeInsets.all(isTablet ? 20 : 16),
-          child: Row(
-            children: [
-              Container(
-                width: isTablet ? 70 : 60,
-                height: isTablet ? 70 : 60,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.event_available_rounded,
-                  color: Colors.white,
-                  size: isTablet ? 32 : 28,
-                ),
-              ),
-              SizedBox(width: isTablet ? 20 : 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '$teamName - $trainingType',
-                      style: GoogleFonts.poppins(
-                        fontWeight: FontWeight.w600,
-                        fontSize: isTablet ? 18 : 16,
-                        color: Colors.grey.shade800,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      coachName,
-                      style: GoogleFonts.poppins(
-                        fontSize: isTablet ? 16 : 14,
-                        color: Colors.grey.shade600,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
-                    ),
-                    SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.access_time_rounded,
-                          size: isTablet ? 18 : 16,
-                          color: Colors.grey.shade500,
-                        ),
-                        SizedBox(width: 4),
-                        Flexible(
-                          child: Text(
-                            '$dateStr at $timeStr',
-                            style: GoogleFonts.poppins(
-                              fontSize: isTablet ? 14 : 12,
-                              color: Colors.grey.shade500,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: EdgeInsets.symmetric(
-                    horizontal: isTablet ? 16 : 12,
-                    vertical: isTablet ? 12 : 8),
-                decoration: BoxDecoration(
-                  color: attendeeCount > 0
-                      ? Colors.green.shade50
-                      : Colors.red.shade50,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
-                  children: [
-                    Text(
-                      '$attendeeCount/$totalPlayers',
-                      style: GoogleFonts.poppins(
-                        fontWeight: FontWeight.w700,
-                        fontSize: isTablet ? 18 : 16,
-                        color: attendeeCount > 0
-                            ? Colors.green.shade700
-                            : Colors.red.shade700,
-                      ),
-                    ),
-                    Text(
-                      l10n.present,
-                      style: GoogleFonts.poppins(
-                        fontSize: isTablet ? 12 : 10,
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPlayerCard(DocumentSnapshot playerDoc, AppLocalizations l10n) {
-    final data = playerDoc.data() as Map<String, dynamic>? ?? {};
-    final size = MediaQuery.of(context).size;
-    final isMobile = size.width < 480;
-    final isTablet = size.width > 768;
-
-    final name = data['name'] ?? 'No Name';
-    final position = data['position'] ?? 'N/A';
-    final teamName = data['team'] ?? 'No Team';
-    final pictureUrl = data['picture'] as String?;
-
-    if (isMobile) {
-      return Card(
-        elevation: 0,
-        margin: EdgeInsets.symmetric(vertical: 4),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: Colors.grey.shade200),
-        ),
-        child: InkWell(
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => PlayerReportScreen(playerDoc: playerDoc),
-            ),
-          ),
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: EdgeInsets.all(12),
-            child: Row(
-              children: [
-                Hero(
-                  tag: 'player_${playerDoc.id}',
-                  child: Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.grey.shade200, width: 2),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 4,
-                          offset: Offset(0, 1),
-                        ),
-                      ],
-                    ),
-                    child: CircleAvatar(
-                      radius: 22,
-                      backgroundColor: Colors.grey.shade100,
-                      backgroundImage: (pictureUrl?.isNotEmpty == true)
-                          ? NetworkImage(pictureUrl!)
-                          : AssetImage("assets/images/default_profile.jpeg")
-                              as ImageProvider,
-                    ),
-                  ),
-                ),
-                SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        name,
-                        style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                          color: Colors.grey.shade800,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                      ),
-                      SizedBox(height: 2),
-                      Row(
-                        children: [
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Color(0xFF10B981).withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              position,
-                              style: GoogleFonts.poppins(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w500,
-                                color: Color(0xFF10B981),
-                              ),
-                            ),
-                          ),
-                          SizedBox(width: 6),
-                          Expanded(
-                            child: Text(
-                              teamName,
-                              style: GoogleFonts.poppins(
-                                fontSize: 12,
-                                color: Colors.grey.shade600,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                Icon(
-                  Icons.chevron_right_rounded,
-                  color: Colors.grey.shade400,
-                  size: 20,
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.grey.shade200),
-      ),
-      child: InkWell(
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => PlayerReportScreen(playerDoc: playerDoc),
-          ),
-        ),
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: EdgeInsets.all(isTablet ? 20 : 16),
-          child: Row(
-            children: [
-              Hero(
-                tag: 'player_${playerDoc.id}',
-                child: Container(
-                  width: isTablet ? 70 : 60,
-                  height: isTablet ? 70 : 60,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.grey.shade200, width: 2),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 8,
-                        offset: Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: CircleAvatar(
-                    radius: isTablet ? 35 : 30,
-                    backgroundColor: Colors.grey.shade100,
-                    backgroundImage: (pictureUrl?.isNotEmpty == true)
-                        ? NetworkImage(pictureUrl!)
-                        : AssetImage("assets/images/default_profile.jpeg")
-                            as ImageProvider,
-                  ),
-                ),
-              ),
-              SizedBox(width: isTablet ? 20 : 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      name,
-                      style: GoogleFonts.poppins(
-                        fontWeight: FontWeight.w600,
-                        fontSize: isTablet ? 18 : 16,
-                        color: Colors.grey.shade800,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
-                    ),
-                    SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                              horizontal: isTablet ? 10 : 8,
-                              vertical: isTablet ? 6 : 4),
-                          decoration: BoxDecoration(
-                            color: Color(0xFF10B981).withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            position,
-                            style: GoogleFonts.poppins(
-                              fontSize: isTablet ? 14 : 12,
-                              fontWeight: FontWeight.w500,
-                              color: Color(0xFF10B981),
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: 8),
-                        Icon(
-                          Icons.group_outlined,
-                          size: isTablet ? 18 : 16,
-                          color: Colors.grey.shade500,
-                        ),
-                        SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            teamName,
-                            style: GoogleFonts.poppins(
-                              fontSize: isTablet ? 16 : 14,
-                              color: Colors.grey.shade600,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: Colors.grey.shade400,
-                size: isTablet ? 28 : 24,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTeamCard(DocumentSnapshot teamDoc, AppLocalizations l10n) {
-    final data = teamDoc.data() as Map<String, dynamic>? ?? {};
-    final size = MediaQuery.of(context).size;
-    final isMobile = size.width < 480;
-    final isTablet = size.width > 768;
-
-    final teamName = data['team_name'] ?? 'No Team Name';
-    final playerCount = data['number_of_players'] ?? 0;
-    final teamDescription = data['team_description'] ?? '';
-
-    if (isMobile) {
-      return Card(
-        elevation: 0,
-        margin: EdgeInsets.symmetric(vertical: 4),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: Colors.grey.shade200),
-        ),
-        child: InkWell(
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (context) => TeamReportScreen(teamDoc: teamDoc)),
-          ),
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
-                        ),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        Icons.groups_rounded,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        teamName,
-                        style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                          color: Colors.grey.shade800,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                      ),
-                    ),
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: playerCount > 0
-                            ? Colors.blue.shade50
-                            : Colors.grey.shade100,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        '$playerCount',
-                        style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 14,
-                          color: playerCount > 0
-                              ? Colors.blue.shade700
-                              : Colors.grey.shade600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                if (teamDescription.isNotEmpty) ...[
-                  SizedBox(height: 8),
-                  Text(
-                    teamDescription,
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      color: Colors.grey.shade600,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 2,
-                  ),
-                ],
-                SizedBox(height: 8),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.people_rounded,
-                      size: 14,
-                      color: Colors.grey.shade500,
-                    ),
-                    SizedBox(width: 4),
-                    Text(
-                      '$playerCount ${l10n.players}',
-                      style: GoogleFonts.poppins(
-                        fontSize: 11,
-                        color: Colors.grey.shade500,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.grey.shade200),
-      ),
-      child: InkWell(
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-              builder: (context) => TeamReportScreen(teamDoc: teamDoc)),
-        ),
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: EdgeInsets.all(isTablet ? 20 : 16),
-          child: Row(
-            children: [
-              Container(
-                width: isTablet ? 70 : 60,
-                height: isTablet ? 70 : 60,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.groups_rounded,
-                  color: Colors.white,
-                  size: isTablet ? 32 : 28,
-                ),
-              ),
-              SizedBox(width: isTablet ? 20 : 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      teamName,
-                      style: GoogleFonts.poppins(
-                        fontWeight: FontWeight.w600,
-                        fontSize: isTablet ? 18 : 16,
-                        color: Colors.grey.shade800,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
-                    ),
-                    SizedBox(height: 4),
-                    if (teamDescription.isNotEmpty) ...[
-                      Text(
-                        teamDescription,
-                        style: GoogleFonts.poppins(
-                          fontSize: isTablet ? 16 : 14,
-                          color: Colors.grey.shade600,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: isTablet ? 2 : 1,
-                      ),
-                      SizedBox(height: 8),
-                    ],
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.people_rounded,
-                          size: isTablet ? 18 : 16,
-                          color: Colors.grey.shade500,
-                        ),
-                        SizedBox(width: 4),
-                        Text(
-                          '$playerCount ${l10n.players}',
-                          style: GoogleFonts.poppins(
-                            fontSize: isTablet ? 14 : 12,
-                            color: Colors.grey.shade500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: EdgeInsets.symmetric(
-                    horizontal: isTablet ? 16 : 12,
-                    vertical: isTablet ? 12 : 8),
-                decoration: BoxDecoration(
-                  color: playerCount > 0
-                      ? Colors.blue.shade50
-                      : Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  '$playerCount',
-                  style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.w700,
-                    fontSize: isTablet ? 20 : 18,
-                    color: playerCount > 0
-                        ? Colors.blue.shade700
-                        : Colors.grey.shade600,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
     );
   }
 
@@ -1555,11 +805,11 @@ class _AdminScreenState extends State<AdminScreen>
       SnackBar(
         content: Text(
           l10n.comingSoon,
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
+          style: AppTheme.bodyMedium,
         ),
-        backgroundColor: Color(0xFFF27121),
+        backgroundColor: AppTheme.primary,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
     );
   }
@@ -1569,60 +819,43 @@ class _AdminScreenState extends State<AdminScreen>
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: AppTheme.surface,
           shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
           title: Row(
             children: [
-              Icon(Icons.logout_rounded, color: Colors.red.shade600),
-              SizedBox(width: 12),
+              Icon(Icons.logout_rounded, color: AppTheme.error),
+              const SizedBox(width: 12),
               Text(
                 l10n.logout,
-                style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                style: AppTheme.heading3,
               ),
             ],
           ),
           content: Text(
             l10n.confirmLogout,
-            style: GoogleFonts.poppins(),
+            style: AppTheme.bodyMedium,
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
               child: Text(
                 l10n.cancel,
-                style: GoogleFonts.poppins(color: Colors.grey.shade600),
+                style:
+                    AppTheme.bodyMedium.copyWith(color: AppTheme.textSecondary),
               ),
             ),
-            ElevatedButton(
+            GradientButton(
+              label: l10n.logout,
               onPressed: () {
                 Navigator.of(context).pop();
                 _logout(context);
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red.shade600,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-              ),
-              child: Text(
-                l10n.logout,
-                style: GoogleFonts.poppins(color: Colors.white),
-              ),
+              height: 40,
             ),
           ],
         );
       },
-    );
-  }
-
-  void _showDataMigrationDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 600),
-          child: const DataMigrationButton(),
-        ),
-      ),
     );
   }
 
@@ -1639,36 +872,524 @@ class _AdminScreenState extends State<AdminScreen>
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Logout failed: $e'),
-          backgroundColor: Colors.red,
+          content: Text(
+            'Logout failed: $e',
+            style: AppTheme.bodyMedium,
+          ),
+          backgroundColor: AppTheme.error,
           behavior: SnackBarBehavior.floating,
         ),
       );
     }
   }
-}
 
-// Helper classes
-class TabConfig {
-  final IconData icon;
-  final IconData activeIcon;
-  final List<Color> gradient;
+  void _showTeamsBottomSheet(BuildContext context, AppLocalizations l10n) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.75,
+        decoration: const BoxDecoration(
+          color: AppTheme.surface,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(28),
+            topRight: Radius.circular(28),
+          ),
+          border: Border(
+            top: BorderSide(color: AppTheme.border, width: 1),
+          ),
+        ),
+        child: Column(
+          children: [
+            // Handle bar
+            Container(
+              margin: const EdgeInsets.only(top: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppTheme.border,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
 
-  TabConfig({
-    required this.icon,
-    required this.activeIcon,
-    required this.gradient,
-  });
-}
+            // Header
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Row(
+                children: [
+                  GradientIcon(icon: Icons.groups, size: 40, iconSize: 20),
+                  const SizedBox(width: 14),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Teams', style: AppTheme.heading3),
+                      Text(
+                        'Select a team to view report',
+                        style: AppTheme.caption,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: ScreenConfig.spaceM),
 
-class DrawerItem {
-  final IconData icon;
-  final String title;
-  final VoidCallback onTap;
+            // Divider
+            const Divider(color: AppTheme.border, height: 1),
 
-  DrawerItem({
-    required this.icon,
-    required this.title,
-    required this.onTap,
-  });
+            // Teams list
+            Expanded(
+              child: StreamBuilder<QuerySnapshot>(
+                stream: _firestore
+                    .collection('organizations')
+                    .doc(OrganizationContext.currentOrgId)
+                    .collection('teams')
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(
+                      child: CircularProgressIndicator(
+                        color: AppTheme.primary,
+                        strokeWidth: 3,
+                      ),
+                    );
+                  }
+
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.error_outline,
+                              color: AppTheme.error, size: 48),
+                          const SizedBox(height: 12),
+                          Text('Error loading teams',
+                              style: AppTheme.bodyMedium),
+                        ],
+                      ),
+                    );
+                  }
+
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            width: 80,
+                            height: 80,
+                            decoration: BoxDecoration(
+                              color: AppTheme.surface2,
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(color: AppTheme.border),
+                            ),
+                            child: const Icon(
+                              Icons.groups_outlined,
+                              size: 40,
+                              color: AppTheme.textMuted,
+                            ),
+                          ),
+                          SizedBox(height: ScreenConfig.spaceM),
+                          Text('No teams found', style: AppTheme.heading3),
+                          SizedBox(height: ScreenConfig.spaceS),
+                          Text(
+                            'Create teams in the receptionist screen',
+                            style: AppTheme.caption,
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  return ListView.separated(
+                    padding: ScreenConfig.cardPadding,
+                    itemCount: snapshot.data!.docs.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 10),
+                    itemBuilder: (context, index) {
+                      final teamDoc = snapshot.data!.docs[index];
+                      final data = teamDoc.data() as Map<String, dynamic>;
+                      final teamName = data['team_name'] ?? 'Unknown Team';
+                      final playerCount = data['number_of_players'] ?? 0;
+                      final description = data['team_description'] ?? '';
+
+                      return AppCard(
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  TeamReportScreen(teamDoc: teamDoc),
+                            ),
+                          );
+                        },
+                        padding: ScreenConfig.cardPadding,
+                        child: Row(
+                          children: [
+                            // Team avatar
+                            Container(
+                              width: 52,
+                              height: 52,
+                              decoration: BoxDecoration(
+                                gradient: AppTheme.primaryGradient,
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: const Icon(
+                                Icons.groups,
+                                color: AppTheme.background,
+                                size: 26,
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+
+                            // Team info
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(teamName, style: AppTheme.bodyLarge),
+                                  const SizedBox(height: 4),
+                                  if (description.isNotEmpty)
+                                    Text(
+                                      description,
+                                      style: AppTheme.caption,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  const SizedBox(height: 4),
+                                  Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.people,
+                                        size: 12,
+                                        color: AppTheme.textMuted,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        '$playerCount players',
+                                        style: AppTheme.caption.copyWith(
+                                          color: AppTheme.textMuted,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            // Arrow
+                            const Icon(
+                              Icons.chevron_right_rounded,
+                              color: AppTheme.primary,
+                              size: 22,
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showReportsBottomSheet(BuildContext context, AppLocalizations l10n) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: AppTheme.surface,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(28),
+            topRight: Radius.circular(28),
+          ),
+          border: Border(
+            top: BorderSide(color: AppTheme.border, width: 1),
+          ),
+        ),
+        child: Padding(
+          padding: ScreenConfig.cardPadding,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle bar
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppTheme.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              SizedBox(height: ScreenConfig.spaceL),
+
+              // Header
+              Row(
+                children: [
+                  GradientIcon(
+                    icon: Icons.analytics_rounded,
+                    size: 40,
+                    iconSize: 20,
+                  ),
+                  const SizedBox(width: 14),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Reports', style: AppTheme.heading3),
+                      Text(
+                        'Generate and export reports',
+                        style: AppTheme.caption,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              SizedBox(height: ScreenConfig.spaceL),
+
+              // Report options
+              _buildReportOption(
+                context: context,
+                icon: Icons.groups_rounded,
+                title: 'Team Report',
+                subtitle: 'Player list, positions, stats per team',
+                onTap: () {
+                  Navigator.pop(context);
+                  _showTeamsBottomSheet(context, l10n);
+                },
+              ),
+              const SizedBox(height: 12),
+              _buildReportOption(
+                context: context,
+                icon: Icons.event_note_rounded,
+                title: 'Session Report',
+                subtitle: 'Attendance and stats per training session',
+                onTap: () {
+                  Navigator.pop(context);
+                  _showSessionsBottomSheet(context, l10n);
+                },
+              ),
+              SizedBox(height: ScreenConfig.spaceL),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReportOption({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return AppCard(
+      onTap: onTap,
+      padding: ScreenConfig.cardPadding,
+      child: Row(
+        children: [
+          GradientIcon(icon: icon, size: 44, iconSize: 22),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: AppTheme.bodyLarge),
+                const SizedBox(height: 4),
+                Text(subtitle, style: AppTheme.caption),
+              ],
+            ),
+          ),
+          const Icon(
+            Icons.chevron_right_rounded,
+            color: AppTheme.primary,
+            size: 22,
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSessionsBottomSheet(BuildContext context, AppLocalizations l10n) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.75,
+        decoration: const BoxDecoration(
+          color: AppTheme.surface,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(28),
+            topRight: Radius.circular(28),
+          ),
+          border: Border(
+            top: BorderSide(color: AppTheme.border, width: 1),
+          ),
+        ),
+        child: Column(
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppTheme.border,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Row(
+                children: [
+                  GradientIcon(
+                    icon: Icons.event_note_rounded,
+                    size: 40,
+                    iconSize: 20,
+                  ),
+                  const SizedBox(width: 14),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Session Reports', style: AppTheme.heading3),
+                      Text('Select a session', style: AppTheme.caption),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: ScreenConfig.spaceM),
+            const Divider(color: AppTheme.border, height: 1),
+            Expanded(
+              child: StreamBuilder<QuerySnapshot>(
+                stream: _firestore
+                    .collection('organizations')
+                    .doc(OrganizationContext.currentOrgId)
+                    .collection('training_sessions')
+                    .orderBy('start_time', descending: true)
+                    .limit(20)
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(
+                      child: CircularProgressIndicator(
+                        color: AppTheme.primary,
+                        strokeWidth: 3,
+                      ),
+                    );
+                  }
+
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.event_busy,
+                              size: 48, color: AppTheme.textMuted),
+                          SizedBox(height: ScreenConfig.spaceM),
+                          Text('No sessions found', style: AppTheme.heading3),
+                          SizedBox(height: ScreenConfig.spaceS),
+                          Text(
+                            'Training sessions will appear here',
+                            style: AppTheme.caption,
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  return ListView.separated(
+                    padding: ScreenConfig.cardPadding,
+                    itemCount: snapshot.data!.docs.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 10),
+                    itemBuilder: (context, index) {
+                      final sessionDoc = snapshot.data!.docs[index];
+                      final data = sessionDoc.data() as Map<String, dynamic>;
+                      final teamName = data['team'] ?? 'Unknown Team';
+                      final trainingType =
+                          data['training_type'] ?? data['type'] ?? '';
+                      final startTime = data['start_time'] as Timestamp?;
+                      String timeText = 'No date';
+                      if (startTime != null) {
+                        timeText = DateFormat('MMM dd, yyyy • HH:mm')
+                            .format(startTime.toDate());
+                      }
+
+                      final players = data['players'] as List<dynamic>? ?? [];
+                      final presentCount = players
+                          .where((p) =>
+                              (p as Map<String, dynamic>?)?['present'] == true)
+                          .length;
+
+                      return AppCard(
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => SessionReportScreen(
+                                sessionDoc: sessionDoc,
+                              ),
+                            ),
+                          );
+                        },
+                        padding: ScreenConfig.cardPadding,
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 3,
+                              height: 56,
+                              decoration: BoxDecoration(
+                                gradient: AppTheme.primaryGradient,
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(teamName, style: AppTheme.bodyLarge),
+                                  const SizedBox(height: 4),
+                                  Text(timeText, style: AppTheme.caption),
+                                ],
+                              ),
+                            ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                StatusBadge(
+                                  label: trainingType,
+                                  color: AppTheme.primary,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '$presentCount/${players.length}',
+                                  style: AppTheme.caption.copyWith(
+                                    color: AppTheme.textMuted,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

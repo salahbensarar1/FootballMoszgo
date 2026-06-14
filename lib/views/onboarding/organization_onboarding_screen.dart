@@ -290,7 +290,7 @@ class _OrganizationOnboardingScreenState
       width: double.infinity,
       margin: const EdgeInsets.symmetric(vertical: 8),
       child: Material(
-        color: isPrimary ? Colors.white : Colors.white.withOpacity(0.1),
+        color: isPrimary ? Colors.white : Colors.white.withValues(alpha:0.1),
         borderRadius: BorderRadius.circular(16),
         child: InkWell(
           onTap: onTap,
@@ -304,7 +304,7 @@ class _OrganizationOnboardingScreenState
                   decoration: BoxDecoration(
                     color: isPrimary
                         ? const Color(0xFF1E88E5)
-                        : Colors.white.withOpacity(0.2),
+                        : Colors.white.withValues(alpha:0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
@@ -333,7 +333,7 @@ class _OrganizationOnboardingScreenState
                         subtitle,
                         style: TextStyle(
                           color: isPrimary
-                              ? const Color(0xFF1E88E5).withOpacity(0.7)
+                              ? const Color(0xFF1E88E5).withValues(alpha:0.7)
                               : Colors.white70,
                           fontSize: 14,
                         ),
@@ -391,7 +391,7 @@ class _OrganizationOnboardingScreenState
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha:0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(

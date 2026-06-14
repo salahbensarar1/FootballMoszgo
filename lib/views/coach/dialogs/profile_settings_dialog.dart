@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:footballtraining/l10n/app_localizations.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:footballtraining/services/organization_context.dart';
@@ -185,8 +185,8 @@ class ProfileSettingsDialogState extends State<ProfileSettingsDialog> {
       final user = _auth.currentUser;
       if (user == null) throw Exception('No user logged in');
 
-      await user.updateEmail(newEmail);
-      _showSuccessSnackBar('Email updated successfully!');
+      await user.verifyBeforeUpdateEmail(newEmail);
+      _showSuccessSnackBar('Email verification sent! Please check your email and follow the instructions to update your email address.');
     } catch (e) {
       throw Exception('Failed to update email: $e');
     }
@@ -197,6 +197,11 @@ class ProfileSettingsDialogState extends State<ProfileSettingsDialog> {
       final user = _auth.currentUser;
       if (user == null) throw Exception('No user logged in');
 
+      final credential = EmailAuthProvider.credential(
+        email: user.email!,
+        password: _currentPasswordController.text.trim(),
+      );
+      await user.reauthenticateWithCredential(credential);
       await user.updatePassword(newPassword);
       _showSuccessSnackBar('Password updated successfully!');
     } catch (e) {
@@ -529,7 +534,7 @@ class ProfileSettingsDialogState extends State<ProfileSettingsDialog> {
                         }
                       });
                     },
-                    activeColor: const Color(0xFFF27121),
+                    activeThumbColor: const Color(0xFFF27121),
                   ),
                 ],
               ),

@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:footballtraining/l10n/app_localizations.dart';
 import 'package:footballtraining/data/models/team_model.dart';
 import 'package:footballtraining/data/models/user_model.dart' as user_model;
 import 'package:footballtraining/services/logging_service.dart';

@@ -2,9 +2,10 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:footballtraining/l10n/app_localizations.dart';
 import 'package:footballtraining/utils/role_helper.dart';
+import 'package:footballtraining/core/theme/app_theme.dart';
+import 'package:footballtraining/core/widgets/app_widgets.dart';
 
 class UserCard extends StatelessWidget {
   final DocumentSnapshot userDoc;
@@ -24,7 +25,7 @@ class UserCard extends StatelessWidget {
     final size = MediaQuery.of(context).size;
     final isMobile = size.width < 480;
     final isTablet = size.width > 768;
-    
+
     final data = userDoc.data() as Map<String, dynamic>? ?? {};
 
     final name = data['name'] ?? 'N/A';
@@ -35,73 +36,49 @@ class UserCard extends StatelessWidget {
     final roleColor = RoleHelper.getRoleColor(role);
     final roleIcon = RoleHelper.getRoleIcon(role);
 
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.grey.shade200),
-      ),
+    return AppCard(
+      padding: EdgeInsets.all(isMobile ? 12 : (isTablet ? 20 : 16)),
       child: InkWell(
         onTap: () => _showUserDetailsDialog(context, l10n),
         borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: EdgeInsets.all(isMobile ? 12 : (isTablet ? 20 : 16)),
-          child: isMobile 
-              ? _buildMobileLayout(name, email, role, roleColor, roleIcon, pictureUrl, context, l10n)
-              : _buildDesktopLayout(name, email, role, roleColor, roleIcon, pictureUrl, context, l10n, isTablet),
-        ),
+        child: isMobile
+            ? _buildMobileLayout(name, email, role, roleColor, roleIcon,
+                pictureUrl, context, l10n)
+            : _buildDesktopLayout(name, email, role, roleColor, roleIcon,
+                pictureUrl, context, l10n, isTablet),
       ),
     );
   }
 
   Widget _buildUserAvatar(String? pictureUrl, Color roleColor, {double? size}) {
     final avatarSize = size ?? 60;
-    
+
     return Hero(
       tag: 'user_${userDoc.id}',
-      child: Container(
-        width: avatarSize,
-        height: avatarSize,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(color: roleColor.withOpacity(0.3), width: 2),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: CircleAvatar(
-          radius: avatarSize / 2,
-          backgroundColor: Colors.grey.shade100,
-          backgroundImage: (pictureUrl?.isNotEmpty == true)
-              ? NetworkImage(pictureUrl!)
-              : const AssetImage("assets/images/default_profile.jpeg")
-                  as ImageProvider,
-        ),
+      child: GradientAvatar(
+        size: avatarSize,
+        imageUrl: pictureUrl,
+        defaultAsset: "assets/images/default_profile.jpeg",
+        borderColor: roleColor,
       ),
     );
   }
 
   Widget _buildUserInfo(String name, String email, String role, Color roleColor,
-      IconData roleIcon, {bool isMobile = false, bool isTablet = false}) {
-    final titleFontSize = isTablet ? 18.0 : (isMobile ? 14.0 : 16.0);
-    final emailFontSize = isTablet ? 16.0 : (isMobile ? 12.0 : 14.0);
-    final roleFontSize = isTablet ? 14.0 : (isMobile ? 10.0 : 12.0);
-    final roleIconSize = isTablet ? 16.0 : (isMobile ? 12.0 : 14.0);
-    
+      IconData roleIcon,
+      {bool isMobile = false, bool isTablet = false}) {
     return Expanded(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             name,
-            style: GoogleFonts.poppins(
+            style: (isTablet
+                    ? AppTheme.bodyLarge
+                    : (isMobile ? AppTheme.bodyMedium : AppTheme.bodyLarge))
+                .copyWith(
               fontWeight: FontWeight.w600,
-              fontSize: titleFontSize,
-              color: Colors.grey.shade800,
+              color: AppTheme.textPrimary,
             ),
             overflow: TextOverflow.ellipsis,
             maxLines: 1,
@@ -109,72 +86,53 @@ class UserCard extends StatelessWidget {
           SizedBox(height: isMobile ? 2 : 4),
           Text(
             email,
-            style: GoogleFonts.poppins(
-              fontSize: emailFontSize,
-              color: Colors.grey.shade600,
+            style: (isTablet
+                    ? AppTheme.bodyMedium
+                    : (isMobile ? AppTheme.caption : AppTheme.bodyMedium))
+                .copyWith(
+              color: AppTheme.textSecondary,
             ),
             overflow: TextOverflow.ellipsis,
             maxLines: 1,
           ),
           SizedBox(height: isMobile ? 6 : 8),
-          Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: isMobile ? 6 : 8, 
-              vertical: isMobile ? 2 : 4
-            ),
-            decoration: BoxDecoration(
-              color: roleColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  roleIcon,
-                  size: roleIconSize,
-                  color: roleColor,
-                ),
-                SizedBox(width: isMobile ? 2 : 4),
-                Flexible(
-                  child: Text(
-                    role.toUpperCase(),
-                    style: GoogleFonts.poppins(
-                      fontSize: roleFontSize,
-                      fontWeight: FontWeight.w600,
-                      color: roleColor,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                  ),
-                ),
-              ],
-            ),
+          StatusBadge(
+            label: role.toUpperCase(),
+            color: roleColor,
+            icon: roleIcon,
+            compact: isMobile,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildPopupMenu(BuildContext context, AppLocalizations l10n, {bool isMobile = false}) {
+  Widget _buildPopupMenu(BuildContext context, AppLocalizations l10n,
+      {bool isMobile = false}) {
     final iconSize = isMobile ? 16.0 : 20.0;
     final buttonSize = isMobile ? 32.0 : 40.0;
-    
+
     return PopupMenuButton<String>(
       icon: Container(
         width: buttonSize,
         height: buttonSize,
         padding: EdgeInsets.all(isMobile ? 6 : 8),
         decoration: BoxDecoration(
-          color: Colors.grey.shade100,
-          borderRadius: BorderRadius.circular(8),
+          color: AppTheme.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppTheme.border, width: 1),
         ),
         child: Icon(
           Icons.more_vert_rounded,
-          color: Colors.grey.shade600,
+          color: AppTheme.textSecondary,
           size: iconSize,
         ),
       ),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      color: AppTheme.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: AppTheme.border),
+      ),
       onSelected: (value) {
         if (value == 'edit') {
           onEdit();
@@ -187,12 +145,12 @@ class UserCard extends StatelessWidget {
           value: 'edit',
           child: Row(
             children: [
-              Icon(Icons.edit_rounded, color: Colors.blue.shade600, size: iconSize),
+              Icon(Icons.edit_rounded, color: AppTheme.primary, size: iconSize),
               SizedBox(width: isMobile ? 8 : 12),
               Text(
                 l10n.edit,
-                style: GoogleFonts.poppins(
-                  color: Colors.blue.shade600,
+                style: AppTheme.bodyMedium.copyWith(
+                  color: AppTheme.primary,
                   fontSize: isMobile ? 13 : 14,
                 ),
               ),
@@ -203,12 +161,12 @@ class UserCard extends StatelessWidget {
           value: 'delete',
           child: Row(
             children: [
-              Icon(Icons.delete_rounded, color: Colors.red.shade600, size: iconSize),
+              Icon(Icons.delete_rounded, color: AppTheme.error, size: iconSize),
               SizedBox(width: isMobile ? 8 : 12),
               Text(
                 l10n.delete,
-                style: GoogleFonts.poppins(
-                  color: Colors.red.shade600,
+                style: AppTheme.bodyMedium.copyWith(
+                  color: AppTheme.error,
                   fontSize: isMobile ? 13 : 14,
                 ),
               ),
@@ -219,9 +177,15 @@ class UserCard extends StatelessWidget {
     );
   }
 
-  Widget _buildMobileLayout(String name, String email, String role, 
-      Color roleColor, IconData roleIcon, String? pictureUrl, 
-      BuildContext context, AppLocalizations l10n) {
+  Widget _buildMobileLayout(
+      String name,
+      String email,
+      String role,
+      Color roleColor,
+      IconData roleIcon,
+      String? pictureUrl,
+      BuildContext context,
+      AppLocalizations l10n) {
     return Row(
       children: [
         _buildUserAvatar(pictureUrl, roleColor, size: 48),
@@ -232,14 +196,22 @@ class UserCard extends StatelessWidget {
     );
   }
 
-  Widget _buildDesktopLayout(String name, String email, String role, 
-      Color roleColor, IconData roleIcon, String? pictureUrl, 
-      BuildContext context, AppLocalizations l10n, bool isTablet) {
+  Widget _buildDesktopLayout(
+      String name,
+      String email,
+      String role,
+      Color roleColor,
+      IconData roleIcon,
+      String? pictureUrl,
+      BuildContext context,
+      AppLocalizations l10n,
+      bool isTablet) {
     return Row(
       children: [
         _buildUserAvatar(pictureUrl, roleColor, size: isTablet ? 70 : 60),
         SizedBox(width: isTablet ? 20 : 16),
-        _buildUserInfo(name, email, role, roleColor, roleIcon, isTablet: isTablet),
+        _buildUserInfo(name, email, role, roleColor, roleIcon,
+            isTablet: isTablet),
         _buildPopupMenu(context, l10n),
       ],
     );
@@ -250,70 +222,107 @@ class UserCard extends StatelessWidget {
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            CircleAvatar(
-              radius: 20,
-              backgroundImage: (data['picture']?.isNotEmpty == true)
-                  ? NetworkImage(data['picture'])
-                  : AssetImage("assets/images/default_profile.jpeg")
-                      as ImageProvider,
-            ),
-            SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                data['name'] ?? 'User Details',
-                style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-                overflow: TextOverflow.ellipsis,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        backgroundColor: AppTheme.surface,
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: AppTheme.surface,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: AppTheme.border),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header with avatar
+              Row(
+                children: [
+                  GradientAvatar(
+                    size: 56,
+                    imageUrl: data['picture'],
+                    defaultAsset: "assets/images/default_profile.jpeg",
+                    borderColor: AppTheme.primary,
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          data['name'] ?? 'User Details',
+                          style: AppTheme.heading3,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          data['email'] ?? 'No email',
+                          style: AppTheme.bodyMedium.copyWith(
+                            color: AppTheme.textSecondary,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildDetailRow('Email', data['email'] ?? 'Not available'),
-            _buildDetailRow('Role', (data['role'] ?? 'Unknown').toUpperCase()),
-            if (data['role_description']?.isNotEmpty == true)
-              _buildDetailRow('Description', data['role_description']),
-            if (data['team']?.isNotEmpty == true)
-              _buildDetailRow('Team', data['team']),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Close',
-              style: GoogleFonts.poppins(color: Colors.grey.shade600),
-            ),
+
+              const SizedBox(height: 24),
+
+              // Details section
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppTheme.background,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppTheme.border),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildDetailRow(
+                        'Role', (data['role'] ?? 'Unknown').toUpperCase()),
+                    if (data['role_description']?.isNotEmpty == true)
+                      _buildDetailRow('Description', data['role_description']),
+                    if (data['team']?.isNotEmpty == true)
+                      _buildDetailRow('Team', data['team']),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // Action buttons
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  OutlinedPrimaryButton(
+                    label: 'Close',
+                    onPressed: () => Navigator.pop(context),
+                    compact: true,
+                  ),
+                  const SizedBox(width: 12),
+                  GradientButton(
+                    label: l10n.edit,
+                    onPressed: () {
+                      Navigator.pop(context);
+                      onEdit();
+                    },
+                    compact: true,
+                  ),
+                ],
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              onEdit();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Color(0xFFF27121),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
-            ),
-            child: Text(
-              l10n.edit,
-              style: GoogleFonts.poppins(color: Colors.white),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 
   Widget _buildDetailRow(String label, String value) {
     return Padding(
-      padding: EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -321,19 +330,18 @@ class UserCard extends StatelessWidget {
             width: 80,
             child: Text(
               '$label:',
-              style: GoogleFonts.poppins(
+              style: AppTheme.caption.copyWith(
                 fontWeight: FontWeight.w500,
-                color: Colors.grey.shade700,
-                fontSize: 13,
+                color: AppTheme.textSecondary,
               ),
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: GoogleFonts.poppins(
-                color: Colors.grey.shade800,
-                fontSize: 13,
+              style: AppTheme.caption.copyWith(
+                color: AppTheme.textPrimary,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),

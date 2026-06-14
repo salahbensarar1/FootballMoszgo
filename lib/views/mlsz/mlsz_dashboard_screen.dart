@@ -127,7 +127,7 @@ class _MLSZDashboardScreenState extends State<MLSZDashboardScreen> {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withValues(alpha:0.1),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -286,7 +286,7 @@ class _MLSZDashboardScreenState extends State<MLSZDashboardScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha:0.1),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -309,7 +309,7 @@ class _MLSZDashboardScreenState extends State<MLSZDashboardScreen> {
             label,
             style: TextStyle(
               fontSize: 14,
-              color: Colors.white.withOpacity(0.9),
+              color: Colors.white.withValues(alpha:0.9),
             ),
           ),
         ],
@@ -324,7 +324,7 @@ class _MLSZDashboardScreenState extends State<MLSZDashboardScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha:0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -357,12 +357,12 @@ class _MLSZDashboardScreenState extends State<MLSZDashboardScreen> {
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: isMyTeam
-                      ? const Color(0xFF7C4DFF).withOpacity(0.1)
+                      ? const Color(0xFF7C4DFF).withValues(alpha:0.1)
                       : null,
                   borderRadius: BorderRadius.circular(12),
                   border: isMyTeam
                       ? Border.all(
-                          color: const Color(0xFF7C4DFF).withOpacity(0.3))
+                          color: const Color(0xFF7C4DFF).withValues(alpha:0.3))
                       : null,
                 ),
                 child: Row(

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:footballtraining/l10n/app_localizations.dart';
 import '../services/logging_service.dart';
 import '../services/global_messenger_service.dart';
 
@@ -27,19 +27,19 @@ class _ErrorBoundaryState extends State<ErrorBoundary> {
   @override
   void initState() {
     super.initState();
-    
+
     // Set up global error handler
     FlutterError.onError = (FlutterErrorDetails details) {
       LoggingService.error('Flutter Error', details.exception, details.stack);
-      
+
       if (mounted) {
         setState(() {
           _error = details.exception;
         });
       }
-      
+
       widget.onError?.call();
-      
+
       // Show user-friendly message
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
@@ -68,7 +68,7 @@ class _ErrorBoundaryState extends State<ErrorBoundary> {
 
   Widget _buildErrorWidget(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    
+
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       body: Center(
@@ -104,9 +104,9 @@ class _ErrorBoundaryState extends State<ErrorBoundary> {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  widget.fallbackMessage ?? 
-                  l10n?.tryAgainOrContact ?? 
-                  'Please try again or contact support if the problem persists.',
+                  widget.fallbackMessage ??
+                      l10n?.tryAgainOrContact ??
+                      'Please try again or contact support if the problem persists.',
                   style: GoogleFonts.poppins(
                     fontSize: 14,
                     color: Colors.grey.shade600,

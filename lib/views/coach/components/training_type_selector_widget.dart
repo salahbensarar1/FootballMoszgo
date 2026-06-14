@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:footballtraining/l10n/app_localizations.dart';
+import 'package:footballtraining/core/theme/app_theme.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class TrainingTypeConfig {
   final String value;
@@ -161,18 +163,17 @@ class TrainingTypeSelectorWidget extends StatelessWidget {
                       decoration: BoxDecoration(
                         gradient: isSelected
                             ? LinearGradient(colors: type.gradient)
-                            : LinearGradient(colors: [
-                                Colors.grey.shade200,
-                                Colors.grey.shade300
-                              ]),
+                            : LinearGradient(
+                                colors: [AppTheme.surface2, AppTheme.surface2]),
                         borderRadius: BorderRadius.circular(12),
                         border: isSelected
                             ? Border.all(color: type.gradient[0], width: 2)
-                            : null,
+                            : Border.all(color: AppTheme.border, width: 1),
                         boxShadow: isSelected
                             ? [
                                 BoxShadow(
-                                  color: type.gradient[0].withOpacity(0.3),
+                                  color:
+                                      type.gradient[0].withValues(alpha: 0.3),
                                   blurRadius: 8,
                                   offset: const Offset(0, 4),
                                 ),
@@ -185,9 +186,8 @@ class TrainingTypeSelectorWidget extends StatelessWidget {
                           Icon(
                             type.icon,
                             size: isSmallScreen ? 28 : 32,
-                            color: isSelected
-                                ? Colors.white
-                                : Colors.grey.shade600,
+                            color:
+                                isSelected ? Colors.white : AppTheme.textMuted,
                           ),
                           const SizedBox(height: 6),
                           Text(
@@ -196,10 +196,10 @@ class TrainingTypeSelectorWidget extends StatelessWidget {
                               fontSize: isSmallScreen ? 11 : 12,
                               fontWeight: isSelected
                                   ? FontWeight.bold
-                                  : FontWeight.normal,
+                                  : FontWeight.w500,
                               color: isSelected
                                   ? Colors.white
-                                  : Colors.grey.shade700,
+                                  : AppTheme.textSecondary,
                             ),
                             textAlign: TextAlign.center,
                             maxLines: 1,
@@ -222,18 +222,18 @@ class TrainingTypeSelectorWidget extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        gradient: gradient,
-        color: gradient == null ? Colors.white : null,
-        borderRadius: BorderRadius.circular(16),
+        color: AppTheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppTheme.border, width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: 0.3),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       child: child,
     );
   }
@@ -241,17 +241,24 @@ class TrainingTypeSelectorWidget extends StatelessWidget {
   Widget _buildSectionHeader(String title, IconData icon, bool isSmallScreen) {
     return Row(
       children: [
-        Icon(icon, color: const Color(0xFFF27121), size: 20),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            title,
-            style: TextStyle(
-              fontSize: isSmallScreen ? 16 : 18,
-              fontWeight: FontWeight.bold,
-            ),
-            overflow: TextOverflow.ellipsis,
+        Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            gradient: AppTheme.primaryGradient,
+            borderRadius: BorderRadius.circular(10),
           ),
+          child: Icon(icon, color: AppTheme.background, size: 18),
+        ),
+        const SizedBox(width: 12),
+        Text(
+          title,
+          style: GoogleFonts.syne(
+            fontSize: isSmallScreen ? 16 : 18,
+            fontWeight: FontWeight.w700,
+            color: AppTheme.textPrimary,
+          ),
+          overflow: TextOverflow.ellipsis,
         ),
       ],
     );

@@ -3,11 +3,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:footballtraining/l10n/app_localizations.dart';
 import 'package:footballtraining/views/login/login_page.dart';
 import 'package:footballtraining/data/repositories/team_service.dart';
 import 'package:footballtraining/data/models/team_model.dart';
 import 'package:footballtraining/services/organization_context.dart';
+import 'package:footballtraining/core/theme/app_theme.dart';
+import 'package:footballtraining/core/widgets/app_widgets.dart';
+import 'package:footballtraining/core/painters/pitch_painter.dart';
 import 'package:intl/intl.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'widgets/coach_app_bar_extracted.dart';
@@ -266,7 +269,8 @@ class _CoachScreenState extends State<CoachScreen>
 
       // Validate organization context before saving
       if (!OrganizationContext.isInitialized) {
-        _showErrorMessage("Organization context not initialized. Please restart the app.");
+        _showErrorMessage(
+            "Organization context not initialized. Please restart the app.");
         return;
       }
 
@@ -317,18 +321,27 @@ class _CoachScreenState extends State<CoachScreen>
       SnackBar(
         content: Row(
           children: [
-            const Icon(Icons.check_circle, color: Colors.white),
-            const SizedBox(width: 8),
-            Expanded(child: Text(message)),
+            const Icon(Icons.check_circle_outline,
+                color: AppTheme.background, size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                message,
+                style: AppTheme.bodyMedium.copyWith(
+                  color: AppTheme.background,
+                ),
+              ),
+            ),
           ],
         ),
-        backgroundColor: Colors.green.shade600,
+        backgroundColor: AppTheme.success,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
         duration: const Duration(seconds: 3),
         action: SnackBarAction(
           label: 'OK',
-          textColor: Colors.white,
+          textColor: AppTheme.background,
           onPressed: () {
             ScaffoldMessenger.of(context).hideCurrentSnackBar();
           },
@@ -342,14 +355,23 @@ class _CoachScreenState extends State<CoachScreen>
       SnackBar(
         content: Row(
           children: [
-            const Icon(Icons.error, color: Colors.white),
-            const SizedBox(width: 8),
-            Expanded(child: Text(message)),
+            const Icon(Icons.error_outline,
+                color: AppTheme.background, size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                message,
+                style: AppTheme.bodyMedium.copyWith(
+                  color: AppTheme.background,
+                ),
+              ),
+            ),
           ],
         ),
-        backgroundColor: Colors.red,
+        backgroundColor: AppTheme.error,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
       ),
     );
   }
@@ -361,7 +383,7 @@ class _CoachScreenState extends State<CoachScreen>
     final isSmallScreen = size.width < 400;
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: AppTheme.background,
       appBar: CoachAppBarExtracted(
         isSmallScreen: isSmallScreen,
         isTrainingActive: isTrainingActive,
@@ -387,21 +409,21 @@ class _CoachScreenState extends State<CoachScreen>
       body: SafeArea(
         child: Stack(
           children: [
-            // Background gradient
+            // Background with pitch pattern
             Positioned.fill(
               child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.grey.shade100,
-                      Colors.grey.shade50,
-                    ],
-                    stops: const [0.0, 0.7], // Better gradient distribution
-                  ),
+                decoration: const BoxDecoration(
+                  gradient: AppTheme.backgroundGradient,
                 ),
               ),
+            ),
+
+            // Pitch pattern overlay
+            CustomPaint(
+              painter: PitchLinePainter(
+                lineColor: AppTheme.primary.withValues(alpha: 0.02),
+              ),
+              size: Size.infinite,
             ),
 
             // Main content
@@ -421,7 +443,7 @@ class _CoachScreenState extends State<CoachScreen>
                     isSmallScreen: isSmallScreen,
                     isTrainingActive: isTrainingActive,
                   ),
-                  const SizedBox(height: 24),
+                  SizedBox(height: ScreenConfig.spaceL),
 
                   // Team selection
                   AnimatedOpacity(
@@ -528,22 +550,19 @@ class _CoachScreenState extends State<CoachScreen>
   }
 
   Widget _buildPitchLocationCard(AppLocalizations l10n, bool isSmallScreen) {
-    return _buildCard(
+    return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSectionHeader(
               l10n.pitchLocation, Icons.location_on, isSmallScreen),
           const SizedBox(height: 12),
-          TextFormField(
+          PremiumTextField(
             controller: pitchController,
             enabled: !isTrainingActive || currentSessionId != null,
-            decoration: InputDecoration(
-              labelText: l10n.pitchLocation,
-              border:
-                  OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              prefixIcon: const Icon(Icons.stadium),
-            ),
+            labelText: l10n.pitchLocation,
+            hintText: 'Enter pitch location',
+            leadingIcon: Icons.stadium,
           ),
         ],
       ),
@@ -554,72 +573,12 @@ class _CoachScreenState extends State<CoachScreen>
     return Container(
       width: double.infinity,
       height: isSmallScreen ? 60 : 70,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFF27121).withOpacity(0.4),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: ElevatedButton.icon(
+      child: GradientButton(
+        label: l10n.startTraining,
         onPressed: canStartTraining ? _startTraining : null,
-        style: ElevatedButton.styleFrom(
-          foregroundColor: Colors.white,
-          backgroundColor: const Color(0xFFF27121),
-          disabledBackgroundColor: Colors.grey.shade400,
-          disabledForegroundColor: Colors.white70,
-          padding: EdgeInsets.symmetric(
-            horizontal: isSmallScreen ? 12 : 22,
-            vertical: isSmallScreen ? 10 : 14,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          elevation: 0,
-        ),
-        icon: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
-            shape: BoxShape.circle,
-          ),
-          child: const Icon(
-            Icons.play_arrow_rounded,
-            color: Colors.white,
-            size: 28,
-          ),
-        ),
-        label: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const SizedBox(width: 8),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  l10n.startTraining,
-                  style: TextStyle(
-                    fontSize: isSmallScreen ? 16 : 18,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                if (!isSmallScreen)
-                  Text(
-                    selectedTeam?.teamName ?? "",
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.white.withOpacity(0.8),
-                    ),
-                  ),
-              ],
-            ),
-          ],
-        ),
+        icon: Icons.play_arrow_rounded,
+        expanded: true,
+        subtitle: !isSmallScreen ? selectedTeam?.teamName : null,
       ),
     );
   }
@@ -631,23 +590,19 @@ class _CoachScreenState extends State<CoachScreen>
     final remainingMin = remaining.inMinutes.clamp(0, 120);
     final remainingSec = remaining.inSeconds.remainder(60).clamp(0, 59);
     final Color progressColor = remainingMin < 5
-        ? Colors.red
+        ? AppTheme.error
         : remainingMin < 15
-            ? Colors.orange
-            : Colors.white;
+            ? AppTheme.warning
+            : AppTheme.background;
 
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF10B981), Color(0xFF059669)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        gradient: AppTheme.successGradient,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Color(0xFF10B981).withOpacity(0.3),
+            color: AppTheme.success.withValues(alpha: 0.3),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -662,12 +617,12 @@ class _CoachScreenState extends State<CoachScreen>
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  shape: BoxShape.circle,
+                  color: AppTheme.background.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
                   Icons.timer,
-                  color: Colors.white,
+                  color: AppTheme.background,
                   size: 24,
                 ),
               ),
@@ -677,30 +632,26 @@ class _CoachScreenState extends State<CoachScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "Edzés folyamatban",
-                      style: TextStyle(
-                        color: Colors.white,
+                      "Training in Progress",
+                      style: AppTheme.heading3.copyWith(
+                        color: AppTheme.background,
                         fontSize: isSmallScreen ? 18 : 20,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.5,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Row(
                       children: [
                         Text(
-                          "Kezdés: ${DateFormat('HH:mm').format(trainingStart!)}",
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.9),
-                            fontSize: isSmallScreen ? 12 : 14,
+                          "Start: ${DateFormat('HH:mm').format(trainingStart!)}",
+                          style: AppTheme.caption.copyWith(
+                            color: AppTheme.background.withValues(alpha: 0.9),
                           ),
                         ),
                         const SizedBox(width: 16),
                         Text(
-                          "Vége: ${DateFormat('HH:mm').format(trainingEnd!)}",
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.9),
-                            fontSize: isSmallScreen ? 12 : 14,
+                          "End: ${DateFormat('HH:mm').format(trainingEnd!)}",
+                          style: AppTheme.caption.copyWith(
+                            color: AppTheme.background.withValues(alpha: 0.9),
                           ),
                         ),
                       ],
@@ -715,26 +666,24 @@ class _CoachScreenState extends State<CoachScreen>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                "$remainingMin:${remainingSec.toString().padLeft(2, '0')} hátravan",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: isSmallScreen ? 13 : 15,
-                  fontWeight: FontWeight.w500,
+                "$remainingMin:${remainingSec.toString().padLeft(2, '0')} remaining",
+                style: AppTheme.bodyMedium.copyWith(
+                  color: AppTheme.background,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppTheme.background,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
                   "${(progress * 100).toInt()}%",
-                  style: TextStyle(
-                    color: Color(0xFF059669),
-                    fontWeight: FontWeight.bold,
-                    fontSize: isSmallScreen ? 12 : 14,
+                  style: AppTheme.bodyMedium.copyWith(
+                    color: AppTheme.success,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
@@ -746,7 +695,7 @@ class _CoachScreenState extends State<CoachScreen>
             child: LinearProgressIndicator(
               value: progress,
               minHeight: 8,
-              backgroundColor: Colors.white.withOpacity(0.3),
+              backgroundColor: AppTheme.background.withValues(alpha: 0.3),
               valueColor: AlwaysStoppedAnimation<Color>(progressColor),
             ),
           ),
@@ -755,38 +704,18 @@ class _CoachScreenState extends State<CoachScreen>
     );
   }
 
-  // Helper Widgets
-  Widget _buildCard({required Widget child, Gradient? gradient}) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        gradient: gradient,
-        color: gradient == null ? Colors.white : null,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.all(16),
-      child: child,
-    );
-  }
-
   Widget _buildSectionHeader(String title, IconData icon, bool isSmallScreen) {
     return Row(
       children: [
-        Icon(icon, color: const Color(0xFFF27121), size: 20),
+        Icon(icon, color: AppTheme.primary, size: 20),
         const SizedBox(width: 8),
         Expanded(
           child: Text(
             title,
-            style: TextStyle(
-              fontSize: isSmallScreen ? 16 : 18,
-              fontWeight: FontWeight.bold,
+            style: (isSmallScreen ? AppTheme.bodyLarge : AppTheme.heading3)
+                .copyWith(
+              fontWeight: FontWeight.w700,
+              color: AppTheme.textPrimary,
             ),
             overflow: TextOverflow.ellipsis,
           ),
@@ -821,40 +750,72 @@ class _CoachScreenState extends State<CoachScreen>
     if (userProfileImageUrl != null && userProfileImageUrl!.isNotEmpty) {
       return CachedNetworkImage(
         imageUrl: userProfileImageUrl!,
-        imageBuilder: (context, imageProvider) => CircleAvatar(
-          radius: radius,
-          backgroundImage: imageProvider,
-        ),
-        placeholder: (context, url) => CircleAvatar(
-          radius: radius,
-          backgroundColor: Colors.white.withOpacity(0.2),
-          child: SizedBox(
-            width: radius * 0.6,
-            height: radius * 0.6,
-            child: const CircularProgressIndicator(
-              strokeWidth: 2,
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+        imageBuilder: (context, imageProvider) => Container(
+          width: radius * 2,
+          height: radius * 2,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: AppTheme.primary.withValues(alpha: 0.3),
+              width: 2,
             ),
+            boxShadow: AppTheme.cardShadow,
+          ),
+          child: CircleAvatar(
+            radius: radius,
+            backgroundImage: imageProvider,
           ),
         ),
-        errorWidget: (context, url, error) => CircleAvatar(
-          radius: radius,
-          backgroundColor: Colors.white.withOpacity(0.2),
+        placeholder: (context, url) => Container(
+          width: radius * 2,
+          height: radius * 2,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppTheme.background.withValues(alpha: 0.2),
+            border: Border.all(
+              color: AppTheme.primary.withValues(alpha: 0.3),
+              width: 2,
+            ),
+          ),
+          child: const CircularProgressIndicator(
+            strokeWidth: 2,
+            valueColor: AlwaysStoppedAnimation<Color>(AppTheme.background),
+          ),
+        ),
+        errorWidget: (context, url, error) => Container(
+          width: radius * 2,
+          height: radius * 2,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppTheme.background.withValues(alpha: 0.2),
+            border: Border.all(
+              color: AppTheme.primary.withValues(alpha: 0.3),
+              width: 2,
+            ),
+          ),
           child: Icon(
             Icons.person,
             size: radius * 0.8,
-            color: Colors.white,
+            color: AppTheme.background,
           ),
         ),
       );
     } else {
-      return CircleAvatar(
-        radius: radius,
-        backgroundColor: Colors.white.withOpacity(0.2),
+      return Container(
+        width: radius * 2,
+        height: radius * 2,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: AppTheme.background.withValues(alpha: 0.2),
+          border: Border.all(
+            color: AppTheme.primary.withValues(alpha: 0.3),
+            width: 2,
+          ),
+        ),
         child: Icon(
           Icons.person,
           size: radius * 0.8,
-          color: Colors.white,
+          color: AppTheme.background,
         ),
       );
     }

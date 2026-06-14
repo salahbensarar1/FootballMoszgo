@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:footballtraining/l10n/app_localizations.dart';
 import 'package:footballtraining/main.dart';
 
 class LanguageSelectionDialog extends StatelessWidget {
@@ -42,7 +42,7 @@ class LanguageSelectionDialog extends StatelessWidget {
     final isSelected = currentLocale.languageCode == languageCode;
 
     return Material(
-      color: isSelected ? const Color(0xFFF27121).withOpacity(0.1) : null,
+      color: isSelected ? const Color(0xFFF27121).withValues(alpha: 0.1) : null,
       borderRadius: BorderRadius.circular(12),
       child: ListTile(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

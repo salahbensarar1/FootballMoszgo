@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:footballtraining/core/theme/app_theme.dart';
 
 class LoadingStateWidget extends StatelessWidget {
   final String? message;
@@ -16,20 +16,19 @@ class LoadingStateWidget extends StatelessWidget {
             width: 60,
             height: 60,
             decoration: BoxDecoration(
-              color: Color(0xFFF27121).withOpacity(0.1),
+              color: AppTheme.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(30),
             ),
-            child: CircularProgressIndicator(
-              color: Color(0xFFF27121),
+            child: const CircularProgressIndicator(
+              color: AppTheme.primary,
               strokeWidth: 3,
             ),
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           Text(
             message ?? 'Loading...',
-            style: GoogleFonts.poppins(
-              color: Colors.grey.shade600,
-              fontSize: 16,
+            style: AppTheme.bodyLarge.copyWith(
+              color: AppTheme.textSecondary,
             ),
           ),
         ],

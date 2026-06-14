@@ -227,7 +227,7 @@ class _PaymentMonthIndicatorState extends State<PaymentMonthIndicator>
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: color.withOpacity(0.3),
+                      color: color.withValues(alpha: 0.3),
                       spreadRadius: 1,
                       blurRadius: 3,
                       offset: const Offset(0, 1),
@@ -429,7 +429,7 @@ class _PaymentMonthIndicatorState extends State<PaymentMonthIndicator>
                           vertical: 12, horizontal: 16),
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? _getStatusColor(status).withOpacity(0.1)
+                            ? _getStatusColor(status).withValues(alpha: 0.1)
                             : Colors.transparent,
                         border: Border.all(
                           color: isSelected

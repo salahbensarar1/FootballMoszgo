@@ -204,7 +204,7 @@ class _CoachAssignmentDialogState extends State<CoachAssignmentDialog>
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
+                  color: Colors.black.withValues(alpha:0.2),
                   blurRadius: 20,
                   offset: Offset(0, 10),
                 ),
@@ -248,7 +248,7 @@ class _CoachAssignmentDialogState extends State<CoachAssignmentDialog>
           Container(
             padding: EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha:0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
@@ -275,7 +275,7 @@ class _CoachAssignmentDialogState extends State<CoachAssignmentDialog>
                   widget.teamName,
                   style: GoogleFonts.poppins(
                     fontSize: isSmallScreen ? 14 : 16,
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha:0.9),
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -286,7 +286,7 @@ class _CoachAssignmentDialogState extends State<CoachAssignmentDialog>
             onPressed: () => Navigator.pop(context),
             icon: Icon(Icons.close_rounded, color: Colors.white),
             style: IconButton.styleFrom(
-              backgroundColor: Colors.white.withOpacity(0.2),
+              backgroundColor: Colors.white.withValues(alpha:0.2),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),

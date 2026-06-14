@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:footballtraining/l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AddUserDialog extends StatefulWidget {
@@ -287,12 +287,15 @@ class _Header extends StatelessWidget {
       padding: EdgeInsets.fromLTRB(hPad, 22, hPad, 20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [brand.withOpacity(0.12), brand.withOpacity(0.04)],
+          colors: [
+            brand.withValues(alpha: 0.12),
+            brand.withValues(alpha: 0.04)
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         border: Border(
-          bottom: BorderSide(color: brand.withOpacity(0.15), width: 1),
+          bottom: BorderSide(color: brand.withValues(alpha: 0.15), width: 1),
         ),
       ),
       child: Row(
@@ -300,7 +303,7 @@ class _Header extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(9),
             decoration: BoxDecoration(
-              color: brand.withOpacity(0.15),
+              color: brand.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(Icons.person_add_rounded, color: brand, size: 22),
@@ -466,7 +469,7 @@ class _RoleSelector extends StatelessWidget {
               curve: Curves.easeInOut,
               decoration: BoxDecoration(
                 color: isSelected
-                    ? role.color.withOpacity(0.12)
+                    ? role.color.withValues(alpha: 0.12)
                     : Colors.grey.shade50,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
@@ -566,11 +569,11 @@ class _SubmitButton extends StatelessWidget {
           onPressed: onPressed,
           style: ElevatedButton.styleFrom(
             backgroundColor: isLoading
-                ? Color.lerp(brand, brand.withOpacity(0.7), anim.value)
+                ? Color.lerp(brand, brand.withValues(alpha: 0.7), anim.value)
                 : brand,
             padding: const EdgeInsets.symmetric(vertical: 14),
             elevation: isLoading ? 0 : 2,
-            shadowColor: brand.withOpacity(0.4),
+            shadowColor: brand.withValues(alpha: 0.4),
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),

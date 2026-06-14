@@ -1,8 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:footballtraining/l10n/app_localizations.dart';
+import 'package:footballtraining/core/theme/app_theme.dart';
+import 'package:footballtraining/core/widgets/app_widgets.dart';
+import 'package:footballtraining/utils/role_helper.dart';
 
 class EditUserDialog extends StatefulWidget {
   final DocumentSnapshot userDoc;
@@ -53,192 +55,233 @@ class _EditUserDialogState extends State<EditUserDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      title: Row(
-        children: [
-          Container(
-            padding: EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Color(0xFFF27121).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              Icons.edit_rounded,
-              color: Color(0xFFF27121),
-              size: 24,
-            ),
-          ),
-          SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              widget.l10n.editUser,
-              style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      ),
-      content: Container(
-        width: double.maxFinite,
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Name Field
-                TextFormField(
-                  controller: _nameController,
-                  decoration: InputDecoration(
-                    labelText: widget.l10n.name,
-                    prefixIcon: Icon(Icons.person_outline_rounded),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value?.isEmpty ?? true) {
-                      return widget.l10n.pleaseEnterName;
-                    }
-                    return null;
-                  },
+    final size = MediaQuery.of(context).size;
+
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      backgroundColor: Colors.transparent,
+      child: Container(
+        constraints: BoxConstraints(
+          maxWidth: size.width > 600 ? 500 : size.width - 32,
+          maxHeight: size.height * 0.8,
+        ),
+        decoration: BoxDecoration(
+          color: AppTheme.surface,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: AppTheme.border),
+          boxShadow: AppTheme.cardShadow,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Header section
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: const BoxDecoration(
+                gradient: AppTheme.primaryGradient,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(24),
+                  topRight: Radius.circular(24),
                 ),
-
-                SizedBox(height: 16),
-
-                // Email Field (Read-only)
-                TextFormField(
-                  controller: _emailController,
-                  enabled: false,
-                  decoration: InputDecoration(
-                    labelText: widget.l10n.email,
-                    prefixIcon: Icon(Icons.email_outlined),
-                    border: OutlineInputBorder(
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppTheme.background.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    filled: true,
-                    fillColor: Colors.grey.shade100,
-                  ),
-                ),
-
-                SizedBox(height: 16),
-
-                // Role Selection
-                DropdownButtonFormField<String>(
-                  value: selectedRole,
-                  decoration: InputDecoration(
-                    labelText: widget.l10n.role,
-                    prefixIcon: Icon(Icons.work_outline_rounded),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                    child: const Icon(
+                      Icons.edit_rounded,
+                      color: AppTheme.background,
+                      size: 24,
                     ),
                   ),
-                  items: roleOptions.map((role) {
-                    return DropdownMenuItem(
-                      value: role,
-                      child: Row(
-                        children: [
-                          Icon(
-                            _getRoleIcon(role),
-                            color: _getRoleColor(role),
-                            size: 20,
-                          ),
-                          SizedBox(width: 8),
-                          Text(
-                            _getRoleDisplayName(role),
-                            style: GoogleFonts.poppins(
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Text(
+                      widget.l10n.editUser,
+                      style: AppTheme.heading3.copyWith(
+                        color: AppTheme.background,
                       ),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    if (value != null) {
-                      setState(() => selectedRole = value);
-                    }
-                  },
-                ),
-
-                SizedBox(height: 16),
-
-                // Role Description Field
-                TextFormField(
-                  controller: _roleDescriptionController,
-                  maxLines: 3,
-                  decoration: InputDecoration(
-                    labelText: widget.l10n.roleDescription,
-                    prefixIcon: Icon(Icons.description_outlined),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    hintText: widget.l10n.enterRoleDescription,
+                  ),
+                ],
+              ),
+            ),
+
+            // Form content
+            Flexible(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Form(
+                  key: _formKey,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Name Field
+                        PremiumTextField(
+                          controller: _nameController,
+                          labelText: widget.l10n.name,
+                          hintText: 'Enter full name',
+                          leadingIcon: Icons.person_outline_rounded,
+                          validator: (value) {
+                            if (value?.isEmpty ?? true) {
+                              return widget.l10n.pleaseEnterName;
+                            }
+                            return null;
+                          },
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // Email Field (Read-only)
+                        PremiumTextField(
+                          controller: _emailController,
+                          labelText: widget.l10n.email,
+                          hintText: 'Email address',
+                          leadingIcon: Icons.email_outlined,
+                          enabled: false,
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // Role Selection Card
+                        AppCard(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.work_outline_rounded,
+                                    color: AppTheme.primary,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    widget.l10n.role,
+                                    style: AppTheme.bodyMedium.copyWith(
+                                      color: AppTheme.textSecondary,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              Wrap(
+                                spacing: 12,
+                                runSpacing: 8,
+                                children: roleOptions.map((role) {
+                                  final isSelected = selectedRole == role;
+                                  final roleColor =
+                                      RoleHelper.getRoleColor(role);
+                                  final roleIcon = RoleHelper.getRoleIcon(role);
+
+                                  return GestureDetector(
+                                    onTap: () =>
+                                        setState(() => selectedRole = role),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 16, vertical: 10),
+                                      decoration: BoxDecoration(
+                                        color: isSelected
+                                            ? roleColor.withValues(alpha: 0.1)
+                                            : AppTheme.background,
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: isSelected
+                                              ? roleColor
+                                              : AppTheme.border,
+                                          width: isSelected ? 2 : 1,
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            roleIcon,
+                                            color: roleColor,
+                                            size: 18,
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            _getRoleDisplayName(role),
+                                            style: AppTheme.bodyMedium.copyWith(
+                                              fontWeight: isSelected
+                                                  ? FontWeight.w600
+                                                  : FontWeight.w500,
+                                              color: isSelected
+                                                  ? roleColor
+                                                  : AppTheme.textPrimary,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // Role Description Field
+                        PremiumTextField(
+                          controller: _roleDescriptionController,
+                          labelText: widget.l10n.roleDescription,
+                          hintText: widget.l10n.enterRoleDescription,
+                          leadingIcon: Icons.description_outlined,
+                          maxLines: 3,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
+
+            // Action buttons
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: AppTheme.background,
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(24),
+                  bottomRight: Radius.circular(24),
+                ),
+                border: Border(
+                  top: BorderSide(color: AppTheme.border, width: 1),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  OutlinedPrimaryButton(
+                    label: widget.l10n.cancel,
+                    onPressed: isLoading ? null : () => Navigator.pop(context),
+                    compact: true,
+                  ),
+                  const SizedBox(width: 12),
+                  GradientButton(
+                    label: widget.l10n.save,
+                    onPressed: isLoading ? null : _updateUser,
+                    isLoading: isLoading,
+                    compact: true,
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: isLoading ? null : () => Navigator.pop(context),
-          child: Text(
-            widget.l10n.cancel,
-            style: GoogleFonts.poppins(color: Colors.grey.shade600),
-          ),
-        ),
-        ElevatedButton(
-          onPressed: isLoading ? null : _updateUser,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Color(0xFFF27121),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          ),
-          child: isLoading
-              ? SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                    strokeWidth: 2,
-                  ),
-                )
-              : Text(
-                  widget.l10n.save,
-                  style: GoogleFonts.poppins(color: Colors.white),
-                ),
-        ),
-      ],
     );
-  }
-
-  Color _getRoleColor(String role) {
-    switch (role.toLowerCase()) {
-      case 'admin':
-        return Colors.red.shade600;
-      case 'coach':
-        return Colors.blue.shade600;
-      case 'receptionist':
-        return Colors.green.shade600;
-      default:
-        return Colors.grey.shade600;
-    }
-  }
-
-  IconData _getRoleIcon(String role) {
-    switch (role.toLowerCase()) {
-      case 'admin':
-        return Icons.admin_panel_settings_rounded;
-      case 'coach':
-        return Icons.sports_rounded;
-      case 'receptionist':
-        return Icons.desk_rounded;
-      default:
-        return Icons.person_rounded;
-    }
   }
 
   String _getRoleDisplayName(String role) {
@@ -272,32 +315,62 @@ class _EditUserDialogState extends State<EditUserDialog> {
         'updated_by': FirebaseAuth.instance.currentUser?.uid,
       });
 
-      Navigator.pop(context);
-      widget.onUserUpdated();
+      if (mounted) {
+        Navigator.pop(context);
+        widget.onUserUpdated();
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            widget.l10n.successfullyUpdated,
-            style: GoogleFonts.poppins(),
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle_outline,
+                    color: AppTheme.background, size: 20),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    widget.l10n.successfullyUpdated,
+                    style: AppTheme.bodyMedium.copyWith(
+                      color: AppTheme.background,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: AppTheme.success,
+            behavior: SnackBarBehavior.floating,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            margin: const EdgeInsets.all(16),
           ),
-          backgroundColor: Colors.green,
-          behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      );
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            widget.l10n.failedToUpdate(e.toString()),
-            style: GoogleFonts.poppins(),
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline,
+                    color: AppTheme.background, size: 20),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    widget.l10n.failedToUpdate(e.toString()),
+                    style: AppTheme.bodyMedium.copyWith(
+                      color: AppTheme.background,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: AppTheme.error,
+            behavior: SnackBarBehavior.floating,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            margin: const EdgeInsets.all(16),
           ),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+        );
+      }
     } finally {
       if (mounted) {
         setState(() => isLoading = false);

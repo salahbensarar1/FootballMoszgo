@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:footballtraining/shared/utils/responsive_utils.dart';
 import 'package:footballtraining/config/environment.dart';
+import 'package:footballtraining/core/theme/app_theme.dart';
 
 /// Adaptive scaffold wrapper that ensures proper content layout across all screen sizes
 class AdaptiveScaffoldWrapper extends StatelessWidget {
@@ -61,7 +62,7 @@ class AdaptiveScaffoldWrapper extends StatelessWidget {
     scaffoldBody = _wrapWithDemoBanner(context, scaffoldBody);
 
     return Scaffold(
-      backgroundColor: backgroundColor ?? Colors.grey.shade50,
+      backgroundColor: backgroundColor ?? AppTheme.background,
       appBar: appBar,
       body: scaffoldBody,
       floatingActionButton: floatingActionButton,
@@ -84,7 +85,7 @@ class AdaptiveScaffoldWrapper extends StatelessWidget {
     return Banner(
       message: 'DEMO',
       location: BannerLocation.topStart,
-      color: Colors.orange.shade700,
+      color: AppTheme.primary,
       child: child,
     );
   }
@@ -105,8 +106,14 @@ mixin AdaptiveDialogMixin {
     final maxHeight = screenHeight * maxHeightFactor;
 
     return AlertDialog(
+      backgroundColor: AppTheme.surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      title: titleWidget ?? (title != null ? Text(title) : null),
+      title: titleWidget ?? (title != null ?
+        Text(
+          title,
+          style: AppTheme.heading3,
+        ) : null
+      ),
       contentPadding: contentPadding ?? const EdgeInsets.fromLTRB(24, 20, 24, 24),
       content: ConstrainedBox(
         constraints: BoxConstraints(

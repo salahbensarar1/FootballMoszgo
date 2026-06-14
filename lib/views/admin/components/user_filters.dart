@@ -47,7 +47,7 @@ class UserFilters extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha:0.05),
             blurRadius: 10,
             offset: Offset(0, 2),
           ),
@@ -66,7 +66,7 @@ class UserFilters extends StatelessWidget {
             margin: EdgeInsets.all(12),
             padding: EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Color(0xFFF27121).withOpacity(0.1),
+              color: Color(0xFFF27121).withValues(alpha:0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
@@ -141,8 +141,8 @@ class UserFilters extends StatelessWidget {
         },
         elevation: isSelected ? 4 : 1,
         shadowColor: isSelected
-            ? Color(0xFFF27121).withOpacity(0.3)
-            : Colors.grey.withOpacity(0.1),
+            ? Color(0xFFF27121).withValues(alpha:0.3)
+            : Colors.grey.withValues(alpha:0.1),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
           side: BorderSide(

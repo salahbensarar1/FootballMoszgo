@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:footballtraining/l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:footballtraining/main.dart'; // For language switching
 import 'package:footballtraining/views/admin/widgets/emergency_data_fix_button.dart';
@@ -209,7 +209,7 @@ class _SettingsScreenState extends State<SettingsScreen>
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: Offset(0, 4),
               ),
@@ -225,10 +225,11 @@ class _SettingsScreenState extends State<SettingsScreen>
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                      color: Color(0xFFF27121).withOpacity(0.2), width: 2),
+                      color: Color(0xFFF27121).withValues(alpha: 0.2),
+                      width: 2),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 8,
                       offset: Offset(0, 2),
                     ),
@@ -266,7 +267,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                 Container(
                   padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Color(0xFFF27121).withOpacity(0.1),
+                    color: Color(0xFFF27121).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -329,7 +330,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                   color: Colors.white,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
+                      color: Colors.black.withValues(alpha: 0.2),
                       blurRadius: 4,
                       offset: Offset(0, 2),
                     ),
@@ -549,7 +550,7 @@ class _SettingsScreenState extends State<SettingsScreen>
               Container(
                 padding: EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Color(0xFFF27121).withOpacity(0.1),
+                  color: Color(0xFFF27121).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -589,7 +590,7 @@ class _SettingsScreenState extends State<SettingsScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: Offset(0, 4),
           ),
@@ -723,7 +724,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     return Container(
       decoration: BoxDecoration(
         color: isSelected
-            ? Color(0xFFF27121).withOpacity(0.1)
+            ? Color(0xFFF27121).withValues(alpha: 0.1)
             : Colors.grey.shade50,
         borderRadius: BorderRadius.circular(12),
         border: isSelected ? Border.all(color: Color(0xFFF27121)) : null,
@@ -766,7 +767,7 @@ class _SettingsScreenState extends State<SettingsScreen>
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: Color(0xFFF27121).withOpacity(0.1),
+                color: Color(0xFFF27121).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(

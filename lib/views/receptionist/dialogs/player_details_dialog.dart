@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 // Import your payment models
 import '../../../data/models/payment_model.dart';
 import '../../../services/organization_context.dart';
+import 'package:footballtraining/core/theme/app_theme.dart';
 
 class PlayerDetailsDialog extends StatefulWidget {
   final PlayerPaymentStatus player;
@@ -44,8 +45,13 @@ class _PlayerDetailsDialogState extends State<PlayerDetailsDialog>
 
   @override
   Widget build(BuildContext context) {
+    ScreenConfig.init(context);
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      insetPadding: EdgeInsets.symmetric(
+        horizontal: ScreenConfig.spaceM,
+        vertical: ScreenConfig.spaceXL,
+      ),
       child: Container(
         constraints: const BoxConstraints(maxWidth: 500, maxHeight: 700),
         child: Column(
@@ -151,6 +157,8 @@ class _PlayerDetailsDialogState extends State<PlayerDetailsDialog>
       ),
       child: TabBar(
         controller: _tabController,
+        isScrollable: true,
+        labelPadding: const EdgeInsets.symmetric(horizontal: 16),
         labelColor: _getStatusColor(widget.player.status),
         unselectedLabelColor: Colors.grey.shade600,
         indicatorColor: _getStatusColor(widget.player.status),
@@ -238,7 +246,7 @@ class _PlayerDetailsDialogState extends State<PlayerDetailsDialog>
     }
 
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: ScreenConfig.cardPadding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -265,11 +273,11 @@ class _PlayerDetailsDialogState extends State<PlayerDetailsDialog>
           const SizedBox(height: 16),
           Expanded(
             child: GridView.builder(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 3,
-                childAspectRatio: 1.2,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
+                childAspectRatio: ScreenConfig.isSmallPhone ? 0.9 : 1.0,
+                crossAxisSpacing: ScreenConfig.spaceS,
+                mainAxisSpacing: ScreenConfig.spaceS,
               ),
               itemCount: 12,
               itemBuilder: (context, index) {

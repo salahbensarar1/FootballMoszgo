@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:footballtraining/l10n/app_localizations.dart';
 import 'package:footballtraining/shared/utils/coach_role_utils.dart';
 import 'package:footballtraining/shared/utils/responsive_utils.dart';
 import 'package:footballtraining/views/login/login_page.dart';
@@ -13,18 +13,15 @@ import 'package:footballtraining/views/receptionist/dialogs/coach_assignment_dia
 import 'package:footballtraining/views/receptionist/payment_overview_screen.dart';
 import 'package:footballtraining/views/receptionist/settings_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:footballtraining/core/theme/app_theme.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:footballtraining/shared/widgets/payment_month_indicator.dart';
 import 'package:footballtraining/data/repositories/coach_management_service.dart';
-import 'package:footballtraining/data/repositories/team_repository.dart';
-import 'package:footballtraining/data/models/team_model.dart';
 import 'package:footballtraining/services/organization_context.dart';
 import 'package:footballtraining/services/receptionist_data_service.dart';
 import 'package:footballtraining/views/receptionist/widgets/player_card.dart';
 import 'package:footballtraining/views/receptionist/widgets/standard_card.dart';
-import 'package:footballtraining/shared/utils/responsive_utils.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class ReceptionistScreen extends StatefulWidget {
   const ReceptionistScreen({super.key});
@@ -263,6 +260,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context); // Required for AutomaticKeepAliveClientMixin
+    ScreenConfig.init(context);
 
     final l10n = AppLocalizations.of(context)!;
 
@@ -284,7 +282,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
     }
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: AppTheme.background,
       appBar: _buildAppBar(l10n),
       drawer: isSmallScreen
           ? _buildDrawer(l10n)
@@ -347,7 +345,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
   Widget _buildDrawer(AppLocalizations l10n) {
     return Drawer(
       child: Container(
-        color: Colors.white,
+        color: AppTheme.surface,
         child: Column(
           children: [
             _buildDrawerHeader(l10n),
@@ -413,7 +411,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                     border: Border.all(color: Colors.white, width: 3),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
+                        color: Colors.black.withValues(alpha: 0.2),
                         blurRadius: 10,
                         offset: const Offset(0, 5),
                       ),
@@ -429,7 +427,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: ScreenConfig.spaceM),
               Text(
                 userName ?? l10n.receptionistScreen,
                 style: GoogleFonts.poppins(
@@ -463,11 +461,13 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
     Color? iconColor,
   }) {
     return ListTile(
+      iconColor: AppTheme.primary,
+      textColor: AppTheme.textPrimary,
       leading: Container(
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: (iconColor ?? const Color(0xFF667eea)).withOpacity(0.1),
+          color: (iconColor ?? const Color(0xFF667eea)).withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Icon(
@@ -502,15 +502,9 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
           vertical: isSmallScreen ? 8 : 12),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppTheme.surface2,
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 20,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          border: Border.all(color: AppTheme.border),
         ),
         child: TabBar(
           controller: _tabController,
@@ -521,7 +515,8 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
             ),
             boxShadow: [
               BoxShadow(
-                color: tabConfigs[currentTab].gradient[0].withOpacity(0.3),
+                color:
+                    tabConfigs[currentTab].gradient[0].withValues(alpha: 0.3),
                 blurRadius: 8,
                 offset: const Offset(0, 4),
               ),
@@ -583,15 +578,9 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
           horizontal: isSmallScreen ? 12 : 16, vertical: 8),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppTheme.surface2,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          border: Border.all(color: AppTheme.border),
         ),
         child: TextField(
           controller: _searchController,
@@ -599,14 +588,15 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
           decoration: InputDecoration(
             hintText: l10n.searchHint(tabs[currentTab]),
             hintStyle: GoogleFonts.poppins(
-              color: Colors.grey.shade500,
+              color: AppTheme.textSecondary,
               fontSize: 14,
             ),
             prefixIcon: Container(
               margin: const EdgeInsets.all(12),
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: tabConfigs[currentTab].gradient[0].withOpacity(0.1),
+                color:
+                    tabConfigs[currentTab].gradient[0].withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
@@ -693,7 +683,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
             width: 60,
             height: 60,
             decoration: BoxDecoration(
-              color: tabConfigs[currentTab].gradient[0].withOpacity(0.1),
+              color: AppTheme.surface2,
               borderRadius: BorderRadius.circular(30),
             ),
             child: CircularProgressIndicator(
@@ -701,7 +691,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
               strokeWidth: 3,
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: ScreenConfig.spaceM),
           Text(
             l10n.loading,
             style: GoogleFonts.poppins(
@@ -725,7 +715,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: Colors.red.shade50,
+                color: AppTheme.surface,
                 borderRadius: BorderRadius.circular(40),
               ),
               child: Icon(
@@ -734,25 +724,25 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                 size: 40,
               ),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: ScreenConfig.spaceL),
             Text(
               l10n.somethingWentWrong,
               style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
-                color: Colors.grey.shade800,
+                color: AppTheme.textPrimary,
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: ScreenConfig.spaceS),
             Text(
               l10n.tryAgainOrContact,
               style: GoogleFonts.poppins(
                 fontSize: 14,
-                color: Colors.grey.shade600,
+                color: AppTheme.textSecondary,
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: ScreenConfig.spaceM),
             ElevatedButton.icon(
               onPressed: () => setState(() {}),
               icon: const Icon(Icons.refresh_rounded),
@@ -788,7 +778,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
               width: 120,
               height: 120,
               decoration: BoxDecoration(
-                color: Colors.grey.shade100,
+                color: AppTheme.surface2,
                 borderRadius: BorderRadius.circular(60),
               ),
               child: Icon(
@@ -797,22 +787,22 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                 size: 60,
               ),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: ScreenConfig.spaceL),
             Text(
               l10n.noEntitiesFound(tabs[currentTab]),
               style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
-                color: Colors.grey.shade800,
+                color: AppTheme.textPrimary,
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: ScreenConfig.spaceS),
             Text(
               l10n.addSomeEntities(tabs[currentTab].toLowerCase()),
               style: GoogleFonts.poppins(
                 fontSize: 14,
-                color: Colors.grey.shade600,
+                color: AppTheme.textSecondary,
               ),
             ),
           ],
@@ -832,7 +822,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
               width: 100,
               height: 100,
               decoration: BoxDecoration(
-                color: Colors.grey.shade100,
+                color: AppTheme.surface2,
                 borderRadius: BorderRadius.circular(50),
               ),
               child: Icon(
@@ -841,7 +831,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                 size: 50,
               ),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: ScreenConfig.spaceL),
             Text(
               l10n.noResultsFor(searchQuery),
               style: GoogleFonts.poppins(
@@ -851,7 +841,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: ScreenConfig.spaceS),
             Text(
               l10n.tryAdjustingSearch,
               style: GoogleFonts.poppins(
@@ -867,7 +857,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
 
   Widget _buildItemsList(List<DocumentSnapshot> items, AppLocalizations l10n) {
     return ListView.separated(
-      padding: const EdgeInsets.all(16),
+      padding: ScreenConfig.cardPadding,
       itemCount: items.length,
       separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
@@ -899,11 +889,11 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
         "${l10n.position}: ${data['position'] ?? 'Unknown'}";
     final String pictureUrl = data['picture']?.toString() ?? '';
 
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.surface,
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.grey.shade200),
+        border: Border.all(color: AppTheme.border),
       ),
       child: Column(
         children: [
@@ -922,7 +912,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                       border: Border.all(color: Colors.grey.shade200, width: 2),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withValues(alpha: 0.1),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
@@ -930,7 +920,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                     ),
                     child: CircleAvatar(
                       radius: 28,
-                      backgroundColor: Colors.grey.shade100,
+                      backgroundColor: AppTheme.surface2,
                       backgroundImage: pictureUrl.isEmpty
                           ? const AssetImage(
                               "assets/images/default_profile.jpeg")
@@ -948,7 +938,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                         style: GoogleFonts.poppins(
                           fontWeight: FontWeight.w600,
                           fontSize: 16,
-                          color: Colors.grey.shade800,
+                          color: AppTheme.textPrimary,
                         ),
                         overflow: TextOverflow.ellipsis,
                         maxLines: 1,
@@ -957,7 +947,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                       Text(
                         subtitle,
                         style: GoogleFonts.poppins(
-                          color: Colors.grey.shade600,
+                          color: AppTheme.textSecondary,
                           fontSize: 14,
                         ),
                         overflow: TextOverflow.ellipsis,
@@ -968,7 +958,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                 ),
                 PopupMenuButton<String>(
                   icon: Icon(Icons.more_vert_rounded,
-                      color: Colors.grey.shade600),
+                      color: AppTheme.textSecondary),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
                   onSelected: (value) {
@@ -986,7 +976,8 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                           Icon(Icons.edit_rounded,
                               size: 20, color: Colors.blue.shade600),
                           const SizedBox(width: 8),
-                          Text(l10n.edit),
+                          Text(l10n.edit,
+                              style: TextStyle(color: AppTheme.textPrimary)),
                         ],
                       ),
                     ),
@@ -1020,7 +1011,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                     Icon(
                       Icons.payment_rounded,
                       size: 16,
-                      color: Colors.grey.shade600,
+                      color: AppTheme.textSecondary,
                     ),
                     const SizedBox(width: 6),
                     Flexible(
@@ -1029,7 +1020,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                         style: GoogleFonts.poppins(
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
-                          color: Colors.grey.shade700,
+                          color: AppTheme.textSecondary,
                         ),
                         overflow: TextOverflow.ellipsis,
                         maxLines: 1,
@@ -1037,7 +1028,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: ScreenConfig.spaceS),
                 PaymentMonthIndicator(
                   playerId: item.id,
                   isEditable: true,
@@ -1076,11 +1067,11 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
 
     final String pictureUrl = data['picture']?.toString() ?? '';
 
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.surface,
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.grey.shade200),
+        border: Border.all(color: AppTheme.border),
       ),
       child: InkWell(
         onTap: () {
@@ -1088,7 +1079,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
         },
         borderRadius: BorderRadius.circular(16),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: ScreenConfig.cardPadding,
           child: Row(
             children: [
               Container(
@@ -1099,7 +1090,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: cardGradient[0].withOpacity(0.3),
+                      color: cardGradient[0].withValues(alpha: 0.3),
                       blurRadius: 8,
                       offset: const Offset(0, 4),
                     ),
@@ -1136,7 +1127,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                       style: GoogleFonts.poppins(
                         fontWeight: FontWeight.w600,
                         fontSize: 16,
-                        color: Colors.grey.shade800,
+                        color: AppTheme.textPrimary,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -1145,7 +1136,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                       subtitle,
                       style: GoogleFonts.poppins(
                         fontSize: 14,
-                        color: Colors.grey.shade600,
+                        color: AppTheme.textSecondary,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -1153,8 +1144,8 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                 ),
               ),
               PopupMenuButton<String>(
-                icon:
-                    Icon(Icons.more_vert_rounded, color: Colors.grey.shade600),
+                icon: Icon(Icons.more_vert_rounded,
+                    color: AppTheme.textSecondary),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
                 onSelected: (value) {
@@ -1172,7 +1163,8 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                         Icon(Icons.edit_rounded,
                             size: 20, color: Colors.blue.shade600),
                         const SizedBox(width: 8),
-                        Text(l10n.edit),
+                        Text(l10n.edit,
+                            style: TextStyle(color: AppTheme.textPrimary)),
                       ],
                     ),
                   ),
@@ -1206,7 +1198,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: tabConfigs[currentTab].gradient[0].withOpacity(0.4),
+            color: tabConfigs[currentTab].gradient[0].withValues(alpha: 0.4),
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),
@@ -1250,7 +1242,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
   // Enhanced helper methods for production readiness
   Widget _buildErrorScaffold(AppLocalizations l10n) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: AppTheme.background,
       appBar: AppBar(
         title: Text(l10n.receptionistScreen),
         backgroundColor: Colors.red.shade600,
@@ -1261,14 +1253,14 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.error_outline, size: 64, color: Colors.red.shade400),
-            const SizedBox(height: 16),
+            SizedBox(height: ScreenConfig.spaceM),
             Text(
               l10n.somethingWentWrong,
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: ScreenConfig.spaceS),
             Text(l10n.tryAgainOrContact),
-            const SizedBox(height: 16),
+            SizedBox(height: ScreenConfig.spaceM),
             ElevatedButton(
               onPressed: _refreshData,
               child: Text(l10n.retry),
@@ -1281,7 +1273,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
 
   Widget _buildLoadingScaffold(AppLocalizations l10n) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: AppTheme.background,
       appBar: AppBar(
         title: Text(l10n.receptionistScreen),
         backgroundColor: const Color(0xFF667eea),
@@ -1292,7 +1284,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const CircularProgressIndicator(),
-            const SizedBox(height: 16),
+            SizedBox(height: ScreenConfig.spaceM),
             Text(l10n.loading),
           ],
         ),
@@ -1580,7 +1572,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                       ],
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: ScreenConfig.spaceM),
                   Expanded(
                     child: TabBarView(
                       children: [
@@ -1593,13 +1585,13 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                                 label: l10n.name,
                                 icon: Icons.person_rounded,
                               ),
-                              const SizedBox(height: 16),
+                              SizedBox(height: ScreenConfig.spaceM),
                               _buildTextField(
                                 controller: positionController,
                                 label: l10n.position,
                                 icon: Icons.sports_soccer_rounded,
                               ),
-                              const SizedBox(height: 16),
+                              SizedBox(height: ScreenConfig.spaceM),
                               StreamBuilder<QuerySnapshot>(
                                 stream: FirebaseFirestore.instance
                                     .collection('organizations')
@@ -1647,13 +1639,13 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                                   );
                                 },
                               ),
-                              const SizedBox(height: 16),
+                              SizedBox(height: ScreenConfig.spaceM),
                               // Payment Required Toggle
                               StatefulBuilder(
                                 builder: (context, setState) {
                                   return Container(
                                     margin: const EdgeInsets.only(top: 16),
-                                    padding: const EdgeInsets.all(16),
+                                    padding: ScreenConfig.cardPadding,
                                     decoration: BoxDecoration(
                                       color: paymentRequired
                                           ? Colors.green.shade50
@@ -1677,7 +1669,8 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                                         const SizedBox(width: 12),
                                         Expanded(
                                           child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
                                               Text(
                                                 'Monthly payment required',
@@ -1703,8 +1696,8 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                                         ),
                                         Switch(
                                           value: paymentRequired,
-                                          onChanged: (value) =>
-                                              setState(() => paymentRequired = value),
+                                          onChanged: (value) => setState(
+                                              () => paymentRequired = value),
                                           activeColor: Colors.green.shade600,
                                         ),
                                       ],
@@ -1770,14 +1763,14 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                         .collection('payments')
                         .doc(paymentDocId)
                         .set(
-                          {
-                            'is_active': paymentRequired,
-                            'month': now.month,
-                            'year': now.year,
-                            'updated_at': FieldValue.serverTimestamp(),
-                          },
-                          SetOptions(merge: true),
-                        );
+                      {
+                        'is_active': paymentRequired,
+                        'month': now.month,
+                        'year': now.year,
+                        'updated_at': FieldValue.serverTimestamp(),
+                      },
+                      SetOptions(merge: true),
+                    );
 
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -1926,7 +1919,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                       },
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  SizedBox(height: ScreenConfig.spaceL),
                 ],
                 _buildTextField(
                   controller: nameController,
@@ -1936,13 +1929,13 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                       : Icons.person_rounded,
                 ),
                 if (currentTab == 0) ...[
-                  const SizedBox(height: 16),
+                  SizedBox(height: ScreenConfig.spaceM),
                   _buildTextField(
                     controller: emailController,
                     label: l10n.email,
                     icon: Icons.email_rounded,
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: ScreenConfig.spaceM),
                   _buildTextField(
                     controller: descriptionController,
                     label: l10n.roleDescription,
@@ -1950,7 +1943,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                   ),
                 ],
                 if (currentTab == 0) ...[
-                  const SizedBox(height: 16),
+                  SizedBox(height: ScreenConfig.spaceM),
                   FutureBuilder<DocumentSnapshot>(
                     future: FirebaseFirestore.instance
                         .collection('organizations')
@@ -1974,7 +1967,8 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                           ),
                           child: Text(
                             'Error loading teams: ${snapshot.error}',
-                            style: TextStyle(color: Colors.red.shade700, fontSize: 12),
+                            style: TextStyle(
+                                color: Colors.red.shade700, fontSize: 12),
                           ),
                         );
                       }
@@ -1985,7 +1979,8 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                       }
 
                       // Safely read the teams array
-                      final data = snapshot.data!.data() as Map<String, dynamic>?;
+                      final data =
+                          snapshot.data!.data() as Map<String, dynamic>?;
                       final rawTeams = data?['teams'];
 
                       List<Map<String, dynamic>> activeTeams = [];
@@ -1999,7 +1994,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
 
                       return Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.all(16),
+                        padding: ScreenConfig.cardPadding,
                         decoration: BoxDecoration(
                           border: Border.all(color: Colors.grey.shade300),
                           borderRadius: BorderRadius.circular(12),
@@ -2042,8 +2037,10 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                             ] else ...[
                               ...activeTeams.map((entry) {
                                 final teamName =
-                                    entry['team_name'] as String? ?? 'Unknown team';
-                                final role = entry['role'] as String? ?? 'coach';
+                                    entry['team_name'] as String? ??
+                                        'Unknown team';
+                                final role =
+                                    entry['role'] as String? ?? 'coach';
                                 return Padding(
                                   padding: const EdgeInsets.only(bottom: 8),
                                   child: Row(
@@ -2072,10 +2069,10 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                   ),
                 ],
                 if (currentTab == 2) ...[
-                  const SizedBox(height: 16),
+                  SizedBox(height: ScreenConfig.spaceM),
                   Container(
                     width: double.infinity,
-                    padding: EdgeInsets.all(16),
+                    padding: ScreenConfig.cardPadding,
                     decoration: BoxDecoration(
                       border: Border.all(color: Colors.grey.shade300),
                       borderRadius: BorderRadius.circular(12),
@@ -2121,7 +2118,7 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                             ),
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        SizedBox(height: ScreenConfig.spaceS),
                         Text(
                           l10n.assignMultipleCoaches,
                           style: GoogleFonts.poppins(
@@ -2529,10 +2526,13 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                 margin: EdgeInsets.all(config['paddingMedium']),
                 padding: EdgeInsets.all(config['paddingLarge']),
                 decoration: BoxDecoration(
-                  color: tabConfigs[currentTab].gradient[0].withOpacity(0.1),
+                  color:
+                      tabConfigs[currentTab].gradient[0].withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(config['borderRadius']),
                   border: Border.all(
-                    color: tabConfigs[currentTab].gradient[0].withOpacity(0.2),
+                    color: tabConfigs[currentTab]
+                        .gradient[0]
+                        .withValues(alpha: 0.2),
                     width: 1,
                   ),
                 ),
@@ -2575,7 +2575,8 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                     // ENTERPRISE-GRADE: Store payment status with 3 states
                     Map<String, PaymentStatus> payments = {};
 
-                    print('🔍 [ReceptionistScreen] Snapshot hasData: ${snapshot.hasData}, docs: ${snapshot.data?.docs.length ?? 0}');
+                    print(
+                        '🔍 [ReceptionistScreen] Snapshot hasData: ${snapshot.hasData}, docs: ${snapshot.data?.docs.length ?? 0}');
 
                     if (snapshot.hasData) {
                       for (var doc in snapshot.data!.docs) {
@@ -2593,15 +2594,18 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                           status = PaymentStatus.unpaid; // Red - Unpaid
                         }
 
-                        final monthKey = paymentData['month'] as String? ?? doc.id.split('-').last;
+                        final monthKey = paymentData['month'] as String? ??
+                            doc.id.split('-').last;
 
-                        print('🔍 [ReceptionistScreen] Doc ID: ${doc.id}, Month: $monthKey, isPaid: $isPaid, isActive: $isActive');
+                        print(
+                            '🔍 [ReceptionistScreen] Doc ID: ${doc.id}, Month: $monthKey, isPaid: $isPaid, isActive: $isActive');
 
                         payments[monthKey] = status;
                       }
                     }
 
-                    print('🔍 [ReceptionistScreen] Final payments keys: ${payments.keys}, values: ${payments.values}');
+                    print(
+                        '🔍 [ReceptionistScreen] Final payments keys: ${payments.keys}, values: ${payments.values}');
 
                     return Container(
                       margin: EdgeInsets.symmetric(
@@ -2694,7 +2698,6 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
                   },
                 ),
               ),
-
             ],
           ),
         );

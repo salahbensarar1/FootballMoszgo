@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:footballtraining/views/setup/organization_setup_wizard.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:footballtraining/core/theme/app_theme.dart';
+import 'package:footballtraining/l10n/app_localizations.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class LoginButton extends StatelessWidget {
   final bool isSmallScreen;
@@ -18,23 +20,18 @@ class LoginButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      height: isSmallScreen ? 50 : 56,
+
+    return Container(
+      height: 54,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        gradient: const LinearGradient(
-          colors: [Color(0xFF667eea), Color(0xFF764ba2)],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ),
+        gradient: AppTheme.primaryGradient,
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF667eea).withValues(alpha: 0.3),
-            blurRadius: 8,
+            color: AppTheme.primary.withValues(alpha: 0.3),
+            blurRadius: 12,
             spreadRadius: 1,
-            offset: const Offset(0, 4),
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -43,7 +40,9 @@ class LoginButton extends StatelessWidget {
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.transparent,
           shadowColor: Colors.transparent,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          minimumSize: const Size(double.infinity, 54),
         ),
         child: isLoading
             ? const SizedBox(
@@ -57,17 +56,17 @@ class LoginButton extends StatelessWidget {
             : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.login,
-                    color: Colors.white,
-                    size: isSmallScreen ? 20 : 22,
+                    color: AppTheme.textPrimary,
+                    size: 22,
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 12),
                   Text(
                     l10n.loginButton,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: isSmallScreen ? 16 : 18,
+                    style: GoogleFonts.poppins(
+                      color: AppTheme.textPrimary,
+                      fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -84,8 +83,8 @@ class AdminButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    
-    return TextButton.icon(
+
+    return OutlinedButton.icon(
       onPressed: () {
         HapticFeedback.lightImpact();
         Navigator.push(
@@ -97,19 +96,22 @@ class AdminButton extends StatelessWidget {
       },
       icon: const Icon(
         Icons.business_outlined,
-        color: Color(0xFF667eea),
+        color: AppTheme.primary,
         size: 20,
       ),
       label: Text(
         l10n.createNewOrganization,
-        style: const TextStyle(
-          color: Color(0xFF667eea),
-          fontWeight: FontWeight.w500,
+        style: GoogleFonts.poppins(
+          color: AppTheme.primary,
+          fontWeight: FontWeight.w600,
+          fontSize: 16,
         ),
       ),
-      style: TextButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      style: OutlinedButton.styleFrom(
+        side: const BorderSide(color: AppTheme.primary, width: 1.5),
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        minimumSize: const Size(double.infinity, 54),
       ),
     );
   }

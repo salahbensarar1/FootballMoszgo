@@ -4,11 +4,12 @@ import 'package:footballtraining/views/admin/admin_screen.dart';
 import 'package:footballtraining/views/coach/coach_screen.dart';
 import 'package:footballtraining/views/receptionist/receptionist_screen.dart';
 import 'package:footballtraining/services/auth_service.dart';
-import 'package:footballtraining/utils/responsive_utils.dart';
-import 'package:footballtraining/views/login/widgets/mozgo_logo.dart';
+import 'package:footballtraining/core/theme/app_theme.dart';
+import 'package:footballtraining/core/widgets/app_widgets.dart';
+import 'package:footballtraining/core/painters/pitch_painter.dart';
+import 'package:footballtraining/l10n/app_localizations.dart';
 import 'package:footballtraining/views/login/widgets/login_form_fields.dart';
-import 'package:footballtraining/views/login/widgets/login_buttons.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -27,12 +28,13 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   final TextEditingController passwordController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
-  late Animation<double> _scaleAnimation;
+  late AnimationController _logoController;
+  late AnimationController _formController;
+  late Animation<double> _logoFadeAnimation;
+  late Animation<Offset> _formSlideAnimation;
 
   bool isLoading = false;
+  bool _obscurePassword = true;
 
   @override
   void initState() {
@@ -42,41 +44,42 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
 
   @override
   void dispose() {
-    _animationController.dispose();
+    _logoController.dispose();
+    _formController.dispose();
     emailController.dispose();
     passwordController.dispose();
     super.dispose();
   }
 
   void _setupAnimations() {
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 1200),
+    _logoController = AnimationController(
+      duration: const Duration(milliseconds: 600),
       vsync: this,
     );
 
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
-      ),
+    _formController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
     );
 
-    _slideAnimation =
-        Tween<Offset>(begin: const Offset(0, 0.5), end: Offset.zero).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: const Interval(0.3, 0.9, curve: Curves.elasticOut),
-      ),
-    );
+    _logoFadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _logoController,
+      curve: Curves.easeOut,
+    ));
 
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: const Interval(0.5, 1.0, curve: Curves.elasticOut),
-      ),
-    );
+    _formSlideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.5),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _formController,
+      curve: Curves.elasticOut,
+    ));
 
-    _animationController.forward();
+    _logoController.forward();
+    _formController.forward();
   }
 
   Future<void> _loginUser() async {
@@ -110,8 +113,10 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         Navigator.pushReplacement(
           context,
           PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) => destination,
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                destination,
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
               return FadeTransition(opacity: animation, child: child);
             },
             transitionDuration: const Duration(milliseconds: 300),
@@ -135,14 +140,19 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       SnackBar(
         content: Row(
           children: [
-            const Icon(Icons.error_outline, color: Colors.white),
+            const Icon(Icons.error_outline, color: AppTheme.textPrimary),
             const SizedBox(width: 8),
-            Expanded(child: Text(message)),
+            Expanded(
+              child: Text(
+                message,
+                style: AppTheme.bodyMedium,
+              ),
+            ),
           ],
         ),
-        backgroundColor: Colors.red.shade600,
+        backgroundColor: AppTheme.error,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         margin: const EdgeInsets.all(16),
       ),
     );
@@ -150,187 +160,190 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final size = ResponsiveUtils.getScreenSize(context);
-    final isMobile = ResponsiveUtils.isMobile(context);
-    final l10n = AppLocalizations.of(context)!;
+    final size = MediaQuery.of(context).size;
+    final screenWidth = size.width;
 
     return Scaffold(
-      body: Container(
-        height: size.height,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF667eea),
-              Color(0xFF764ba2),
-              Color(0xFFf093fb),
-              Color(0xFFf5576c),
-            ],
-            stops: [0.0, 0.3, 0.7, 1.0],
+      backgroundColor: AppTheme.background,
+      resizeToAvoidBottomInset: true,
+      body: Stack(
+        children: [
+          // Layer 1 - Background art
+          Container(
+            decoration: const BoxDecoration(
+              gradient: AppTheme.backgroundGradient,
+            ),
+            width: double.infinity,
+            height: double.infinity,
           ),
-        ),
-        child: SafeArea(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              return SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                  child: Padding(
-                    padding: ResponsiveUtils.getPadding(
-                      context,
-                      mobile: 20.0,
-                      tablet: 40.0,
-                      desktop: 60.0,
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        FadeTransition(
-                          opacity: _fadeAnimation,
-                          child: _buildHeader(isMobile, l10n),
-                        ),
-                        SizedBox(
-                            height: ResponsiveUtils.getSpacing(
-                          context,
-                          mobile: 40.0,
-                          tablet: 60.0,
-                          desktop: 80.0,
-                        )),
-                        ResponsiveUtils.responsiveLayout(
-                          context,
-                          mobile: SlideTransition(
-                            position: _slideAnimation,
-                            child: ScaleTransition(
-                              scale: _scaleAnimation,
-                              child: _buildLoginForm(isMobile, l10n),
-                            ),
-                          ),
-                          tablet: Container(
-                            width: ResponsiveUtils.getWidthPercentage(context,
-                                tablet: 0.6),
-                            child: SlideTransition(
-                              position: _slideAnimation,
-                              child: ScaleTransition(
-                                scale: _scaleAnimation,
-                                child: _buildLoginForm(false, l10n),
-                              ),
-                            ),
-                          ),
-                          desktop: Container(
-                            width: ResponsiveUtils.getWidthPercentage(context,
-                                desktop: 0.4),
-                            child: SlideTransition(
-                              position: _slideAnimation,
-                              child: ScaleTransition(
-                                scale: _scaleAnimation,
-                                child: _buildLoginForm(false, l10n),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+
+          // Diagonal lines pattern
+          CustomPaint(
+            painter: PitchLinePainter(
+              lineColor: AppTheme.primary.withValues(alpha: 0.04),
+            ),
+            size: Size.infinite,
+          ),
+
+          // Layer 2 - Content
+          SafeArea(
+            child: Column(
+              children: [
+                // Top 38% - Logo section
+                Expanded(
+                  flex: 2,
+                  child: FadeTransition(
+                    opacity: _logoFadeAnimation,
+                    child: _buildTopSection(screenWidth < 400, AppLocalizations.of(context)!),
                   ),
                 ),
-              );
-            },
-          ),
-        ),
-      ),
-    );
-  }
 
-  Widget _buildHeader(bool isSmallScreen, AppLocalizations l10n) {
-    return Column(
-      children: [
-        MozGoLogo(isSmallScreen: isSmallScreen),
-        SizedBox(height: isSmallScreen ? 20 : 30),
-        Text(
-          l10n.appTitle,
-          style: TextStyle(
-            fontSize: isSmallScreen ? 28 : 36,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-            letterSpacing: 1.2,
-            shadows: [
-              Shadow(
-                color: Colors.black.withValues(alpha: 0.3),
-                offset: const Offset(0, 2),
-                blurRadius: 4,
-              ),
-            ],
-          ),
-        ),
-        SizedBox(height: isSmallScreen ? 8 : 12),
-        Text(
-          l10n.welcomeBack,
-          style: TextStyle(
-            fontSize: isSmallScreen ? 16 : 18,
-            color: Colors.white.withValues(alpha: 0.9),
-            fontWeight: FontWeight.w300,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildLoginForm(bool isSmallScreen, AppLocalizations l10n) {
-    return Container(
-      constraints: BoxConstraints(maxWidth: isSmallScreen ? double.infinity : 400),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(isSmallScreen ? 20 : 30),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 20,
-            spreadRadius: 5,
-            offset: const Offset(0, 10),
+                // Bottom 62% - Form section
+                Expanded(
+                  flex: 3,
+                  child: SlideTransition(
+                    position: _formSlideAnimation,
+                    child: _buildBottomSection(screenWidth < 400, AppLocalizations.of(context)!),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
-      child: Padding(
-        padding: EdgeInsets.all(isSmallScreen ? 24 : 32),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                l10n.login,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: isSmallScreen ? 24 : 28,
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFF2D3748),
-                ),
+    );
+  }
+
+  Widget _buildTopSection(bool isSmallScreen, AppLocalizations l10n) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(ScreenConfig.spaceL),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: EdgeInsets.all(ScreenConfig.spaceL),
+            decoration: BoxDecoration(
+              gradient: AppTheme.primaryGradient,
+              borderRadius: BorderRadius.circular(ScreenConfig.radiusL),
+              boxShadow: AppTheme.primaryShadow,
+            ),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.sports_soccer,
+                    size: ScreenConfig.iconXL,
+                    color: AppTheme.background,
+                  ),
+                  SizedBox(height: ScreenConfig.spaceS),
+                  Text(
+                    'FootballMoszgo',
+                    style: GoogleFonts.syne(
+                      fontSize: ScreenConfig.fontXXL,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.background,
+                    ),
+                  ),
+                  SizedBox(height: ScreenConfig.spaceXS),
+                  Text(
+                    'Professional Club Management',
+                    style: GoogleFonts.poppins(
+                      fontSize: ScreenConfig.fontXS,
+                      color: AppTheme.background.withValues(alpha: 0.7),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
               ),
-              SizedBox(height: isSmallScreen ? 30 : 40),
-              EmailField(
-                controller: emailController,
-                onFieldSubmitted: () => FocusScope.of(context).nextFocus(),
-              ),
-              SizedBox(height: isSmallScreen ? 16 : 20),
-              PasswordField(
-                controller: passwordController,
-                onFieldSubmitted: _loginUser,
-              ),
-              SizedBox(height: isSmallScreen ? 30 : 40),
-              LoginButton(
-                isSmallScreen: isSmallScreen,
-                isLoading: isLoading,
-                onPressed: _loginUser,
-              ),
-              SizedBox(height: isSmallScreen ? 20 : 24),
-              const AdminButton(),
-              const SizedBox(height: 12),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
 
+  Widget _buildBottomSection(bool isSmallScreen, AppLocalizations l10n) {
+    return Container(
+      width: double.infinity,
+      decoration: const BoxDecoration(
+        color: AppTheme.surface,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(32),
+          topRight: Radius.circular(32),
+        ),
+      ),
+      child: SingleChildScrollView(
+        physics: const ClampingScrollPhysics(),
+        padding: EdgeInsets.fromLTRB(
+          ScreenConfig.spaceL,
+          ScreenConfig.spaceL,
+          ScreenConfig.spaceL,
+          ScreenConfig.spaceL + MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Welcome Back',
+              style: GoogleFonts.syne(
+                fontSize: ScreenConfig.fontXXL,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.textPrimary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: ScreenConfig.spaceXS),
+            Text(
+              'Sign in to continue managing your club',
+              style: GoogleFonts.poppins(
+                fontSize: ScreenConfig.fontS,
+                color: AppTheme.textSecondary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: ScreenConfig.spaceXL),
+            Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  EmailField(
+                    controller: emailController,
+                    onFieldSubmitted: () => FocusScope.of(context).nextFocus(),
+                  ),
+                  SizedBox(height: ScreenConfig.spaceM),
+                  PasswordField(
+                    controller: passwordController,
+                    onFieldSubmitted: _loginUser,
+                  ),
+                  SizedBox(height: ScreenConfig.spaceXS),
+                  const ForgotPasswordLink(),
+                  SizedBox(height: ScreenConfig.spaceL),
+                  GradientButton(
+                    label: 'Login',
+                    onPressed: _loginUser,
+                    isLoading: isLoading,
+                  ),
+                  SizedBox(height: ScreenConfig.spaceM),
+                  OutlinedPrimaryButton(
+                    label: 'Create New Organization',
+                    leadingIcon: Icons.add_business,
+                    onPressed: () {
+                      // Navigate to organization creation
+                    },
+                  ),
+                  SizedBox(height: ScreenConfig.spaceM),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

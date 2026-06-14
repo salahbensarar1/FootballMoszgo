@@ -1,38 +1,48 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:footballtraining/core/theme/app_theme.dart';
+import 'package:footballtraining/core/widgets/gradient_widgets.dart';
 
 class EmptyStateWidget extends StatelessWidget {
   final String searchQuery;
   final String entityName;
+  final VoidCallback? onAction;
+  final String? actionLabel;
 
   const EmptyStateWidget({
     super.key,
     required this.searchQuery,
     required this.entityName,
+    this.onAction,
+    this.actionLabel,
   });
 
   @override
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: EdgeInsets.all(32),
+        padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            // Dark themed icon container
             Container(
               width: 120,
               height: 120,
               decoration: BoxDecoration(
-                color: Colors.grey.shade100,
+                color: AppTheme.surface2,
                 borderRadius: BorderRadius.circular(60),
+                border: Border.all(color: AppTheme.border, width: 2),
               ),
               child: Icon(
                 _getIconForEntity(entityName),
-                color: Colors.grey.shade400,
+                color: AppTheme.textSecondary,
                 size: 60,
               ),
             ),
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
+
+            // Title text
             Text(
               searchQuery.isEmpty
                   ? 'No $entityName found'
@@ -40,19 +50,34 @@ class EmptyStateWidget extends StatelessWidget {
               style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
-                color: Colors.grey.shade800,
+                color: AppTheme.textPrimary,
               ),
               textAlign: TextAlign.center,
             ),
+
+            // Subtitle text
             if (searchQuery.isNotEmpty) ...[
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               Text(
                 'Try adjusting your search terms or filters',
                 style: GoogleFonts.poppins(
                   fontSize: 14,
-                  color: Colors.grey.shade600,
+                  color: AppTheme.textSecondary,
                 ),
                 textAlign: TextAlign.center,
+              ),
+            ],
+
+            // Optional action button
+            if (onAction != null && actionLabel != null) ...[
+              const SizedBox(height: 32),
+              SizedBox(
+                width: 200,
+                child: GradientButton(
+                  label: actionLabel!,
+                  onPressed: onAction!,
+                  height: 44,
+                ),
               ),
             ],
           ],

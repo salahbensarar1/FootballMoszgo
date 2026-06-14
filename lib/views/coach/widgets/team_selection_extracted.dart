@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:footballtraining/l10n/app_localizations.dart';
 import 'package:footballtraining/data/models/team_model.dart';
 import 'package:footballtraining/data/repositories/team_service.dart';
+import 'package:footballtraining/core/theme/app_theme.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class TeamSelectionExtracted extends StatelessWidget {
   final String? coachUid;
@@ -32,7 +34,9 @@ class TeamSelectionExtracted extends StatelessWidget {
           _buildSectionHeader(l10n.selectTeam, Icons.group, isSmallScreen),
           const SizedBox(height: 12),
           StreamBuilder<List<Team>>(
-            stream: coachUid != null ? teamService.getTeamsForCoach(coachUid!) : null,
+            stream: coachUid != null
+                ? teamService.getTeamsForCoach(coachUid!)
+                : null,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
@@ -42,17 +46,17 @@ class TeamSelectionExtracted extends StatelessWidget {
                 return Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.red.shade50,
+                    color: AppTheme.error.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.error_outline, color: Colors.red.shade400),
+                      Icon(Icons.error_outline, color: AppTheme.error),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           '${l10n.errorLoadingTeams}: ${snapshot.error}',
-                          style: TextStyle(color: Colors.red.shade700),
+                          style: TextStyle(color: AppTheme.error),
                         ),
                       ),
                     ],
@@ -63,16 +67,47 @@ class TeamSelectionExtracted extends StatelessWidget {
               final teams = snapshot.data ?? [];
 
               if (teams.isEmpty) {
-                return _buildEmptyState("No teams assigned", Icons.sports_soccer);
+                return _buildEmptyState(
+                    "No teams assigned", Icons.sports_soccer);
               }
 
               return DropdownButtonFormField<Team>(
                 decoration: InputDecoration(
                   labelText: l10n.team,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  prefixIcon: const Icon(Icons.sports_soccer),
+                  labelStyle: GoogleFonts.poppins(
+                    color: AppTheme.textSecondary,
+                    fontSize: 14,
+                  ),
+                  filled: true,
+                  fillColor: AppTheme.surface2,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide:
+                        const BorderSide(color: AppTheme.border, width: 1),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide:
+                        const BorderSide(color: AppTheme.border, width: 1),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide:
+                        const BorderSide(color: AppTheme.primary, width: 1.5),
+                  ),
+                  prefixIcon: const Icon(
+                    Icons.sports_soccer,
+                    color: AppTheme.primary,
+                    size: 20,
+                  ),
                 ),
-                value: selectedTeam,
+                dropdownColor: AppTheme.surface,
+                style: GoogleFonts.poppins(
+                  color: AppTheme.textPrimary,
+                  fontSize: 14,
+                ),
+                iconEnabledColor: AppTheme.primary,
+                initialValue: selectedTeam,
                 items: teams.map((team) {
                   return DropdownMenuItem<Team>(
                     value: team,
@@ -93,18 +128,18 @@ class TeamSelectionExtracted extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        gradient: gradient,
-        color: gradient == null ? Colors.white : null,
-        borderRadius: BorderRadius.circular(16),
+        color: AppTheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppTheme.border, width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: 0.3),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       child: child,
     );
   }
@@ -112,17 +147,24 @@ class TeamSelectionExtracted extends StatelessWidget {
   Widget _buildSectionHeader(String title, IconData icon, bool isSmallScreen) {
     return Row(
       children: [
-        Icon(icon, color: const Color(0xFFF27121), size: 20),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            title,
-            style: TextStyle(
-              fontSize: isSmallScreen ? 16 : 18,
-              fontWeight: FontWeight.bold,
-            ),
-            overflow: TextOverflow.ellipsis,
+        Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            gradient: AppTheme.primaryGradient,
+            borderRadius: BorderRadius.circular(10),
           ),
+          child: Icon(icon, color: AppTheme.background, size: 18),
+        ),
+        const SizedBox(width: 12),
+        Text(
+          title,
+          style: GoogleFonts.syne(
+            fontSize: isSmallScreen ? 16 : 18,
+            fontWeight: FontWeight.w700,
+            color: AppTheme.textPrimary,
+          ),
+          overflow: TextOverflow.ellipsis,
         ),
       ],
     );
@@ -133,11 +175,23 @@ class TeamSelectionExtracted extends StatelessWidget {
       padding: const EdgeInsets.all(32),
       child: Column(
         children: [
-          Icon(icon, size: 64, color: Colors.grey),
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: AppTheme.surface2,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: AppTheme.border),
+            ),
+            child: Icon(icon, size: 32, color: AppTheme.textMuted),
+          ),
           const SizedBox(height: 16),
           Text(
             message,
-            style: const TextStyle(fontSize: 16, color: Colors.grey),
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              color: AppTheme.textSecondary,
+            ),
             textAlign: TextAlign.center,
           ),
         ],

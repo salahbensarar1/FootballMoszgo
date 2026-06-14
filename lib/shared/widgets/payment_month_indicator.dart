@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:footballtraining/shared/utils/date_formatter.dart';
 import 'package:footballtraining/data/models/payment_model.dart';
 import 'package:footballtraining/services/organization_context.dart';
+import 'package:footballtraining/core/theme/app_theme.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class PaymentMonthIndicator extends StatefulWidget {
   final String playerId;
@@ -231,12 +233,12 @@ class _PaymentMonthIndicatorState extends State<PaymentMonthIndicator>
                     end: Alignment.bottomRight,
                   ),
                   border: Border.all(
-                    color: Colors.white,
+                    color: AppTheme.border,
                     width: 1.5,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: color.withOpacity(0.3),
+                      color: color.withValues(alpha: 0.3),
                       spreadRadius: 1,
                       blurRadius: 3,
                       offset: const Offset(0, 1),
@@ -273,11 +275,12 @@ class _PaymentMonthIndicatorState extends State<PaymentMonthIndicator>
         waitDuration: const Duration(milliseconds: 500),
         showDuration: const Duration(milliseconds: 2000),
         decoration: BoxDecoration(
-          color: Colors.grey.shade800,
+          color: AppTheme.surface2,
           borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: AppTheme.border),
         ),
-        textStyle: const TextStyle(
-          color: Colors.white,
+        textStyle: GoogleFonts.poppins(
+          color: AppTheme.textPrimary,
           fontSize: 12,
         ),
         child: circle,
@@ -290,26 +293,26 @@ class _PaymentMonthIndicatorState extends State<PaymentMonthIndicator>
   Color _getStatusColor(PaymentStatus status) {
     switch (status) {
       case PaymentStatus.paid:
-        return Colors.green.shade600;
+        return AppTheme.success;
       case PaymentStatus.unpaid:
-        return Colors.red.shade600;
+        return AppTheme.error;
       case PaymentStatus.partial:
-        return Colors.orange.shade600;
+        return AppTheme.primary;
       case PaymentStatus.notActive:
-        return Colors.grey.shade500; // Grey color for not active
+        return AppTheme.textSecondary;
     }
   }
 
   List<Color> _getStatusGradient(PaymentStatus status) {
     switch (status) {
       case PaymentStatus.paid:
-        return [Colors.green.shade400, Colors.green.shade600];
+        return [AppTheme.success.withValues(alpha: 0.8), AppTheme.success];
       case PaymentStatus.unpaid:
-        return [Colors.red.shade400, Colors.red.shade600];
+        return [AppTheme.error.withValues(alpha: 0.8), AppTheme.error];
       case PaymentStatus.partial:
-        return [Colors.orange.shade400, Colors.orange.shade600];
+        return [AppTheme.primary.withValues(alpha: 0.8), AppTheme.primary];
       case PaymentStatus.notActive:
-        return [Colors.grey.shade400, Colors.grey.shade600]; // Grey gradient
+        return [AppTheme.textSecondary.withValues(alpha: 0.6), AppTheme.textSecondary];
     }
   }
 
@@ -376,7 +379,7 @@ class _PaymentMonthIndicatorState extends State<PaymentMonthIndicator>
       isDismissible: true,
       builder: (context) => Container(
         decoration: const BoxDecoration(
-          color: Colors.white,
+          color: AppTheme.surface,
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(20),
             topRight: Radius.circular(20),
@@ -393,7 +396,7 @@ class _PaymentMonthIndicatorState extends State<PaymentMonthIndicator>
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
+                  color: AppTheme.border,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -402,18 +405,18 @@ class _PaymentMonthIndicatorState extends State<PaymentMonthIndicator>
 
             Text(
               'Update Payment Status',
-              style: TextStyle(
+              style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
-                color: Colors.grey.shade800,
+                color: AppTheme.textPrimary,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               'Month: ${DateFormatter.getMonthName(int.parse(monthKey))}', // Fixed: Use proper method
-              style: TextStyle(
+              style: GoogleFonts.poppins(
                 fontSize: 14,
-                color: Colors.grey.shade600,
+                color: AppTheme.textSecondary,
               ),
             ),
             const SizedBox(height: 20),
@@ -438,12 +441,12 @@ class _PaymentMonthIndicatorState extends State<PaymentMonthIndicator>
                           vertical: 12, horizontal: 16),
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? _getStatusColor(status).withOpacity(0.1)
+                            ? _getStatusColor(status).withValues(alpha: 0.1)
                             : Colors.transparent,
                         border: Border.all(
                           color: isSelected
                               ? _getStatusColor(status)
-                              : Colors.grey.shade300,
+                              : AppTheme.border,
                           width: isSelected ? 2 : 1,
                         ),
                         borderRadius: BorderRadius.circular(12),
@@ -472,17 +475,17 @@ class _PaymentMonthIndicatorState extends State<PaymentMonthIndicator>
                               children: [
                                 Text(
                                   status.displayName,
-                                  style: TextStyle(
+                                  style: GoogleFonts.poppins(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
-                                    color: Colors.grey.shade800,
+                                    color: AppTheme.textPrimary,
                                   ),
                                 ),
                                 Text(
                                   _getStatusDescription(status),
-                                  style: TextStyle(
+                                  style: GoogleFonts.poppins(
                                     fontSize: 12,
-                                    color: Colors.grey.shade600,
+                                    color: AppTheme.textSecondary,
                                   ),
                                 ),
                               ],
@@ -517,9 +520,9 @@ class _PaymentMonthIndicatorState extends State<PaymentMonthIndicator>
                 ),
                 child: Text(
                   'Cancel',
-                  style: TextStyle(
+                  style: GoogleFonts.poppins(
                     fontSize: 16,
-                    color: Colors.grey.shade600,
+                    color: AppTheme.textSecondary,
                   ),
                 ),
               ),

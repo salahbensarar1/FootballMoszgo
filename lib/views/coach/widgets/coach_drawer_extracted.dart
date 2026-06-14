@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:footballtraining/l10n/app_localizations.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:footballtraining/core/theme/app_theme.dart';
 
 class CoachDrawerExtracted extends StatelessWidget {
   final String? userDisplayName;
@@ -38,7 +39,7 @@ class CoachDrawerExtracted extends StatelessWidget {
     final isSmallScreen = MediaQuery.of(context).size.width < 400;
 
     return Drawer(
-      backgroundColor: Colors.white,
+      backgroundColor: AppTheme.surface,
       elevation: 16,
       child: LayoutBuilder(
         builder: (context, constraints) {
@@ -88,8 +89,8 @@ class CoachDrawerExtracted extends StatelessWidget {
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color:
-                                      const Color(0xFF2196F3).withOpacity(0.1),
+                                  color: const Color(0xFF2196F3)
+                                      .withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Text(
@@ -169,17 +170,7 @@ class CoachDrawerExtracted extends StatelessWidget {
 
     return Container(
       decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Color(0xFFF27121),
-            Color(0xFFE94057),
-            Color(0xFFFF6B6B),
-            Color(0xFFFF8A65),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          stops: [0.0, 0.4, 0.7, 1.0],
-        ),
+        gradient: AppTheme.primaryGradient,
       ),
       child: SafeArea(
         child: Padding(
@@ -198,7 +189,7 @@ class CoachDrawerExtracted extends StatelessWidget {
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.3),
+                          color: Colors.black.withValues(alpha: 0.3),
                           blurRadius: 8,
                           offset: const Offset(0, 4),
                         ),
@@ -221,13 +212,13 @@ class CoachDrawerExtracted extends StatelessWidget {
                           userDisplayName ??
                               user?.displayName ??
                               user?.email?.split('@').first ??
-                              'Edző',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize:
-                                isSmallScreen ? 13 : 15, // Smaller text size
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.5,
+                              'Coach',
+                          style: (isSmallScreen
+                                  ? AppTheme.bodyMedium
+                                  : AppTheme.bodyLarge)
+                              .copyWith(
+                            color: AppTheme.background,
+                            fontWeight: FontWeight.w700,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -239,11 +230,9 @@ class CoachDrawerExtracted extends StatelessWidget {
                         Flexible(
                           child: Text(
                             user!.email!,
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.85),
-                              fontSize:
-                                  isSmallScreen ? 10 : 11, // Smaller text size
-                              fontWeight: FontWeight.w400,
+                            style: AppTheme.caption.copyWith(
+                              color:
+                                  AppTheme.background.withValues(alpha: 0.85),
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -257,22 +246,18 @@ class CoachDrawerExtracted extends StatelessWidget {
                             horizontal: isSmallScreen ? 8 : 10,
                             vertical: isSmallScreen ? 3 : 5),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.25),
-                          borderRadius:
-                              BorderRadius.circular(12), // Smaller radius
+                          color: AppTheme.background.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: Colors.white.withOpacity(0.4),
+                            color: AppTheme.background.withValues(alpha: 0.3),
                             width: 0.5,
                           ),
                         ),
                         child: Text(
                           l10n.coach,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize:
-                                isSmallScreen ? 9 : 10, // Smaller text size
+                          style: AppTheme.caption.copyWith(
+                            color: AppTheme.background,
                             fontWeight: FontWeight.w600,
-                            letterSpacing: 0.5,
                           ),
                         ),
                       ),
@@ -290,7 +275,7 @@ class CoachDrawerExtracted extends StatelessWidget {
   Widget _buildProfileAvatar(double avatarRadius) {
     return CircleAvatar(
       radius: avatarRadius,
-      backgroundColor: Colors.white.withOpacity(0.3),
+      backgroundColor: AppTheme.background.withValues(alpha: 0.3),
       child: ClipOval(
         child: userProfileImageUrl != null && userProfileImageUrl!.isNotEmpty
             ? CachedNetworkImage(
@@ -301,25 +286,25 @@ class CoachDrawerExtracted extends StatelessWidget {
                 placeholder: (context, url) => Container(
                   width: avatarRadius * 2,
                   height: avatarRadius * 2,
-                  color: Colors.grey.shade300,
-                  child: Center(
+                  color: AppTheme.surface,
+                  child: const Center(
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
                       valueColor:
-                          AlwaysStoppedAnimation<Color>(Colors.grey.shade600),
+                          AlwaysStoppedAnimation<Color>(AppTheme.textMuted),
                     ),
                   ),
                 ),
                 errorWidget: (context, url, error) => Icon(
                   Icons.person,
                   size: avatarRadius,
-                  color: Colors.white,
+                  color: AppTheme.background,
                 ),
               )
             : Icon(
                 Icons.person,
                 size: avatarRadius,
-                color: Colors.white,
+                color: AppTheme.background,
               ),
       ),
     );
@@ -336,11 +321,8 @@ class CoachDrawerExtracted extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
           child: Text(
             title,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey.shade600,
-              letterSpacing: 0.5,
+            style: AppTheme.overline.copyWith(
+              color: AppTheme.textSecondary,
             ),
           ),
         ),
@@ -383,7 +365,7 @@ class CoachDrawerExtracted extends StatelessWidget {
                       width: isSmallScreen ? 36 : 40,
                       height: isSmallScreen ? 36 : 40,
                       decoration: BoxDecoration(
-                        color: item.color.withOpacity(0.1),
+                        color: item.color.withValues(alpha: 0.1),
                         borderRadius:
                             BorderRadius.circular(8), // Smaller radius
                       ),
@@ -405,12 +387,12 @@ class CoachDrawerExtracted extends StatelessWidget {
                         children: [
                           Text(
                             item.title,
-                            style: TextStyle(
-                              fontSize: isSmallScreen
-                                  ? 12
-                                  : 14, // Smaller on small screens
+                            style: (isSmallScreen
+                                    ? AppTheme.bodyMedium
+                                    : AppTheme.bodyLarge)
+                                .copyWith(
                               fontWeight: FontWeight.w600,
-                              color: Colors.black87,
+                              color: AppTheme.textPrimary,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -418,11 +400,8 @@ class CoachDrawerExtracted extends StatelessWidget {
                           const SizedBox(height: 2),
                           Text(
                             item.subtitle,
-                            style: TextStyle(
-                              fontSize: isSmallScreen
-                                  ? 10
-                                  : 12, // Smaller on small screens
-                              color: Colors.grey.shade600,
+                            style: AppTheme.caption.copyWith(
+                              color: AppTheme.textSecondary,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -438,7 +417,7 @@ class CoachDrawerExtracted extends StatelessWidget {
                         Icons.arrow_forward_ios,
                         size:
                             isSmallScreen ? 12 : 14, // Smaller on small screens
-                        color: Colors.grey.shade400,
+                        color: AppTheme.textMuted,
                       ),
                   ],
                 ),

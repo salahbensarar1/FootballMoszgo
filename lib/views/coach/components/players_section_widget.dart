@@ -2,9 +2,12 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:footballtraining/l10n/app_localizations.dart';
 import 'package:footballtraining/data/models/team_model.dart';
 import 'package:footballtraining/services/organization_context.dart';
+import 'package:footballtraining/core/theme/app_theme.dart';
+import 'package:footballtraining/core/widgets/app_widgets.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class PlayersSection extends StatefulWidget {
   final Team selectedTeam;
@@ -180,7 +183,7 @@ class _PlayersSectionState extends State<PlayersSection>
           'Nem található játékos ebben a csapatban', Icons.people_outline);
     }
 
-    return _buildCard(
+    return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -223,71 +226,19 @@ class _PlayersSectionState extends State<PlayersSection>
   }
 
   Widget _buildLoadingState() {
-    return _buildCard(
+    return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSectionHeader(
-              "Játékosok betöltése...", Icons.people, widget.isSmallScreen),
+              "Loading players...", Icons.people, widget.isSmallScreen),
           const SizedBox(height: 24),
 
           // Skeleton loaders for player cards
           for (int i = 0; i < 5; i++)
-            Container(
+            ShimmerCard(
               height: 110,
               margin: const EdgeInsets.only(bottom: 12),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
-                children: [
-                  const SizedBox(width: 16),
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade200,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          width: 120,
-                          height: 16,
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade200,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Container(
-                          width: 80,
-                          height: 12,
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade200,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    width: 40,
-                    height: 20,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade200,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                ],
-              ),
             ),
         ],
       ),
@@ -297,65 +248,53 @@ class _PlayersSectionState extends State<PlayersSection>
   Widget _buildAttendanceStatsCard(Map<String, int> stats) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.blue.shade50, Colors.blue.shade100],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.blue.shade100.withOpacity(0.5),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        gradient: AppTheme.primaryGradient,
+        borderRadius: const BorderRadius.all(Radius.circular(16)),
+        boxShadow: AppTheme.primaryShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "Jelenlét statisztika",
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: widget.isSmallScreen ? 14 : 16,
-              color: Colors.blue.shade800,
+            "Attendance Statistics",
+            style: AppTheme.heading3.copyWith(
+              color: AppTheme.background,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildStatItem("Jelen", stats['present'].toString(),
-                  Icons.check_circle_outline, Colors.green),
-              _buildStatItem("Hiányzó", stats['absent'].toString(),
-                  Icons.cancel_outlined, Colors.red.shade400),
-              _buildStatItem("Összes", stats['total'].toString(),
-                  Icons.people_outline, Colors.blue.shade700),
+              _buildStatItem("Present", stats['present'].toString(),
+                  Icons.check_circle_outline, AppTheme.background),
+              _buildStatItem("Absent", stats['absent'].toString(),
+                  Icons.cancel_outlined, AppTheme.background),
+              _buildStatItem("Total", stats['total'].toString(),
+                  Icons.people_outline, AppTheme.background),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: LinearProgressIndicator(
               value:
                   stats['total'] == 0 ? 0 : stats['present']! / stats['total']!,
               minHeight: 8,
-              backgroundColor: Colors.white,
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.green.shade400),
+              backgroundColor: AppTheme.background.withValues(alpha: 0.3),
+              valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.success),
             ),
           ),
           const SizedBox(height: 8),
-          Text(
-            "Jelenlét: ${stats['total'] == 0 ? '0' : ((stats['present']! / stats['total']!) * 100).toStringAsFixed(0)}%",
-            style: TextStyle(
-              fontWeight: FontWeight.w500,
-              fontSize: widget.isSmallScreen ? 12 : 14,
-              color: Colors.blue.shade800,
+          Center(
+            child: Text(
+              "Attendance: ${stats['total'] == 0 ? '0' : ((stats['present']! / stats['total']!) * 100).toStringAsFixed(0)}%",
+              style: AppTheme.bodyMedium.copyWith(
+                fontWeight: FontWeight.w600,
+                color: AppTheme.background.withValues(alpha: 0.9),
+              ),
             ),
-            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -370,17 +309,14 @@ class _PlayersSectionState extends State<PlayersSection>
         const SizedBox(height: 4),
         Text(
           value,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
+          style: AppTheme.heading2.copyWith(
             color: color,
           ),
         ),
         Text(
           label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey.shade700,
+          style: AppTheme.caption.copyWith(
+            color: color.withValues(alpha: 0.8),
           ),
         ),
       ],
@@ -388,31 +324,19 @@ class _PlayersSectionState extends State<PlayersSection>
   }
 
   Widget _buildSearchBar() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300),
-      ),
-      child: TextField(
-        controller: _searchController,
-        decoration: InputDecoration(
-          hintText: "Játékos keresése...",
-          hintStyle: TextStyle(color: Colors.grey.shade500),
-          prefixIcon: Icon(Icons.search, color: Colors.grey.shade500),
-          suffixIcon: _searchController.text.isNotEmpty
-              ? IconButton(
-                  icon: Icon(Icons.clear, color: Colors.grey.shade500),
-                  onPressed: () {
-                    _searchController.clear();
-                  },
-                )
-              : null,
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(vertical: 12),
-        ),
-        style: const TextStyle(fontSize: 14),
-      ),
+    return PremiumTextField(
+      controller: _searchController,
+      hintText: "Search players...",
+      labelText: "Search",
+      leadingIcon: Icons.search,
+      trailingWidget: _searchController.text.isNotEmpty
+          ? IconButton(
+              icon: Icon(Icons.clear, color: AppTheme.textSecondary),
+              onPressed: () {
+                _searchController.clear();
+              },
+            )
+          : null,
     );
   }
 
@@ -445,18 +369,22 @@ class _PlayersSectionState extends State<PlayersSection>
 
   Widget _buildFilterChip(String label, bool isSelected, VoidCallback onTap) {
     return Material(
-      color: isSelected ? Colors.blue.shade500 : Colors.grey.shade200,
+      color: isSelected ? AppTheme.primary : AppTheme.surface,
       borderRadius: BorderRadius.circular(20),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(20),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            border: isSelected ? null : Border.all(color: AppTheme.border),
+            borderRadius: BorderRadius.circular(20),
+          ),
           child: Text(
             label,
-            style: TextStyle(
-              color: isSelected ? Colors.white : Colors.black87,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            style: AppTheme.bodyMedium.copyWith(
+              color: isSelected ? AppTheme.background : AppTheme.textPrimary,
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
             ),
           ),
         ),
@@ -471,23 +399,21 @@ class _PlayersSectionState extends State<PlayersSection>
       alignment: Alignment.center,
       child: Column(
         children: [
-          Icon(Icons.search_off, size: 48, color: Colors.grey.shade400),
+          Icon(Icons.search_off, size: 48, color: AppTheme.textMuted),
           const SizedBox(height: 16),
           Text(
-            "Nincs találat a \"${_searchController.text}\" keresésre",
-            style: TextStyle(
-              fontSize: 16,
+            "No results for \"${_searchController.text}\"",
+            style: AppTheme.bodyLarge.copyWith(
               fontWeight: FontWeight.w500,
-              color: Colors.grey.shade600,
+              color: AppTheme.textSecondary,
             ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
           Text(
-            "Próbálj más keresési feltételt",
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey.shade500,
+            "Try a different search term",
+            style: AppTheme.bodyMedium.copyWith(
+              color: AppTheme.textMuted,
             ),
             textAlign: TextAlign.center,
           ),
@@ -507,17 +433,17 @@ class _PlayersSectionState extends State<PlayersSection>
       key: ValueKey('player_$playerId'),
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
         ],
         border: Border.all(
-          color: isPresent ? Colors.green.shade200 : Colors.grey.shade200,
+          color: isPresent ? Colors.green.shade200 : AppTheme.border,
           width: 1.5,
         ),
       ),
@@ -533,11 +459,11 @@ class _PlayersSectionState extends State<PlayersSection>
                   }
                 : null,
             splashColor: isPresent
-                ? Colors.green.withOpacity(0.1)
-                : Colors.red.withOpacity(0.1),
+                ? Colors.green.withValues(alpha: 0.1)
+                : Colors.red.withValues(alpha: 0.1),
             highlightColor: isPresent
-                ? Colors.green.withOpacity(0.05)
-                : Colors.red.withOpacity(0.05),
+                ? Colors.green.withValues(alpha: 0.05)
+                : Colors.red.withValues(alpha: 0.05),
             child: Column(
               children: [
                 Container(
@@ -546,7 +472,7 @@ class _PlayersSectionState extends State<PlayersSection>
                     gradient: LinearGradient(
                       colors: isPresent
                           ? [Colors.green.shade50, Colors.green.shade100]
-                          : [Colors.grey.shade50, Colors.grey.shade100],
+                          : [AppTheme.surface2, AppTheme.surface2],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
@@ -559,11 +485,11 @@ class _PlayersSectionState extends State<PlayersSection>
                           radius: isSmallScreen ? 20 : 24,
                           backgroundColor: isPresent
                               ? Colors.green.shade400
-                              : Colors.grey.shade400,
+                              : AppTheme.textMuted,
                           child: Text(
                             playerName.substring(0, 1).toUpperCase(),
                             style: TextStyle(
-                              color: Colors.white,
+                              color: AppTheme.surface,
                               fontWeight: FontWeight.bold,
                               fontSize: isSmallScreen ? 14 : 16,
                             ),
@@ -580,7 +506,7 @@ class _PlayersSectionState extends State<PlayersSection>
                               style: TextStyle(
                                 fontWeight: FontWeight.w600,
                                 fontSize: isSmallScreen ? 15 : 17,
-                                color: Colors.black87,
+                                color: AppTheme.textPrimary,
                               ),
                             ),
                             const SizedBox(height: 2),
@@ -599,7 +525,7 @@ class _PlayersSectionState extends State<PlayersSection>
                                     isPresent ? "Jelen" : "Hiányzó",
                                     style: TextStyle(
                                       fontSize: isSmallScreen ? 10 : 12,
-                                      color: Colors.white,
+                                      color: AppTheme.surface,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -616,7 +542,7 @@ class _PlayersSectionState extends State<PlayersSection>
                             HapticFeedback.lightImpact();
                             _updateAttendance(playerId, val);
                           },
-                          activeColor: Colors.white,
+                          activeColor: AppTheme.surface,
                           activeTrackColor: Colors.green.shade400,
                         ),
                     ],
@@ -629,31 +555,31 @@ class _PlayersSectionState extends State<PlayersSection>
                     decoration: InputDecoration(
                       hintText: "Megjegyzések (opcionális)",
                       hintStyle: TextStyle(
-                        color: Colors.grey.shade400,
+                        color: AppTheme.textMuted,
                         fontSize: isSmallScreen ? 12 : 14,
                       ),
                       contentPadding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 10),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: Colors.grey.shade300),
+                        borderSide: BorderSide(color: AppTheme.border),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: Colors.grey.shade300),
+                        borderSide: BorderSide(color: AppTheme.border),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                         borderSide: BorderSide(
                             color: isPresent
                                 ? Colors.green.shade300
-                                : Colors.grey.shade400),
+                                : AppTheme.textMuted),
                       ),
                       isDense: true,
                       prefixIcon: Icon(
                         Icons.note_alt_outlined,
                         size: 18,
-                        color: Colors.grey.shade500,
+                        color: AppTheme.textSecondary,
                       ),
                     ),
                     controller: TextEditingController(text: playerNote),
@@ -663,7 +589,7 @@ class _PlayersSectionState extends State<PlayersSection>
                     enabled: widget.isTrainingActive,
                     style: TextStyle(
                       fontSize: isSmallScreen ? 12 : 14,
-                      color: Colors.black87,
+                      color: AppTheme.textPrimary,
                     ),
                     maxLines: 2,
                     minLines: 1,
@@ -679,97 +605,39 @@ class _PlayersSectionState extends State<PlayersSection>
 
   Widget _buildSaveSessionButton(
       List<QueryDocumentSnapshot> players, bool isSmallScreen) {
-    return Container(
+    return SizedBox(
       width: double.infinity,
       height: isSmallScreen ? 50 : 56,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: widget.currentSessionId != null
-                ? Colors.orange.withOpacity(0.3)
-                : Colors.blue.withOpacity(0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: ElevatedButton.icon(
+      child: GradientButton(
+        label: widget.currentSessionId != null
+            ? "Update & Close Training"
+            : "Save Training",
         onPressed: () => widget.onSaveSession(players, _attendance, _notes),
-        style: ElevatedButton.styleFrom(
-          elevation: 0,
-          backgroundColor: widget.currentSessionId != null
-              ? Colors.orange.shade500
-              : Colors.blue.shade600,
-          foregroundColor: Colors.white,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        ),
-        icon: AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(
-            widget.currentSessionId != null
-                ? Icons.edit_note_rounded
-                : Icons.save_rounded,
-            size: isSmallScreen ? 18 : 20,
-            color: Colors.white,
-          ),
-        ),
-        label: Text(
-          widget.currentSessionId != null
-              ? "Frissítés és edzés bezárása"
-              : "Edzés mentése",
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: isSmallScreen ? 14 : 16,
-            letterSpacing: 0.5,
-            color: Colors.white,
-          ),
-        ),
       ),
-    );
-  }
-
-  Widget _buildCard({required Widget child, Gradient? gradient}) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        gradient: gradient,
-        color: gradient == null ? Colors.white : null,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.all(16),
-      child: child,
     );
   }
 
   Widget _buildSectionHeader(String title, IconData icon, bool isSmallScreen) {
     return Row(
       children: [
-        Icon(icon, color: const Color(0xFFF27121), size: 20),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            title,
-            style: TextStyle(
-              fontSize: isSmallScreen ? 16 : 18,
-              fontWeight: FontWeight.bold,
-            ),
-            overflow: TextOverflow.ellipsis,
+        Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            gradient: AppTheme.primaryGradient,
+            borderRadius: BorderRadius.circular(10),
           ),
+          child: Icon(icon, color: AppTheme.background, size: 18),
+        ),
+        const SizedBox(width: 12),
+        Text(
+          title,
+          style: GoogleFonts.syne(
+            fontSize: isSmallScreen ? 16 : 18,
+            fontWeight: FontWeight.w700,
+            color: AppTheme.textPrimary,
+          ),
+          overflow: TextOverflow.ellipsis,
         ),
       ],
     );
@@ -780,11 +648,11 @@ class _PlayersSectionState extends State<PlayersSection>
       padding: const EdgeInsets.all(32),
       child: Column(
         children: [
-          Icon(icon, size: 64, color: Colors.grey),
+          Icon(icon, size: 64, color: AppTheme.textMuted),
           const SizedBox(height: 16),
           Text(
             message,
-            style: const TextStyle(fontSize: 16, color: Colors.grey),
+            style: AppTheme.bodyLarge.copyWith(color: AppTheme.textMuted),
             textAlign: TextAlign.center,
           ),
         ],

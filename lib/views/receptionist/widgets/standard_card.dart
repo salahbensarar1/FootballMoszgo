@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:footballtraining/l10n/app_localizations.dart';
+import 'package:footballtraining/core/theme/app_theme.dart';
 
 class StandardCard extends StatelessWidget {
   final DocumentSnapshot item;
@@ -25,7 +26,7 @@ class StandardCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final data = item.data() as Map<String, dynamic>;
-    
+
     String title;
     String subtitle;
 
@@ -63,21 +64,22 @@ class StandardCard extends StatelessWidget {
           style: GoogleFonts.poppins(
             fontWeight: FontWeight.w600,
             fontSize: 16,
-            color: Colors.grey.shade800,
+            color: AppTheme.textPrimary,
           ),
           overflow: TextOverflow.ellipsis,
         ),
         subtitle: Text(
           subtitle,
           style: GoogleFonts.poppins(
-            color: Colors.grey.shade600,
+            color: AppTheme.textSecondary,
             fontSize: 14,
           ),
           overflow: TextOverflow.ellipsis,
         ),
         trailing: PopupMenuButton<String>(
-          icon: Icon(Icons.more_vert_rounded, color: Colors.grey.shade600),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          icon: Icon(Icons.more_vert_rounded, color: AppTheme.textSecondary),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           onSelected: (value) {
             if (value == "edit") {
               onEdit();
@@ -90,9 +92,11 @@ class StandardCard extends StatelessWidget {
               value: "edit",
               child: Row(
                 children: [
-                  Icon(Icons.edit_rounded, size: 20, color: Colors.blue.shade600),
+                  Icon(Icons.edit_rounded,
+                      size: 20, color: Colors.blue.shade600),
                   const SizedBox(width: 8),
-                  Text(l10n.edit),
+                  Text(l10n.edit,
+                      style: TextStyle(color: AppTheme.textPrimary)),
                 ],
               ),
             ),
@@ -100,9 +104,11 @@ class StandardCard extends StatelessWidget {
               value: "delete",
               child: Row(
                 children: [
-                  Icon(Icons.delete_rounded, size: 20, color: Colors.red.shade600),
+                  Icon(Icons.delete_rounded,
+                      size: 20, color: Colors.red.shade600),
                   const SizedBox(width: 8),
-                  Text(l10n.delete, style: TextStyle(color: Colors.red.shade600)),
+                  Text(l10n.delete,
+                      style: TextStyle(color: Colors.red.shade600)),
                 ],
               ),
             ),

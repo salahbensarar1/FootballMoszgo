@@ -121,7 +121,7 @@ class RoleHelper {
   /// Returns a light version of the role color
   /// Used for subtle backgrounds and hover states
   static Color getRoleLightColor(String role) {
-    return getRoleColor(role).withOpacity(0.1);
+    return getRoleColor(role).withValues(alpha: 0.1);
   }
 
   /// Returns role-specific permissions list
@@ -193,11 +193,11 @@ class RoleHelper {
   /// Convenient method for creating consistent role badges
   static Widget createRoleBadge(String role, {double? fontSize}) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: getRoleLightColor(role),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: getRoleColor(role).withOpacity(0.3)),
+        border: Border.all(color: getRoleColor(role).withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -207,7 +207,7 @@ class RoleHelper {
             size: fontSize != null ? fontSize * 1.2 : 14,
             color: getRoleColor(role),
           ),
-          SizedBox(width: 4),
+          const SizedBox(width: 4),
           Text(
             getRoleDisplayName(role).toUpperCase(),
             style: TextStyle(

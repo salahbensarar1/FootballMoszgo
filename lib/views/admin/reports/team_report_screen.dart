@@ -1,11 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:footballtraining/l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:footballtraining/views/admin/reports/player_report_screen.dart';
 import 'package:footballtraining/services/organization_context.dart';
+import 'package:footballtraining/core/theme/app_theme.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
@@ -333,13 +334,13 @@ class _TeamReportScreenState extends State<TeamReportScreen>
             Expanded(
               child: Text(
                 message,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.poppins(
                     fontWeight: FontWeight.w500, fontSize: 14),
               ),
             ),
           ],
         ),
-        backgroundColor: isError ? Colors.red.shade600 : Colors.green.shade600,
+        backgroundColor: isError ? AppTheme.error : AppTheme.success,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: const EdgeInsets.all(16),
@@ -728,16 +729,21 @@ class _TeamReportScreenState extends State<TeamReportScreen>
           child: Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppTheme.surface,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const CircularProgressIndicator(),
+                const CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primary),
+                ),
                 const SizedBox(height: 16),
                 Text(l10n.loadingPlayerDetails,
-                    style: GoogleFonts.inter(fontSize: 14)),
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      color: AppTheme.textSecondary,
+                    )),
               ],
             ),
           ),
@@ -782,7 +788,7 @@ class _TeamReportScreenState extends State<TeamReportScreen>
     final teamDescription = teamData['team_description'] ?? l10n.noDescription;
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: AppTheme.background,
       extendBodyBehindAppBar: true,
       appBar: _buildAppBar(teamName),
       body: teamData.isEmpty
@@ -832,23 +838,30 @@ class _TeamReportScreenState extends State<TeamReportScreen>
   }
 
   Widget _buildLoadingState() {
-    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          SizedBox(
-            width: 60,
-            height: 60,
-            child: CircularProgressIndicator(
-              strokeWidth: 4,
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.green.shade600),
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: AppTheme.surface2,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: AppTheme.border),
+            ),
+            child: const CircularProgressIndicator(
+              strokeWidth: 3,
+              valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primary),
             ),
           ),
           const SizedBox(height: 20),
           Text(
-            l10n.loadingTeamDetails,
-            style: GoogleFonts.inter(fontSize: 16, color: Colors.grey.shade600),
+            AppLocalizations.of(context)!.loadingTeamDetails,
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              color: AppTheme.textSecondary,
+            ),
           ),
         ],
       ),
@@ -858,31 +871,27 @@ class _TeamReportScreenState extends State<TeamReportScreen>
   PreferredSizeWidget _buildAppBar(String teamName) {
     return AppBar(
       elevation: 0,
-      backgroundColor: Colors.transparent,
+      scrolledUnderElevation: 0,
+      backgroundColor: AppTheme.background,
       leading: Container(
         margin: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.9),
+          color: AppTheme.surface2,
           borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          border: Border.all(color: AppTheme.border, width: 1),
         ),
         child: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black87),
+          icon: const Icon(Icons.arrow_back_ios_new,
+              color: AppTheme.textPrimary, size: 18),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
       title: Text(
         AppLocalizations.of(context)!.teamReport,
-        style: GoogleFonts.inter(
+        style: GoogleFonts.syne(
           fontSize: 20,
-          fontWeight: FontWeight.w600,
-          color: Colors.black87,
+          fontWeight: FontWeight.w700,
+          color: AppTheme.textPrimary,
         ),
       ),
       centerTitle: true,
@@ -890,28 +899,22 @@ class _TeamReportScreenState extends State<TeamReportScreen>
         Container(
           margin: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.9),
+            color: AppTheme.surface2,
             borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
+            border: Border.all(color: AppTheme.border, width: 1),
           ),
           child: IconButton(
             icon: isGeneratingPdf
-                ? SizedBox(
+                ? const SizedBox(
                     width: 20,
                     height: 20,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
                       valueColor:
-                          AlwaysStoppedAnimation<Color>(Colors.red.shade600),
+                          AlwaysStoppedAnimation<Color>(AppTheme.primary),
                     ),
                   )
-                : Icon(Icons.picture_as_pdf, color: Colors.red.shade600),
+                : const Icon(Icons.picture_as_pdf, color: AppTheme.primary),
             onPressed: isGeneratingPdf ? null : _generateTeamReport,
           ),
         ),
@@ -925,31 +928,20 @@ class _TeamReportScreenState extends State<TeamReportScreen>
       width: double.infinity,
       padding: EdgeInsets.all(isTablet ? 32 : 24),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF4CAF50), Color(0xFF66BB6A), Color(0xFF81C784)],
-          stops: [0.0, 0.5, 1.0],
-        ),
+        gradient: AppTheme.primaryGradient,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF4CAF50).withOpacity(0.4),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
+        boxShadow: AppTheme.primaryShadow,
       ),
       child: Column(
         children: [
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: AppTheme.background.withValues(alpha:0.15),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Icon(Icons.groups,
-                color: Colors.white, size: isTablet ? 40 : 32),
+                color: AppTheme.background, size: isTablet ? 40 : 32),
           ),
           const SizedBox(height: 20),
           Text(
@@ -957,7 +949,7 @@ class _TeamReportScreenState extends State<TeamReportScreen>
             style: GoogleFonts.inter(
               fontSize: isTablet ? 32 : 28,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: AppTheme.background,
             ),
             textAlign: TextAlign.center,
           ),
@@ -965,16 +957,16 @@ class _TeamReportScreenState extends State<TeamReportScreen>
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: AppTheme.background.withValues(alpha:0.15),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withOpacity(0.3)),
+              border: Border.all(color: AppTheme.background.withValues(alpha:0.3)),
             ),
             child: Text(
               teamDescription,
               style: GoogleFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: Colors.white,
+                color: AppTheme.background,
               ),
               textAlign: TextAlign.center,
             ),
@@ -984,26 +976,26 @@ class _TeamReportScreenState extends State<TeamReportScreen>
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(Icons.people,
-                  color: Colors.white.withOpacity(0.8), size: 16),
+                  color: AppTheme.background.withValues(alpha:0.8), size: 16),
               const SizedBox(width: 8),
               Text(
                 '${teamStats['totalPlayers'] ?? 0} ${AppLocalizations.of(context)!.players}',
                 style: GoogleFonts.inter(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
-                  color: Colors.white.withOpacity(0.9),
+                  color: AppTheme.background.withValues(alpha:0.9),
                 ),
               ),
               const SizedBox(width: 16),
               Icon(Icons.attach_money,
-                  color: Colors.white.withOpacity(0.8), size: 16),
+                  color: AppTheme.background.withValues(alpha:0.8), size: 16),
               const SizedBox(width: 8),
               Text(
                 '${teamData['payment'] ?? 0}',
                 style: GoogleFonts.inter(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
-                  color: Colors.white.withOpacity(0.9),
+                  color: AppTheme.background.withValues(alpha:0.9),
                 ),
               ),
             ],
@@ -1051,15 +1043,10 @@ class _TeamReportScreenState extends State<TeamReportScreen>
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.surface,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        border: Border.all(color: AppTheme.border, width: 1),
+        boxShadow: AppTheme.cardShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1069,11 +1056,11 @@ class _TeamReportScreenState extends State<TeamReportScreen>
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
+                  color: AppTheme.surface2,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(Icons.info_outline,
-                    color: Colors.blue.shade600, size: 24),
+                child:
+                    Icon(Icons.info_outline, color: AppTheme.primary, size: 24),
               ),
               const SizedBox(width: 16),
               Text(
@@ -1081,23 +1068,23 @@ class _TeamReportScreenState extends State<TeamReportScreen>
                 style: GoogleFonts.inter(
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
-                  color: Colors.black87,
+                  color: AppTheme.textPrimary,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 24),
           _buildInfoRow(Icons.groups, l10n.teamName,
-              teamData['team_name'] ?? 'N/A', Colors.green),
+              teamData['team_name'] ?? 'N/A', AppTheme.primary),
           const SizedBox(height: 16),
           _buildInfoRow(
               Icons.description,
               l10n.teamDescription,
               teamData['team_description'] ?? l10n.noDescription,
-              Colors.orange),
+              AppTheme.secondary),
           const SizedBox(height: 16),
           _buildInfoRow(Icons.attach_money, l10n.paymentStatus,
-              '${teamData['payment'] ?? 0}', Colors.purple),
+              '${teamData['payment'] ?? 0}', AppTheme.primary),
         ],
       ),
     );
@@ -1108,15 +1095,10 @@ class _TeamReportScreenState extends State<TeamReportScreen>
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.surface,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        border: Border.all(color: AppTheme.border, width: 1),
+        boxShadow: AppTheme.cardShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1126,11 +1108,10 @@ class _TeamReportScreenState extends State<TeamReportScreen>
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.indigo.shade50,
+                  color: AppTheme.surface2,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(Icons.analytics,
-                    color: Colors.indigo.shade600, size: 24),
+                child: Icon(Icons.analytics, color: AppTheme.primary, size: 24),
               ),
               SizedBox(width: 6),
               Text(
@@ -1138,7 +1119,7 @@ class _TeamReportScreenState extends State<TeamReportScreen>
                 style: GoogleFonts.inter(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
-                  color: Colors.black87,
+                  color: AppTheme.textPrimary,
                 ),
               ),
             ],
@@ -1154,14 +1135,14 @@ class _TeamReportScreenState extends State<TeamReportScreen>
                     child: CircularProgressIndicator(
                       strokeWidth: 3,
                       valueColor:
-                          AlwaysStoppedAnimation<Color>(Colors.indigo.shade600),
+                          AlwaysStoppedAnimation<Color>(AppTheme.primary),
                     ),
                   ),
                   const SizedBox(height: 16),
                   Text(
                     AppLocalizations.of(context)!.calculatingStatistics,
                     style: GoogleFonts.inter(
-                        fontSize: 14, color: Colors.grey.shade600),
+                        fontSize: 14, color: AppTheme.textSecondary),
                   ),
                 ],
               ),
@@ -1230,16 +1211,10 @@ class _TeamReportScreenState extends State<TeamReportScreen>
         return Container(
           padding: EdgeInsets.all(isSmall ? 12 : 16),
           decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.05),
+            color: AppTheme.surface2,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: color.withValues(alpha: 0.2)),
-            boxShadow: [
-              BoxShadow(
-                color: color.withValues(alpha: 0.1),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
+            border: Border.all(color: AppTheme.border),
+            boxShadow: AppTheme.cardShadow,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -1247,7 +1222,7 @@ class _TeamReportScreenState extends State<TeamReportScreen>
               Container(
                 padding: EdgeInsets.all(isSmall ? 6 : 8),
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
+                  color: AppTheme.surfaceHigh,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(icon, color: color, size: isSmall ? 20 : 24),
@@ -1270,7 +1245,8 @@ class _TeamReportScreenState extends State<TeamReportScreen>
                 child: Text(
                   label,
                   style: GoogleFonts.inter(
-                      fontSize: isSmall ? 10 : 12, color: Colors.grey.shade600),
+                      fontSize: isSmall ? 10 : 12,
+                      color: AppTheme.textSecondary),
                 ),
               ),
             ],
@@ -1286,15 +1262,10 @@ class _TeamReportScreenState extends State<TeamReportScreen>
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.surface,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        border: Border.all(color: AppTheme.border, width: 1),
+        boxShadow: AppTheme.cardShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1304,11 +1275,10 @@ class _TeamReportScreenState extends State<TeamReportScreen>
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.green.shade50,
+                  color: AppTheme.surface2,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child:
-                    Icon(Icons.people, color: Colors.green.shade600, size: 24),
+                child: Icon(Icons.people, color: AppTheme.primary, size: 24),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -1317,7 +1287,7 @@ class _TeamReportScreenState extends State<TeamReportScreen>
                   style: GoogleFonts.inter(
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
-                    color: Colors.black87,
+                    color: AppTheme.textPrimary,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -1327,7 +1297,7 @@ class _TeamReportScreenState extends State<TeamReportScreen>
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: Colors.green.shade100,
+                  color: AppTheme.primary.withValues(alpha:0.15),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -1335,7 +1305,7 @@ class _TeamReportScreenState extends State<TeamReportScreen>
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color: Colors.green.shade700,
+                    color: AppTheme.primary,
                   ),
                 ),
               ),
@@ -1352,14 +1322,14 @@ class _TeamReportScreenState extends State<TeamReportScreen>
                     child: CircularProgressIndicator(
                       strokeWidth: 3,
                       valueColor:
-                          AlwaysStoppedAnimation<Color>(Colors.green.shade600),
+                          AlwaysStoppedAnimation<Color>(AppTheme.primary),
                     ),
                   ),
                   const SizedBox(height: 16),
                   Text(
                     l10n.loadingPlayers,
                     style: GoogleFonts.inter(
-                        fontSize: 14, color: Colors.grey.shade600),
+                        fontSize: 14, color: AppTheme.textSecondary),
                   ),
                 ],
               ),
@@ -1368,12 +1338,12 @@ class _TeamReportScreenState extends State<TeamReportScreen>
             Center(
               child: Column(
                 children: [
-                  Icon(Icons.group_off, size: 64, color: Colors.grey.shade400),
+                  Icon(Icons.group_off, size: 64, color: AppTheme.textMuted),
                   const SizedBox(height: 16),
                   Text(
                     AppLocalizations.of(context)!.noPlayersFound,
                     style: GoogleFonts.inter(
-                        fontSize: 16, color: Colors.grey.shade600),
+                        fontSize: 16, color: AppTheme.textSecondary),
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -1423,20 +1393,9 @@ class _TeamReportScreenState extends State<TeamReportScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.green.shade50, Colors.white],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: AppTheme.surface2,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.green.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Border.all(color: AppTheme.border, width: 1),
       ),
       child: InkWell(
         onTap: () => _navigateToPlayerDetails(playerId),
@@ -1446,10 +1405,10 @@ class _TeamReportScreenState extends State<TeamReportScreen>
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.green.shade100,
+                color: AppTheme.surfaceHigh,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(Icons.person, color: Colors.green.shade700, size: 24),
+              child: Icon(Icons.person, color: AppTheme.primary, size: 24),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -1461,7 +1420,7 @@ class _TeamReportScreenState extends State<TeamReportScreen>
                     style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+                      color: AppTheme.textPrimary,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -1472,7 +1431,7 @@ class _TeamReportScreenState extends State<TeamReportScreen>
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: Colors.blue.shade100,
+                          color: AppTheme.primary.withValues(alpha:0.15),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -1480,7 +1439,7 @@ class _TeamReportScreenState extends State<TeamReportScreen>
                           style: GoogleFonts.inter(
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
-                            color: Colors.blue.shade700,
+                            color: AppTheme.primary,
                           ),
                         ),
                       ),
@@ -1491,7 +1450,7 @@ class _TeamReportScreenState extends State<TeamReportScreen>
                             email,
                             style: GoogleFonts.inter(
                               fontSize: 12,
-                              color: Colors.grey.shade600,
+                              color: AppTheme.textSecondary,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -1503,7 +1462,7 @@ class _TeamReportScreenState extends State<TeamReportScreen>
               ),
             ),
             Icon(Icons.chevron_right_rounded,
-                color: Colors.grey.shade400, size: 24),
+                color: AppTheme.textMuted, size: 24),
           ],
         ),
       ),
@@ -1515,16 +1474,16 @@ class _TeamReportScreenState extends State<TeamReportScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: iconColor.withOpacity(0.05),
+        color: AppTheme.surface2,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: iconColor.withOpacity(0.1)),
+        border: Border.all(color: AppTheme.border),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.1),
+              color: AppTheme.surfaceHigh,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: iconColor, size: 20),
@@ -1539,7 +1498,7 @@ class _TeamReportScreenState extends State<TeamReportScreen>
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: Colors.black87,
+                    color: AppTheme.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -1548,7 +1507,7 @@ class _TeamReportScreenState extends State<TeamReportScreen>
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
-                    color: Colors.grey.shade700,
+                    color: AppTheme.textSecondary,
                   ),
                 ),
               ],
@@ -1567,13 +1526,20 @@ class _TeamReportScreenState extends State<TeamReportScreen>
         margin: const EdgeInsets.symmetric(horizontal: 20),
         width: double.infinity,
         height: 56,
+        decoration: BoxDecoration(
+          gradient: isGeneratingPdf
+              ? LinearGradient(colors: [AppTheme.border, AppTheme.border])
+              : AppTheme.primaryGradient,
+          borderRadius: BorderRadius.circular(28),
+          boxShadow: isGeneratingPdf ? [] : AppTheme.primaryShadow,
+        ),
         child: FloatingActionButton.extended(
           onPressed: isGeneratingPdf ? null : _generateTeamReport,
-          backgroundColor:
-              isGeneratingPdf ? Colors.grey.shade400 : const Color(0xFF4CAF50),
-          elevation: 8,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
+          ),
           label: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -1583,27 +1549,29 @@ class _TeamReportScreenState extends State<TeamReportScreen>
                   height: 20,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    valueColor:
+                        AlwaysStoppedAnimation<Color>(AppTheme.textPrimary),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Text(
                   l10n.generating,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: Colors.white,
+                    color: AppTheme.textSecondary,
                   ),
                 ),
               ] else ...[
-                Icon(Icons.picture_as_pdf, color: Colors.white, size: 24),
+                const Icon(Icons.picture_as_pdf,
+                    color: AppTheme.background, size: 22),
                 const SizedBox(width: 12),
                 Text(
                   l10n.generateReport,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: Colors.white,
+                    color: AppTheme.background,
                   ),
                 ),
               ],
