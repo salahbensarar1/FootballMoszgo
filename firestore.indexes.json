@@ -171,7 +171,40 @@
           "order": "ASCENDING"
         }
       ]
+    },
+{
+  "collectionGroup": "players",
+  "queryScope": "COLLECTION",
+  "fields": [
+    {
+      "fieldPath": "team",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "name",
+      "order": "ASCENDING"
     }
+  ]
+},
+{
+  "collectionGroup": "mlsz_teams",
+  "queryScope": "COLLECTION",
+  "fields": [
+    {
+      "fieldPath": "isActive",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "sortOrder",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "displayName",
+      "order": "ASCENDING"
+    }
+  ]
+}
+
   ],
   "fieldOverrides": [
     {
