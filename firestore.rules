@@ -82,8 +82,8 @@ service cloud.firestore {
     // ===========================================
     
     // Organizations - top-level tenant isolation
-    match /organizations/{orgId} {
-      allow read: if canAccessOrg(orgId);
+      match /organizations/{orgId} {
+      allow read: if isOrgMember(orgId);
       allow create: if isAuthenticated(); // During setup process
       allow update: if isAdmin(orgId) && canAccessOrg(orgId);
       allow delete: if isSuperAdmin(orgId) && canAccessOrg(orgId);
@@ -235,9 +235,7 @@ service cloud.firestore {
     // ===========================================
     
     function getUserOrganizations() {
-      // This would typically come from a user_organizations document
-      // For now, we'll use a simpler approach by checking organization membership
-      return [];
+      return get(/databases/$(database)/documents/user_organizations/$(request.auth.uid)).data.organizations;
     }
   }
 }
