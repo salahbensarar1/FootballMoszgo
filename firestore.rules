@@ -82,13 +82,12 @@ service cloud.firestore {
     // ===========================================
     
     // Organizations - top-level tenant isolation
-      match /organizations/{orgId} {
-      allow read: if isOrgMember(orgId);
-      allow create: if isAuthenticated(); // During setup process
-      allow update: if isAdmin(orgId) && canAccessOrg(orgId);
-      allow delete: if isSuperAdmin(orgId) && canAccessOrg(orgId);
-    }
-    
+  match /organizations/{orgId} {
+  allow read: if isAuthenticated();
+  allow create: if isAuthenticated();
+  allow update: if isAdmin(orgId) && canAccessOrg(orgId);
+  allow delete: if isSuperAdmin(orgId) && canAccessOrg(orgId);
+}
     // Subscriptions - system controlled
     match /subscriptions/{subscriptionId} {
       // Only allow reading subscription if user belongs to the organization
@@ -116,12 +115,12 @@ service cloud.firestore {
     // ===========================================
     
     // Organization users
-    match /organizations/{orgId}/users/{userId} {
-      allow read: if canAccessOrg(orgId);
-      allow create: if isAdmin(orgId) && canAccessOrg(orgId);
-      allow update: if (isAdmin(orgId) || request.auth.uid == userId) && canAccessOrg(orgId);
-      allow delete: if isSuperAdmin(orgId) && canAccessOrg(orgId);
-    }
+   match /organizations/{orgId}/users/{userId} {
+    allow read: if isAuthenticated();
+    allow create: if isAdmin(orgId) && canAccessOrg(orgId);
+    allow update: if (isAdmin(orgId) || request.auth.uid == userId) && canAccessOrg(orgId);
+    allow delete: if isSuperAdmin(orgId) && canAccessOrg(orgId);
+}
     
     // Teams
     match /organizations/{orgId}/teams/{teamId} {
