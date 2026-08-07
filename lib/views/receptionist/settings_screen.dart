@@ -1,8 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:footballtraining/core/theme/app_theme.dart';
 import 'package:footballtraining/l10n/app_localizations.dart';
 import 'package:footballtraining/services/organization_context.dart';
+import 'package:footballtraining/views/login/login_page.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class ReceptionistSettingsScreen extends StatefulWidget {
@@ -34,16 +36,6 @@ class _ReceptionistSettingsScreenState extends State<ReceptionistSettingsScreen>
 
   // Settings state
   String _selectedLanguage = 'en';
-  bool _emailNotifications = true;
-  bool _pushNotifications = true;
-  bool _paymentReminders = true;
-  bool _newPlayerAlerts = false;
-  bool _systemUpdates = true;
-  bool _marketingEmails = false;
-  String _reminderFrequency = 'weekly';
-  bool _autoBackup = true;
-  String _dateFormat = 'dd/MM/yyyy';
-  String _timeFormat = '24';
 
   // Animation controllers
   late AnimationController _fadeController;
@@ -91,16 +83,6 @@ class _ReceptionistSettingsScreenState extends State<ReceptionistSettingsScreen>
             _userEmail = data['email'] ?? user.email;
             _profileImageUrl = data['picture'];
             _selectedLanguage = data['language'] ?? 'en';
-            _emailNotifications = data['emailNotifications'] ?? true;
-            _pushNotifications = data['pushNotifications'] ?? true;
-            _paymentReminders = data['paymentReminders'] ?? true;
-            _newPlayerAlerts = data['newPlayerAlerts'] ?? false;
-            _systemUpdates = data['systemUpdates'] ?? true;
-            _marketingEmails = data['marketingEmails'] ?? false;
-            _reminderFrequency = data['reminderFrequency'] ?? 'weekly';
-            _autoBackup = data['autoBackup'] ?? true;
-            _dateFormat = data['dateFormat'] ?? 'dd/MM/yyyy';
-            _timeFormat = data['timeFormat'] ?? '24';
           });
         }
       }
@@ -214,7 +196,7 @@ class _ReceptionistSettingsScreenState extends State<ReceptionistSettingsScreen>
     final isTablet = size.width > 600;
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: AppTheme.background,
       appBar: _buildAppBar(l10n),
       body: _isLoading ? _buildLoadingState() : _buildBody(l10n, isTablet),
     );
@@ -222,6 +204,7 @@ class _ReceptionistSettingsScreenState extends State<ReceptionistSettingsScreen>
 
   PreferredSizeWidget _buildAppBar(AppLocalizations l10n) {
     return AppBar(
+      backgroundColor: Colors.transparent,
       elevation: 0,
       centerTitle: true,
       title: Text(
@@ -229,21 +212,15 @@ class _ReceptionistSettingsScreenState extends State<ReceptionistSettingsScreen>
         style: GoogleFonts.poppins(
           fontWeight: FontWeight.w600,
           fontSize: 20,
-          color: Colors.white,
+          color: AppTheme.background,
         ),
       ),
       leading: IconButton(
-        icon: Icon(Icons.arrow_back_ios_new, color: Colors.white),
+        icon: Icon(Icons.arrow_back_ios_new, color: AppTheme.background),
         onPressed: () => Navigator.of(context).pop(),
       ),
       flexibleSpace: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFF27121), Color(0xFFFF8A50)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
+        decoration: BoxDecoration(gradient: AppTheme.primaryGradient),
       ),
     );
   }
@@ -257,11 +234,11 @@ class _ReceptionistSettingsScreenState extends State<ReceptionistSettingsScreen>
             width: 80,
             height: 80,
             decoration: BoxDecoration(
-              color: Color(0xFFF27121).withValues(alpha: 0.1),
+              color: AppTheme.surface,
               borderRadius: BorderRadius.circular(40),
             ),
             child: CircularProgressIndicator(
-              color: Color(0xFFF27121),
+              color: AppTheme.primary,
               strokeWidth: 3,
             ),
           ),
@@ -270,7 +247,7 @@ class _ReceptionistSettingsScreenState extends State<ReceptionistSettingsScreen>
             'Loading settings...',
             style: GoogleFonts.poppins(
               fontSize: 16,
-              color: Colors.grey.shade600,
+              color: AppTheme.textSecondary,
             ),
           ),
         ],
@@ -293,21 +270,9 @@ class _ReceptionistSettingsScreenState extends State<ReceptionistSettingsScreen>
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 _buildAccountSection(l10n),
-                SizedBox(height: 20),
                 _buildAppPreferencesSection(l10n),
-                SizedBox(height: 20),
-                _buildNotificationSection(l10n),
-                SizedBox(height: 20),
-                _buildPaymentPreferencesSection(l10n),
-                SizedBox(height: 20),
-                _buildSecuritySection(l10n),
-                SizedBox(height: 20),
-                _buildHelpSupportSection(l10n),
-                SizedBox(height: 20),
-                _buildAboutSection(l10n),
-                SizedBox(height: 20),
-                _buildDangerZoneSection(l10n),
-                SizedBox(height: 32),
+                _buildSupportAboutSection(l10n),
+                _buildLogoutButton(l10n),
               ]),
             ),
           ),
@@ -321,93 +286,74 @@ class _ReceptionistSettingsScreenState extends State<ReceptionistSettingsScreen>
       margin: EdgeInsets.all(16),
       padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        gradient: AppTheme.primaryGradient,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 20,
-            offset: Offset(0, 5),
-          ),
-        ],
+        boxShadow: AppTheme.primaryShadow,
       ),
       child: Row(
         children: [
-          Hero(
-            tag: 'receptionist_avatar',
-            child: Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: [Color(0xFFF27121), Color(0xFFFF8A50)],
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Color(0xFFF27121).withValues(alpha: 0.3),
-                    blurRadius: 15,
-                    offset: Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: CircleAvatar(
-                radius: 38,
-                backgroundColor: Colors.transparent,
-                backgroundImage: _profileImageUrl?.isNotEmpty == true
-                    ? NetworkImage(_profileImageUrl!)
-                    : AssetImage('assets/images/receptionist.jpeg')
-                        as ImageProvider,
-              ),
+          Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white, width: 3),
+            ),
+            child: CircleAvatar(
+              radius: 34,
+              backgroundColor: AppTheme.surface,
+              backgroundImage: _profileImageUrl?.isNotEmpty == true
+                  ? NetworkImage(_profileImageUrl!)
+                  : AssetImage('assets/images/default_profile.jpeg')
+                      as ImageProvider,
             ),
           ),
-          SizedBox(width: 20),
+          SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   _userName ?? l10n.receptionist,
-                  style: GoogleFonts.poppins(
-                    fontSize: 22,
+                  style: GoogleFonts.syne(
+                    fontSize: 20,
                     fontWeight: FontWeight.w700,
-                    color: Colors.grey.shade800,
+                    color: AppTheme.background,
                   ),
                 ),
                 SizedBox(height: 4),
                 Text(
-                  _userEmail ?? 'receptionist@example.com',
+                  _userEmail ?? '',
                   style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    color: Colors.grey.shade600,
+                    fontSize: 13,
+                    color: AppTheme.background.withValues(alpha: 0.8),
                   ),
                 ),
-                SizedBox(height: 12),
+                SizedBox(height: 10),
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.green.shade50,
+                    color: AppTheme.background.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.green.shade200),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Container(
-                        width: 8,
-                        height: 8,
+                        width: 7,
+                        height: 7,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Colors.green.shade600,
+                          color: AppTheme.success,
                         ),
                       ),
-                      SizedBox(width: 8),
+                      SizedBox(width: 6),
                       Text(
                         'Online',
                         style: GoogleFonts.poppins(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
-                          color: Colors.green.shade700,
+                          color: AppTheme.background,
                         ),
                       ),
                     ],
@@ -416,19 +362,15 @@ class _ReceptionistSettingsScreenState extends State<ReceptionistSettingsScreen>
               ],
             ),
           ),
-          IconButton(
-            onPressed: () => _showEditProfileDialog(l10n),
-            icon: Container(
-              padding: EdgeInsets.all(8),
+          GestureDetector(
+            onTap: () => _showEditProfileDialog(l10n),
+            child: Container(
+              padding: EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Color(0xFFF27121).withValues(alpha: 0.1),
+                color: AppTheme.background.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
-                Icons.edit,
-                color: Color(0xFFF27121),
-                size: 20,
-              ),
+              child: Icon(Icons.edit_rounded, color: AppTheme.background, size: 20),
             ),
           ),
         ],
@@ -439,59 +381,47 @@ class _ReceptionistSettingsScreenState extends State<ReceptionistSettingsScreen>
   Widget _buildSectionCard({
     required String title,
     required IconData icon,
-    required List<Color> gradient,
     required List<Widget> children,
   }) {
     return Container(
+      margin: EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 20,
-            offset: Offset(0, 5),
-          ),
-        ],
+        color: AppTheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: EdgeInsets.all(20),
+            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             decoration: BoxDecoration(
-              gradient: LinearGradient(colors: gradient),
+              color: AppTheme.surface2,
               borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
+              ),
+              border: Border(
+                left: BorderSide(color: AppTheme.primary, width: 3),
               ),
             ),
             child: Row(
               children: [
-                Container(
-                  padding: EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(icon, color: Colors.white, size: 24),
-                ),
-                SizedBox(width: 16),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: GoogleFonts.poppins(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
+                Icon(icon, color: AppTheme.primary, size: 20),
+                SizedBox(width: 12),
+                Text(
+                  title,
+                  style: GoogleFonts.syne(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.textPrimary,
                   ),
                 ),
               ],
             ),
           ),
           Padding(
-            padding: EdgeInsets.all(20),
+            padding: EdgeInsets.symmetric(vertical: 8),
             child: Column(children: children),
           ),
         ],
@@ -501,29 +431,21 @@ class _ReceptionistSettingsScreenState extends State<ReceptionistSettingsScreen>
 
   Widget _buildAccountSection(AppLocalizations l10n) {
     return _buildSectionCard(
-      title: 'Account Settings',
-      icon: Icons.account_circle,
-      gradient: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+      title: 'Account',
+      icon: Icons.manage_accounts_rounded,
       children: [
-        _buildSettingsItem(
-          icon: Icons.lock_outline,
-          title: 'Change Password',
-          subtitle: 'Update your password',
-          onTap: () => _showChangePasswordDialog(l10n),
-        ),
-        Divider(height: 32, color: Colors.grey.shade200),
         _buildSettingsItem(
           icon: Icons.person_outline,
           title: 'Edit Profile',
           subtitle: 'Update your personal information',
           onTap: () => _showEditProfileDialog(l10n),
         ),
-        Divider(height: 32, color: Colors.grey.shade200),
+        Divider(height: 1, color: AppTheme.border, indent: 20, endIndent: 20),
         _buildSettingsItem(
-          icon: Icons.camera_alt_outlined,
-          title: 'Update Profile Picture',
-          subtitle: 'Change your profile picture',
-          onTap: () => _showComingSoon(),
+          icon: Icons.lock_outline,
+          title: 'Change Password',
+          subtitle: 'Update your password',
+          onTap: () => _showChangePasswordDialog(l10n),
         ),
       ],
     );
@@ -531,272 +453,85 @@ class _ReceptionistSettingsScreenState extends State<ReceptionistSettingsScreen>
 
   Widget _buildAppPreferencesSection(AppLocalizations l10n) {
     return _buildSectionCard(
-      title: 'App Preferences',
-      icon: Icons.settings,
-      gradient: [Color(0xFF10B981), Color(0xFF059669)],
+      title: 'App Settings',
+      icon: Icons.tune_rounded,
       children: [
         _buildLanguageSelector(l10n),
-        Divider(height: 32, color: Colors.grey.shade200),
-        _buildDateFormatSelector(l10n),
-        Divider(height: 32, color: Colors.grey.shade200),
-        _buildTimeFormatSelector(l10n),
       ],
     );
   }
 
-  Widget _buildNotificationSection(AppLocalizations l10n) {
+  Widget _buildSupportAboutSection(AppLocalizations l10n) {
     return _buildSectionCard(
-      title: 'Notification Settings',
-      icon: Icons.notifications_outlined,
-      gradient: [Color(0xFFF59E0B), Color(0xFFD97706)],
+      title: 'Support & About',
+      icon: Icons.info_outline_rounded,
       children: [
-        _buildSwitchItem(
-          title: 'Email Notifications',
-          subtitle: 'Receive notifications via email',
-          value: _emailNotifications,
-          onChanged: (value) {
-            setState(() => _emailNotifications = value);
-            _updateSettings({'emailNotifications': value});
-          },
-        ),
-        _buildSwitchItem(
-          title: 'Push Notifications',
-          subtitle: 'Receive push notifications',
-          value: _pushNotifications,
-          onChanged: (value) {
-            setState(() => _pushNotifications = value);
-            _updateSettings({'pushNotifications': value});
-          },
-        ),
-        _buildSwitchItem(
-          title: 'Payment Reminders',
-          subtitle: 'Get notified about payment updates',
-          value: _paymentReminders,
-          onChanged: (value) {
-            setState(() => _paymentReminders = value);
-            _updateSettings({'paymentReminders': value});
-          },
-        ),
-        _buildSwitchItem(
-          title: 'New Player Alerts',
-          subtitle: 'Notifications for new player registrations',
-          value: _newPlayerAlerts,
-          onChanged: (value) {
-            setState(() => _newPlayerAlerts = value);
-            _updateSettings({'newPlayerAlerts': value});
-          },
-        ),
-        _buildSwitchItem(
-          title: 'System Updates',
-          subtitle: 'Important system and app updates',
-          value: _systemUpdates,
-          onChanged: (value) {
-            setState(() => _systemUpdates = value);
-            _updateSettings({'systemUpdates': value});
-          },
-        ),
-        _buildSwitchItem(
-          title: 'Marketing Emails',
-          subtitle: 'Promotional emails and newsletters',
-          value: _marketingEmails,
-          onChanged: (value) {
-            setState(() => _marketingEmails = value);
-            _updateSettings({'marketingEmails': value});
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPaymentPreferencesSection(AppLocalizations l10n) {
-    return _buildSectionCard(
-      title: 'Payment Preferences',
-      icon: Icons.payment,
-      gradient: [Color(0xFFEC4899), Color(0xFFBE185D)],
-      children: [
-        _buildSettingsItem(
-          icon: Icons.attach_money,
-          title: 'Default Currency',
-          subtitle: 'Hungarian Forint (HUF)',
-          trailing: Text(
-            'HUF',
-            style: GoogleFonts.poppins(
-              fontWeight: FontWeight.w600,
-              color: Color(0xFFEC4899),
-            ),
-          ),
-        ),
-        Divider(height: 32, color: Colors.grey.shade200),
-        _buildReminderFrequencySelector(l10n),
-        Divider(height: 32, color: Colors.grey.shade200),
-        _buildSwitchItem(
-          title: 'Auto Backup',
-          subtitle: 'Automatically backup payment data',
-          value: _autoBackup,
-          onChanged: (value) {
-            setState(() => _autoBackup = value);
-            _updateSettings({'autoBackup': value});
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSecuritySection(AppLocalizations l10n) {
-    return _buildSectionCard(
-      title: 'Security & Privacy',
-      icon: Icons.security,
-      gradient: [Color(0xFF8B5CF6), Color(0xFF7C3AED)],
-      children: [
-        _buildSettingsItem(
-          icon: Icons.history,
-          title: 'Login History',
-          subtitle: 'View your recent login activity',
-          onTap: () => _showComingSoon(),
-        ),
-        Divider(height: 32, color: Colors.grey.shade200),
-        _buildSettingsItem(
-          icon: Icons.verified_user_outlined,
-          title: 'Two-Factor Authentication',
-          subtitle: 'Add an extra layer of security',
-          trailing: Container(
-            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.orange.shade100,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              'Soon',
-              style: GoogleFonts.poppins(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: Colors.orange.shade700,
-              ),
-            ),
-          ),
-          onTap: () => _showComingSoon(),
-        ),
-        Divider(height: 32, color: Colors.grey.shade200),
-        _buildSettingsItem(
-          icon: Icons.privacy_tip_outlined,
-          title: 'Privacy Settings',
-          subtitle: 'Control your data privacy',
-          onTap: () => _showComingSoon(),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildHelpSupportSection(AppLocalizations l10n) {
-    return _buildSectionCard(
-      title: 'Help & Support',
-      icon: Icons.help_outline,
-      gradient: [Color(0xFF06B6D4), Color(0xFF0891B2)],
-      children: [
-        _buildSettingsItem(
-          icon: Icons.quiz_outlined,
-          title: 'FAQ',
-          subtitle: 'Frequently asked questions',
-          onTap: () => _showComingSoon(),
-        ),
-        Divider(height: 32, color: Colors.grey.shade200),
         _buildSettingsItem(
           icon: Icons.support_agent,
           title: 'Contact Support',
           subtitle: 'Get help from our support team',
           onTap: () => _launchEmail(),
         ),
-        Divider(height: 32, color: Colors.grey.shade200),
-        _buildSettingsItem(
-          icon: Icons.school_outlined,
-          title: 'Tutorials',
-          subtitle: 'Learn how to use the app',
-          onTap: () => _showComingSoon(),
-        ),
-        Divider(height: 32, color: Colors.grey.shade200),
+        Divider(height: 1, color: AppTheme.border, indent: 20, endIndent: 20),
         _buildSettingsItem(
           icon: Icons.bug_report_outlined,
-          title: 'Report Bug',
+          title: 'Report a Bug',
           subtitle: 'Report issues or bugs',
           onTap: () => _launchEmail('Bug Report'),
         ),
-      ],
-    );
-  }
-
-  Widget _buildAboutSection(AppLocalizations l10n) {
-    return _buildSectionCard(
-      title: 'About App',
-      icon: Icons.info_outline,
-      gradient: [Color(0xFF64748B), Color(0xFF475569)],
-      children: [
-        _buildSettingsItem(
-          icon: Icons.info,
-          title: 'Version',
-          subtitle: 'App version and build info',
-          trailing: Text(
-            'v1.0.0',
-            style: GoogleFonts.poppins(
-              fontWeight: FontWeight.w600,
-              color: Colors.grey.shade600,
-            ),
-          ),
-        ),
-        Divider(height: 32, color: Colors.grey.shade200),
-        _buildSettingsItem(
-          icon: Icons.article_outlined,
-          title: 'Terms of Service',
-          subtitle: 'Read our terms of service',
-          onTap: () => _showComingSoon(),
-        ),
-        Divider(height: 32, color: Colors.grey.shade200),
+        Divider(height: 1, color: AppTheme.border, indent: 20, endIndent: 20),
         _buildSettingsItem(
           icon: Icons.privacy_tip_outlined,
           title: 'Privacy Policy',
           subtitle: 'Our privacy policy',
           onTap: () => _showComingSoon(),
         ),
-        Divider(height: 32, color: Colors.grey.shade200),
+        Divider(height: 1, color: AppTheme.border, indent: 20, endIndent: 20),
         _buildSettingsItem(
-          icon: Icons.code,
-          title: 'Licenses',
-          subtitle: 'Open source licenses',
+          icon: Icons.article_outlined,
+          title: 'Terms of Service',
+          subtitle: 'Read our terms of service',
           onTap: () => _showComingSoon(),
+        ),
+        Divider(height: 1, color: AppTheme.border, indent: 20, endIndent: 20),
+        _buildSettingsItem(
+          icon: Icons.info_outline,
+          title: 'Version',
+          subtitle: 'App version and build info',
+          trailing: Text(
+            'v1.0.0',
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.w600,
+              color: AppTheme.textMuted,
+            ),
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildDangerZoneSection(AppLocalizations l10n) {
-    return _buildSectionCard(
-      title: 'Danger Zone',
-      icon: Icons.warning_outlined,
-      gradient: [Color(0xFFEF4444), Color(0xFFDC2626)],
-      children: [
-        _buildSettingsItem(
-          icon: Icons.logout,
-          title: 'Logout All Devices',
-          subtitle: 'Sign out from all devices',
-          onTap: () => _showLogoutAllDialog(l10n),
-          titleColor: Colors.red.shade700,
+  Widget _buildLogoutButton(AppLocalizations l10n) {
+    return Container(
+      width: double.infinity,
+      height: 56,
+      margin: EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      child: OutlinedButton.icon(
+        onPressed: () => _showLogoutDialog(l10n),
+        icon: Icon(Icons.logout_rounded, color: AppTheme.error),
+        label: Text(
+          l10n.logout,
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.w600,
+            color: AppTheme.error,
+          ),
         ),
-        Divider(height: 32, color: Colors.grey.shade200),
-        _buildSettingsItem(
-          icon: Icons.delete_sweep,
-          title: 'Clear Cache',
-          subtitle: 'Clear app cache and temporary files',
-          onTap: () => _showComingSoon(),
-          titleColor: Colors.red.shade700,
+        style: OutlinedButton.styleFrom(
+          side: BorderSide(color: AppTheme.error),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
         ),
-        Divider(height: 32, color: Colors.grey.shade200),
-        _buildSettingsItem(
-          icon: Icons.restore,
-          title: 'Reset Settings',
-          subtitle: 'Reset all settings to default',
-          onTap: () => _showResetSettingsDialog(l10n),
-          titleColor: Colors.red.shade700,
-        ),
-      ],
+      ),
     );
   }
 
@@ -812,18 +547,19 @@ class _ReceptionistSettingsScreenState extends State<ReceptionistSettingsScreen>
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Padding(
-        padding: EdgeInsets.symmetric(vertical: 4),
+        padding: EdgeInsets.symmetric(vertical: 4, horizontal: 20),
         child: Row(
           children: [
             Container(
-              padding: EdgeInsets.all(12),
+              width: 48,
+              height: 48,
               decoration: BoxDecoration(
-                color: (titleColor ?? Color(0xFFF27121)).withValues(alpha: 0.1),
+                color: AppTheme.primary.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
                 icon,
-                color: titleColor ?? Color(0xFFF27121),
+                color: titleColor ?? AppTheme.primary,
                 size: 22,
               ),
             ),
@@ -835,9 +571,9 @@ class _ReceptionistSettingsScreenState extends State<ReceptionistSettingsScreen>
                   Text(
                     title,
                     style: GoogleFonts.poppins(
-                      fontSize: 16,
+                      fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: titleColor ?? Colors.grey.shade800,
+                      color: titleColor ?? AppTheme.textPrimary,
                     ),
                   ),
                   SizedBox(height: 2),
@@ -845,7 +581,7 @@ class _ReceptionistSettingsScreenState extends State<ReceptionistSettingsScreen>
                     subtitle,
                     style: GoogleFonts.poppins(
                       fontSize: 13,
-                      color: Colors.grey.shade600,
+                      color: AppTheme.textSecondary,
                     ),
                   ),
                 ],
@@ -853,55 +589,11 @@ class _ReceptionistSettingsScreenState extends State<ReceptionistSettingsScreen>
             ),
             trailing ??
                 Icon(
-                  Icons.chevron_right,
-                  color: Colors.grey.shade400,
+                  Icons.chevron_right_rounded,
+                  color: AppTheme.textMuted,
                 ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildSwitchItem({
-    required String title,
-    required String subtitle,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-  }) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey.shade800,
-                  ),
-                ),
-                SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: GoogleFonts.poppins(
-                    fontSize: 13,
-                    color: Colors.grey.shade600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Switch.adaptive(
-            value: value,
-            onChanged: onChanged,
-            activeColor: Color(0xFFF27121),
-            inactiveTrackColor: Colors.grey.shade300,
-          ),
-        ],
       ),
     );
   }
@@ -914,6 +606,8 @@ class _ReceptionistSettingsScreenState extends State<ReceptionistSettingsScreen>
       trailing: DropdownButton<String>(
         value: _selectedLanguage,
         underline: SizedBox(),
+        dropdownColor: AppTheme.surface,
+        style: GoogleFonts.poppins(color: AppTheme.textPrimary),
         items: [
           DropdownMenuItem(
             value: 'en',
@@ -935,97 +629,18 @@ class _ReceptionistSettingsScreenState extends State<ReceptionistSettingsScreen>
     );
   }
 
-  Widget _buildDateFormatSelector(AppLocalizations l10n) {
-    final formats = ['dd/MM/yyyy', 'MM/dd/yyyy', 'yyyy-MM-dd'];
-    return _buildSettingsItem(
-      icon: Icons.calendar_today,
-      title: 'Date Format',
-      subtitle: _dateFormat,
-      trailing: DropdownButton<String>(
-        value: _dateFormat,
-        underline: SizedBox(),
-        items: formats
-            .map((format) => DropdownMenuItem(
-                  value: format,
-                  child: Text(format, style: GoogleFonts.poppins(fontSize: 14)),
-                ))
-            .toList(),
-        onChanged: (value) {
-          if (value != null) {
-            setState(() => _dateFormat = value);
-            _updateSettings({'dateFormat': value});
-          }
-        },
-      ),
-    );
-  }
-
-  Widget _buildTimeFormatSelector(AppLocalizations l10n) {
-    return _buildSettingsItem(
-      icon: Icons.access_time,
-      title: 'Time Format',
-      subtitle: _timeFormat == '24' ? '24-hour' : '12-hour',
-      trailing: DropdownButton<String>(
-        value: _timeFormat,
-        underline: SizedBox(),
-        items: [
-          DropdownMenuItem(
-            value: '12',
-            child: Text('12-hour', style: GoogleFonts.poppins()),
-          ),
-          DropdownMenuItem(
-            value: '24',
-            child: Text('24-hour', style: GoogleFonts.poppins()),
-          ),
-        ],
-        onChanged: (value) {
-          if (value != null) {
-            setState(() => _timeFormat = value);
-            _updateSettings({'timeFormat': value});
-          }
-        },
-      ),
-    );
-  }
-
-  Widget _buildReminderFrequencySelector(AppLocalizations l10n) {
-    final frequencies = ['daily', 'weekly', 'monthly'];
-    final frequencyLabels = ['Daily', 'Weekly', 'Monthly'];
-
-    return _buildSettingsItem(
-      icon: Icons.schedule,
-      title: 'Reminder Frequency',
-      subtitle: frequencyLabels[frequencies.indexOf(_reminderFrequency)],
-      trailing: DropdownButton<String>(
-        value: _reminderFrequency,
-        underline: SizedBox(),
-        items: frequencies
-            .asMap()
-            .entries
-            .map((entry) => DropdownMenuItem(
-                  value: entry.value,
-                  child: Text(frequencyLabels[entry.key],
-                      style: GoogleFonts.poppins()),
-                ))
-            .toList(),
-        onChanged: (value) {
-          if (value != null) {
-            setState(() => _reminderFrequency = value);
-            _updateSettings({'reminderFrequency': value});
-          }
-        },
-      ),
-    );
-  }
-
   void _showChangePasswordDialog(AppLocalizations l10n) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           'Change Password',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.w600,
+            color: AppTheme.textPrimary,
+          ),
         ),
         content: SingleChildScrollView(
           child: Column(
@@ -1034,6 +649,7 @@ class _ReceptionistSettingsScreenState extends State<ReceptionistSettingsScreen>
               TextField(
                 controller: _currentPasswordController,
                 obscureText: true,
+                style: GoogleFonts.poppins(color: AppTheme.textPrimary),
                 decoration: InputDecoration(
                   labelText: 'Current Password',
                   border: OutlineInputBorder(
@@ -1045,6 +661,7 @@ class _ReceptionistSettingsScreenState extends State<ReceptionistSettingsScreen>
               TextField(
                 controller: _newPasswordController,
                 obscureText: true,
+                style: GoogleFonts.poppins(color: AppTheme.textPrimary),
                 decoration: InputDecoration(
                   labelText: 'New Password',
                   border: OutlineInputBorder(
@@ -1056,6 +673,7 @@ class _ReceptionistSettingsScreenState extends State<ReceptionistSettingsScreen>
               TextField(
                 controller: _confirmPasswordController,
                 obscureText: true,
+                style: GoogleFonts.poppins(color: AppTheme.textPrimary),
                 decoration: InputDecoration(
                   labelText: 'Confirm Password',
                   border: OutlineInputBorder(
@@ -1068,7 +686,7 @@ class _ReceptionistSettingsScreenState extends State<ReceptionistSettingsScreen>
                 'Password must be at least 8 characters',
                 style: GoogleFonts.poppins(
                   fontSize: 12,
-                  color: Colors.grey.shade600,
+                  color: AppTheme.textSecondary,
                 ),
               ),
             ],
@@ -1077,7 +695,10 @@ class _ReceptionistSettingsScreenState extends State<ReceptionistSettingsScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(l10n.cancel),
+            child: Text(
+              l10n.cancel,
+              style: GoogleFonts.poppins(color: AppTheme.textSecondary),
+            ),
           ),
           ElevatedButton(
             onPressed: _isUpdatingPassword
@@ -1087,7 +708,7 @@ class _ReceptionistSettingsScreenState extends State<ReceptionistSettingsScreen>
                     _changePassword();
                   },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Color(0xFFF27121),
+              backgroundColor: AppTheme.primary,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12)),
             ),
@@ -1109,13 +730,18 @@ class _ReceptionistSettingsScreenState extends State<ReceptionistSettingsScreen>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           'Edit Profile',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.w600,
+            color: AppTheme.textPrimary,
+          ),
         ),
         content: TextField(
           controller: nameController,
+          style: GoogleFonts.poppins(color: AppTheme.textPrimary),
           decoration: InputDecoration(
             labelText: l10n.name,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -1125,7 +751,10 @@ class _ReceptionistSettingsScreenState extends State<ReceptionistSettingsScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(l10n.cancel),
+            child: Text(
+              l10n.cancel,
+              style: GoogleFonts.poppins(color: AppTheme.textSecondary),
+            ),
           ),
           ElevatedButton(
             onPressed: () {
@@ -1135,7 +764,7 @@ class _ReceptionistSettingsScreenState extends State<ReceptionistSettingsScreen>
               _showSuccessSnackBar('Profile updated successfully!');
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Color(0xFFF27121),
+              backgroundColor: AppTheme.primary,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12)),
             ),
@@ -1146,82 +775,53 @@ class _ReceptionistSettingsScreenState extends State<ReceptionistSettingsScreen>
     );
   }
 
-  void _showLogoutAllDialog(AppLocalizations l10n) {
+  void _showLogoutDialog(AppLocalizations l10n) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(
           children: [
-            Icon(Icons.logout, color: Colors.red.shade600),
+            Icon(Icons.logout, color: AppTheme.error),
             SizedBox(width: 12),
             Text(
-              'Logout All Devices',
-              style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+              l10n.logout,
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w600,
+                color: AppTheme.textPrimary,
+              ),
             ),
           ],
         ),
         content: Text(
-          'Are you sure you want to logout from all devices?',
-          style: GoogleFonts.poppins(),
+          l10n.confirmLogout,
+          style: GoogleFonts.poppins(color: AppTheme.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(l10n.cancel),
+            child: Text(
+              l10n.cancel,
+              style: GoogleFonts.poppins(color: AppTheme.textSecondary),
+            ),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
-              _showComingSoon();
+              await FirebaseAuth.instance.signOut();
+              if (!context.mounted) return;
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (context) => const LoginPage()),
+                (route) => false,
+              );
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red.shade600,
+              backgroundColor: AppTheme.error,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12)),
             ),
-            child: Text('Logout All'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showResetSettingsDialog(AppLocalizations l10n) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            Icon(Icons.restore, color: Colors.red.shade600),
-            SizedBox(width: 12),
-            Text(
-              'Reset Settings',
-              style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-            ),
-          ],
-        ),
-        content: Text(
-          'Are you sure you want to reset all settings to default?',
-          style: GoogleFonts.poppins(),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(l10n.cancel),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _showComingSoon();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red.shade600,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-            ),
-            child: Text('Reset'),
+            child: Text(l10n.logout),
           ),
         ],
       ),
@@ -1238,7 +838,7 @@ class _ReceptionistSettingsScreenState extends State<ReceptionistSettingsScreen>
             Text('Coming Soon!', style: GoogleFonts.poppins()),
           ],
         ),
-        backgroundColor: Color(0xFFF27121),
+        backgroundColor: AppTheme.primary,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: EdgeInsets.all(16),
