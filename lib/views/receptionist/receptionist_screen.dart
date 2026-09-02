@@ -656,7 +656,6 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
             return playerName.contains(searchQuery.toLowerCase());
           } else {
             // Teams
-
             return doc['team_name']
                 .toString()
                 .toLowerCase()
@@ -2358,6 +2357,8 @@ class _ReceptionistScreenState extends State<ReceptionistScreen>
       } else {
         // Team deletion
         await FirebaseFirestore.instance
+            .collection('organizations')
+            .doc(OrganizationContext.currentOrgId)
             .collection('teams')
             .doc(doc.id)
             .delete();

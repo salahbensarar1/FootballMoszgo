@@ -24,7 +24,8 @@
       "Bash(wc -l /Users/salahbensarar/AndroidStudioProjects/footballtraining/lib/views/receptionist/components/*.dart /Users/salahbensarar/AndroidStudioProjects/footballtraining/lib/views/receptionist/dialogs/*.dart /Users/salahbensarar/AndroidStudioProjects/footballtraining/lib/views/receptionist/widgets/*.dart /Users/salahbensarar/AndroidStudioProjects/footballtraining/lib/views/receptionist/*.dart)",
       "Bash(wc -l /Users/salahbensarar/AndroidStudioProjects/footballtraining/lib/views/shared/widgets/*.dart)",
       "Bash(git -C /Users/salahbensarar/AndroidStudioProjects/footballtraining log --oneline)",
-      "Bash(git -C /Users/salahbensarar/AndroidStudioProjects/footballtraining status --short)"
+      "Bash(git -C /Users/salahbensarar/AndroidStudioProjects/footballtraining status --short)",
+      "Bash(python3 -c \"import json; d=json.load\\(open\\('lib/l10n/app_hu.arb'\\)\\); print\\('valid JSON, keys:', len\\(d\\)\\)\")"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

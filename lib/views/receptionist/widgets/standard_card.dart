@@ -38,15 +38,17 @@ class StandardCard extends StatelessWidget {
       // Team
       title = data['team_name'] ?? 'Unnamed Team';
       final playerCount = data['number_of_players'] ?? 0;
-      final coachIds = data['coach_ids'] as List<dynamic>? ?? [];
-      subtitle = "$playerCount players • ${coachIds.length} coaches";
+      final coaches = data['coaches'] as List<dynamic>? ?? [];
+      final coachCount = data['coach_count'] as int? ?? coaches.length;
+      subtitle = "$playerCount ${l10n.players} • $coachCount ${l10n.coaches}";
     }
 
     return Card(
       elevation: 0,
+      color: AppTheme.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.grey.shade200),
+        side: BorderSide(color: AppTheme.border),
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.all(16),

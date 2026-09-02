@@ -1463,302 +1463,300 @@ class AppLocalizationsHu extends AppLocalizations {
   String get seeAll => 'Összes megtekintése';
 
   @override
-  String get organizationSetup => 'Organization Setup';
+  String get organizationSetup => 'Szervezet beállítása';
 
   @override
-  String get stepBasicInfo => 'Basic Information';
+  String get stepBasicInfo => 'Alapinformációk';
 
   @override
-  String get stepAdminUser => 'Administrator';
+  String get stepAdminUser => 'Adminisztrátor';
 
   @override
-  String get stepTeamSetup => 'Team Setup';
+  String get stepTeamSetup => 'Csapat beállítása';
 
   @override
-  String get stepPaymentConfig => 'Payment Configuration';
+  String get stepPaymentConfig => 'Fizetés beállítása';
 
   @override
-  String get stepReview => 'Review & Complete';
+  String get stepReview => 'Áttekintés és befejezés';
 
   @override
-  String get organizationName => 'Organization Name';
+  String get organizationName => 'Szervezet neve';
 
   @override
-  String get organizationAddress => 'Organization Address';
+  String get organizationAddress => 'Szervezet címe';
 
   @override
-  String get organizationType => 'Organization Type';
+  String get organizationType => 'Szervezet típusa';
 
   @override
-  String get selectOrgType => 'Select organization type';
+  String get selectOrgType => 'Válassza ki a szervezet típusát';
 
   @override
-  String get club => 'Club';
+  String get club => 'Klub';
 
   @override
-  String get school => 'School';
+  String get school => 'Iskola';
 
   @override
-  String get academy => 'Academy';
+  String get academy => 'Akadémia';
 
   @override
-  String get other => 'Other';
+  String get other => 'Egyéb';
 
   @override
-  String get adminSetup => 'Administrator Setup';
+  String get adminSetup => 'Adminisztrátor beállítása';
 
   @override
-  String get adminName => 'Administrator Name';
+  String get adminName => 'Adminisztrátor neve';
 
   @override
-  String get adminEmail => 'Administrator Email';
+  String get adminEmail => 'Adminisztrátor e-mail';
 
   @override
-  String get adminPassword => 'Administrator Password';
+  String get adminPassword => 'Adminisztrátor jelszó';
 
   @override
-  String get createAdminAccount => 'Create administrator account';
+  String get createAdminAccount => 'Adminisztrátor fiók létrehozása';
 
   @override
-  String get teamSetupTitle => 'Create Initial Teams';
+  String get teamSetupTitle => 'Kezdeti csapatok létrehozása';
 
   @override
   String get addTeamsDescription =>
-      'Add teams and sample players to get started';
+      'Adjon hozzá csapatokat és minta játékosokat a kezdéshez';
 
   @override
-  String get enterTeamName => 'Enter team name';
+  String get enterTeamName => 'Adja meg a csapat nevét';
 
   @override
-  String get addSamplePlayers => 'Add sample players';
+  String get addSamplePlayers => 'Minta játékosok hozzáadása';
 
   @override
-  String get samplesPerTeam => 'players per team';
+  String get samplesPerTeam => 'játékos csapatonként';
 
   @override
-  String get paymentConfiguration => 'Payment Configuration';
+  String get paymentConfiguration => 'Fizetés beállítása';
 
   @override
-  String get defaultMonthlyFee => 'Default Monthly Fee';
+  String get defaultMonthlyFee => 'Alapértelmezett havi díj';
 
   @override
-  String get currency => 'Currency';
+  String get currency => 'Pénznem';
 
   @override
-  String get selectCurrency => 'Select currency';
+  String get selectCurrency => 'Válasszon pénznemet';
 
   @override
-  String get paymentDueDay => 'Payment Due Day';
+  String get paymentDueDay => 'Fizetési határidő napja';
 
   @override
-  String get dueDayDescription => 'Day of the month when payments are due';
+  String get dueDayDescription => 'A hónap napja, amikor a fizetés esedékes';
 
   @override
-  String get reviewAndComplete => 'Review & Complete';
+  String get reviewAndComplete => 'Áttekintés és befejezés';
 
   @override
-  String get setupSummary => 'Setup Summary';
+  String get setupSummary => 'Beállítás összesítő';
 
   @override
-  String get reviewDetails => 'Review your organization details below';
+  String get reviewDetails => 'Ellenőrizze az alábbi szervezeti adatokat';
 
   @override
-  String get finishSetup => 'Finish Setup';
+  String get finishSetup => 'Beállítás befejezése';
 
   @override
-  String get backToPrevious => 'Back to Previous';
+  String get backToPrevious => 'Vissza az előzőhöz';
 
   @override
-  String get nextStep => 'Next Step';
+  String get nextStep => 'Következő lépés';
 
   @override
-  String get setupInProgress => 'Setup in Progress...';
+  String get setupInProgress => 'Beállítás folyamatban...';
 
   @override
-  String get creatingOrganization => 'Creating organization...';
+  String get creatingOrganization => 'Szervezet létrehozása...';
 
   @override
-  String get creatingAdminAccount => 'Creating admin account...';
+  String get creatingAdminAccount => 'Adminisztrátor fiók létrehozása...';
 
   @override
-  String get settingUpTeams => 'Setting up teams...';
+  String get settingUpTeams => 'Csapatok beállítása...';
 
   @override
-  String get configuringPayments => 'Configuring payments...';
+  String get configuringPayments => 'Fizetések beállítása...';
 
   @override
-  String get finalizingSetup => 'Finalizing setup...';
+  String get finalizingSetup => 'Beállítás véglegesítése...';
 
   @override
-  String get setupCompleteTitle => 'Setup Complete!';
+  String get setupCompleteTitle => 'Beállítás kész!';
 
   @override
-  String get setupCompleteMessage =>
-      'Your organization has been successfully created';
+  String get setupCompleteMessage => 'A szervezete sikeresen létrehozva';
 
   @override
-  String get getStarted => 'Get Started';
+  String get getStarted => 'Kezdés';
 
   @override
-  String get setupError => 'Setup Error';
+  String get setupError => 'Beállítási hiba';
 
   @override
   String get setupErrorMessage =>
-      'An error occurred during setup. Please try again.';
+      'Hiba történt a beállítás során. Kérjük, próbálja újra.';
 
   @override
   String get contactSupportIfPersists =>
-      'Contact support if this error persists.';
+      'Vegye fel a kapcsolatot a támogatással, ha a hiba fennáll.';
 
   @override
-  String get processingRequest => 'Processing request...';
+  String get processingRequest => 'Kérés feldolgozása...';
 
   @override
-  String get pleaseWait => 'Please wait...';
+  String get pleaseWait => 'Kérjük, várjon...';
 
   @override
-  String get almostDone => 'Almost done...';
+  String get almostDone => 'Majdnem kész...';
 
   @override
-  String get demoOrganization => 'Demo Organization';
+  String get demoOrganization => 'Demo szervezet';
 
   @override
-  String get demoMode => 'Demo Mode';
+  String get demoMode => 'Demo mód';
 
   @override
   String get demoDataWarning =>
-      'This is demo data. Changes will not be saved permanently.';
+      'Ez demo adat. A változtatások nem lesznek véglegesen mentve.';
 
   @override
-  String get cleanupDemoData => 'Cleanup Demo Data';
+  String get cleanupDemoData => 'Demo adatok törlése';
 
   @override
   String get cleanupDescription =>
-      'Remove all demo organizations older than 24 hours';
+      '24 óránál régebbi demo szervezetek eltávolítása';
 
   @override
-  String get performCleanup => 'Perform Cleanup';
+  String get performCleanup => 'Törlés végrehajtása';
 
   @override
-  String get cleanupComplete => 'Cleanup complete';
+  String get cleanupComplete => 'Törlés kész';
 
   @override
-  String get noOldDemoData => 'No old demo data found to cleanup';
+  String get noOldDemoData => 'Nem található régi demo adat törléshez';
 
   @override
-  String get offlineMode => 'Offline Mode';
+  String get offlineMode => 'Offline mód';
 
   @override
-  String get connectionLost => 'Connection lost';
+  String get connectionLost => 'Kapcsolat megszakadt';
 
   @override
-  String get reconnecting => 'Reconnecting...';
+  String get reconnecting => 'Újracsatlakozás...';
 
   @override
-  String get retryConnection => 'Retry Connection';
+  String get retryConnection => 'Kapcsolat újrapróbálása';
 
   @override
   String get offlineChanges =>
-      'Changes will be synced when connection is restored';
+      'A változtatások szinkronizálódnak, amikor a kapcsolat helyreáll';
 
   @override
-  String get validationError => 'Validation Error';
+  String get validationError => 'Érvényesítési hiba';
 
   @override
-  String get fieldRequired => 'This field is required';
+  String get fieldRequired => 'Ez a mező kötelező';
 
   @override
-  String get invalidFormat => 'Invalid format';
+  String get invalidFormat => 'Érvénytelen formátum';
 
   @override
-  String get mustBeNumber => 'Must be a valid number';
+  String get mustBeNumber => 'Érvényes számnak kell lennie';
 
   @override
-  String get mustBePositive => 'Must be a positive number';
+  String get mustBePositive => 'Pozitív számnak kell lennie';
 
   @override
-  String get tooShort => 'Too short';
+  String get tooShort => 'Túl rövid';
 
   @override
-  String get tooLong => 'Too long';
+  String get tooLong => 'Túl hosszú';
 
   @override
-  String get organizationExists => 'Organization with this name already exists';
+  String get organizationExists => 'Ilyen nevű szervezet már létezik';
 
   @override
-  String get emailTaken => 'Email address is already taken';
+  String get emailTaken => 'Ez az e-mail cím már foglalt';
 
   @override
-  String get weakPassword => 'Password is too weak';
+  String get weakPassword => 'A jelszó túl gyenge';
 
   @override
-  String get invalidEmailFormat => 'Invalid email format';
+  String get invalidEmailFormat => 'Érvénytelen e-mail formátum';
 
   @override
-  String get organizationNameTooShort => 'Organization name is too short';
+  String get organizationNameTooShort => 'A szervezet neve túl rövid';
 
   @override
-  String get addressRequired => 'Address is required';
+  String get addressRequired => 'A cím megadása kötelező';
 
   @override
-  String get loadingOrganizations => 'Loading organizations...';
+  String get loadingOrganizations => 'Szervezetek betöltése...';
 
   @override
-  String get selectExistingOrg => 'Select existing organization';
+  String get selectExistingOrg => 'Meglévő szervezet kiválasztása';
 
   @override
-  String get createNewOrg => 'Create new organization';
+  String get createNewOrg => 'Új szervezet létrehozása';
 
   @override
-  String get joinOrganization => 'Join Organization';
+  String get joinOrganization => 'Csatlakozás szervezethez';
 
   @override
-  String get switchOrganization => 'Switch Organization';
+  String get switchOrganization => 'Szervezet váltása';
 
   @override
   String get noOrganizationAccess =>
-      'You don\'t have access to any organizations';
+      'Nincs hozzáférése egyetlen szervezethez sem';
 
   @override
-  String get resumeSetup => 'Resume Setup';
+  String get resumeSetup => 'Beállítás folytatása';
 
   @override
-  String get continueSetup => 'Continue Setup';
+  String get continueSetup => 'Beállítás folytatása';
 
   @override
-  String get startFresh => 'Start Fresh';
+  String get startFresh => 'Újrakezdés';
 
   @override
-  String get setupInterrupted => 'Your setup was interrupted';
+  String get setupInterrupted => 'A beállítás megszakadt';
 
   @override
   String resumeFromStep(String stepNumber) {
-    return 'Resume from step $stepNumber';
+    return 'Folytatás a $stepNumber. lépéstől';
   }
 
   @override
-  String get abandonSetup => 'Abandon Setup';
+  String get abandonSetup => 'Beállítás megszakítása';
 
   @override
   String get networkTimeoutError =>
-      'Network timeout. Please check your connection.';
+      'Hálózati időtúllépés. Kérjük, ellenőrizze a kapcsolatot.';
 
   @override
-  String get serverError => 'Server error. Please try again later.';
+  String get serverError => 'Szerverhiba. Kérjük, próbálja újra később.';
 
   @override
-  String get rateLimitExceeded =>
-      'Too many requests. Please wait before trying again.';
+  String get rateLimitExceeded => 'Túl sok kérés. Kérjük, várjon egy kicsit.';
 
   @override
-  String get operationCancelled => 'Operation was cancelled';
+  String get operationCancelled => 'A művelet megszakadt';
 
   @override
-  String get batchOperationInProgress => 'Batch operation in progress...';
+  String get batchOperationInProgress => 'Kötegelt művelet folyamatban...';
 
   @override
   String processingItems(String current, String total) {
-    return 'Processing $current of $total items...';
+    return '$current/$total elem feldolgozása...';
   }
 
   @override

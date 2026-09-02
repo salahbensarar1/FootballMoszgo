@@ -215,22 +215,27 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   }
 
   Widget _buildTopSection(bool isSmallScreen, AppLocalizations l10n) {
-    return Container(
+    final screenHeight = MediaQuery.of(context).size.height;
+    final topSectionHeight = screenHeight * (isSmallScreen ? 0.22 : 0.26);
+
+    return SizedBox(
+      height: topSectionHeight,
       width: double.infinity,
-      padding: EdgeInsets.all(ScreenConfig.spaceL),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: EdgeInsets.all(ScreenConfig.spaceL),
-            decoration: BoxDecoration(
-              gradient: AppTheme.primaryGradient,
-              borderRadius: BorderRadius.circular(ScreenConfig.radiusL),
-              boxShadow: AppTheme.primaryShadow,
-            ),
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: ScreenConfig.spaceL,
+          vertical: ScreenConfig.spaceS,
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: AppTheme.primaryGradient,
+            borderRadius: BorderRadius.circular(ScreenConfig.radiusL),
+            boxShadow: AppTheme.primaryShadow,
+          ),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Padding(
+              padding: EdgeInsets.all(ScreenConfig.spaceL),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -261,7 +266,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
               ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }

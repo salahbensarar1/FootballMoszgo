@@ -2663,7 +2663,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
           .map((coach) => {
                 'coach_id': coach['id'],
                 'coach_name': coach['name'],
-                'role': coach['role'],
+                'role': coach['role'] ?? 'head_coach',
                 'assigned_at': Timestamp.now(),
               })
           .toList();
@@ -2681,7 +2681,7 @@ class _AddEntryDialogState extends State<AddEntryDialog>
         "primary_coach": selectedCoaches.first['id'], // First coach is primary
         "coach_count": selectedCoaches.length,
         "organization_id": OrganizationContext.currentOrgId,
-        "created_at": Timestamp.now(),
+        "created_at": FieldValue.serverTimestamp(),
       });
 
       teamDocId = teamRef.id;
