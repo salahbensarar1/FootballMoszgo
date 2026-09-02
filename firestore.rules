@@ -127,7 +127,7 @@ service cloud.firestore {
       allow read: if canAccessOrg(orgId);
       allow create: if hasAnyRole(orgId, ['admin', 'super_admin', 'coach']) && canAccessOrg(orgId);
       allow update: if hasAnyRole(orgId, ['admin', 'super_admin', 'coach']) && canAccessOrg(orgId);
-      allow delete: if isAdmin(orgId) && canAccessOrg(orgId);
+      allow delete: if hasAnyRole(orgId, ['admin', 'super_admin', 'receptionist']) && canAccessOrg(orgId);
     }
     
     // Players
